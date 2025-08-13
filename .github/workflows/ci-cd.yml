@@ -388,7 +388,7 @@ jobs:
         sleep 60
       
     - name: 🔍 Run Lighthouse CI
-      uses: treosh/lighthouse-ci-action@v10
+      uses: treosh/lighthouse-ci-action@v12
       with:
         urls: |
           https://${{ secrets.SUPABASE_PROJECT_REF_PROD }}.supabase.co
