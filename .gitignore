@@ -171,3 +171,6 @@ video-generator.html
 .env.staging
 .env.supabase.template
 backend/config/*.env
+
+# Local Netlify folder
+.netlify
