@@ -103,82 +103,43 @@ class LogoCookieManager {
         // Update existing text-only logos
         const textLogos = document.querySelectorAll('.sichrplace-text-only');
         textLogos.forEach(textLogo => {
-            textLogo.classList.remove('sichrplace-text-only');
-            textLogo.classList.add('sichrplace-logo');
-            
-            // Add shield if not present
-            if (!textLogo.querySelector('.sichrplace-shield')) {
-                const shield = document.createElement('div');
-                shield.className = 'sichrplace-shield sichrplace-certified';
-                textLogo.insertBefore(shield, textLogo.firstChild);
-            }
+            // Simply replace with clean logo image
+            textLogo.outerHTML = '<img src="img/SichrPlaceLogo_944x944.jpg" class="logo" alt="SichrPlace" style="height: 50px;">';
         });
     }
 
     replaceLogosWithText() {
-        // Replace visual logos with text-only versions
+        // Replace visual logos with simple text versions
         const logos = document.querySelectorAll('.sichrplace-logo');
         logos.forEach(logo => {
-            logo.classList.add('sichrplace-text-only');
-            logo.classList.remove('sichrplace-logo');
-            
-            // Remove shields
-            const shields = logo.querySelectorAll('.sichrplace-shield');
-            shields.forEach(shield => shield.remove());
+            logo.outerHTML = '<span class="sichrplace-text-only">SichrPlace</span>';
         });
     }
 
     createVisualLogo(type = 'default') {
         const logoTypes = {
             'navbar': `
-                <a href="/" class="sichrplace-logo navbar-brand">
-                    <div class="sichrplace-shield sichrplace-certified"></div>
-                    <span class="sichrplace-text">SichrPlace</span>
-                    <span class="german-certification">Certified</span>
-                </a>
+                <img src="img/SichrPlaceLogo_944x944.jpg" class="logo" alt="SichrPlace" style="height: 50px;">
             `,
             'header': `
-                <div class="sichrplace-logo header-logo">
-                    <div class="sichrplace-shield large sichrplace-certified"></div>
-                    <span class="sichrplace-text">SichrPlace</span>
-                    <span class="german-certification">German Certified</span>
-                </div>
+                <img src="img/SichrPlaceLogo_944x944.jpg" class="logo" alt="SichrPlace" style="height: 80px;">
             `,
             'footer': `
-                <div class="sichrplace-logo">
-                    <div class="sichrplace-shield sichrplace-certified"></div>
-                    <span class="sichrplace-text">SichrPlace</span>
-                </div>
+                <img src="img/SichrPlaceLogo_944x944.jpg" class="logo" alt="SichrPlace" style="height: 40px;">
             `,
             'default': `
-                <div class="sichrplace-logo">
-                    <div class="sichrplace-shield sichrplace-certified"></div>
-                    <span class="sichrplace-text">SichrPlace</span>
-                </div>
+                <img src="img/SichrPlaceLogo_944x944.jpg" class="logo" alt="SichrPlace" style="height: 50px;">
             `
         };
 
         return logoTypes[type] || logoTypes['default'];
     }
 
-    createCertificationFooter() {
+    createSimpleFooter() {
         return `
-            <div class="footer-certification">
-                <div class="certification-badges">
-                    <div class="certification-badge german-authority">
-                        <span>German Authority Certified</span>
-                    </div>
-                    <div class="certification-badge security-verified">
-                        <span>Security Verified</span>
-                    </div>
-                    <div class="certification-badge data-protection">
-                        <span>GDPR Compliant</span>
-                    </div>
-                </div>
-                <div class="certification-text">
-                    SichrPlace is certified by German authorities as a trusted rental platform. 
-                    Our security measures and data protection protocols meet the highest European standards.
-                    Trademark and certification marks are displayed with proper authorization.
+            <div class="simple-footer">
+                <div class="footer-text">
+                    SichrPlace - Secure apartment rental platform for Germany
                 </div>
             </div>
         `;

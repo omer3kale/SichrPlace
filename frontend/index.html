@@ -12,7 +12,7 @@
   <link rel="canonical" href="https://sichrplace.com/">
   <meta property="og:title" content="SichrPlace - Verified Student Apartments in Germany">
   <meta property="og:description" content="Secure, transparent, and easy apartment search for students and professionals in Germany. Verified listings, secure messaging, and digital contracts.">
-  <meta property="og:image" content="https://sichrplace.com/img/logo-shield.svg">
+
   <meta property="og:url" content="https://sichrplace.com/">
   <meta property="og:type" content="website">
   <meta name="robots" content="index, follow">
@@ -25,7 +25,7 @@
   <link rel="icon" href="img/web-app-manifest-192x192.png" sizes="192x192" type="image/png">
   <link rel="icon" href="img/web-app-manifest-512x512.png" sizes="512x512" type="image/png">
   
-  <link rel="icon" href="img/logo-shield.svg" type="image/svg+xml">
+
   
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
@@ -73,13 +73,40 @@
       background: var(--card);
       box-shadow: var(--shadow);
       padding: 0 40px;
-      height: 70px;
+      height: 80px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 10;
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .sichrplace-text {
+      font-family: var(--heading-font);
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .certified-badge {
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .logo img {
+      height: 40px;
+      width: auto;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.1));
     }
     .logo {
       display: flex;
@@ -90,11 +117,11 @@
       font-size: 1.5rem;
       color: var(--primary);
       text-decoration: none;
-    }
-    .logo img {
-      height: 40px;
-      width: auto;
-      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.1));
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 2px solid var(--primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     nav {
       display: flex;
@@ -144,7 +171,7 @@
       right: -7px;
       background: #e11d48;
       color: #fff;
-      "
+      border-radius: 50%;
       padding: 2px 7px;
       font-size: 0.85rem;
       font-weight: 700;
@@ -160,7 +187,7 @@
       right: 0;
       top: 32px;
       background: #fff;
-      "
+      border-radius: var(--radius);
       box-shadow: 0 2px 12px rgba(0,0,0,0.12);
       min-width: 320px;
       z-index: 100;
@@ -194,24 +221,103 @@
     }
     /* Hero Section */
     .hero {
-      background: linear-gradient(120deg, var(--primary) 60%, var(--accent) 100%);
+      background: linear-gradient(135deg, var(--primary) 0%, #1e40af 25%, var(--accent) 75%, #06b6d4 100%);
       color: #fff;
-      padding: 80px 20px 60px 20px;
+      padding: 100px 20px 80px 20px;
       text-align: center;
       position: relative;
+      overflow: hidden;
+      animation: heroGradient 8s ease-in-out infinite alternate;
+    }
+    
+    @keyframes heroGradient {
+      0% {
+        background: linear-gradient(135deg, var(--primary) 0%, #1e40af 25%, var(--accent) 75%, #06b6d4 100%);
+      }
+      50% {
+        background: linear-gradient(135deg, #1e40af 0%, var(--primary) 25%, #06b6d4 75%, var(--accent) 100%);
+      }
+      100% {
+        background: linear-gradient(135deg, var(--accent) 0%, #06b6d4 25%, var(--primary) 75%, #1e40af 100%);
+      }
+    }
+    
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 80%, rgba(255,255,255,0.08) 0%, transparent 50%);
+      animation: heroOverlay 6s ease-in-out infinite alternate;
+    }
+    
+    @keyframes heroOverlay {
+      0% { opacity: 0.8; }
+      100% { opacity: 1; }
     }
     .hero-content {
-      max-width: 600px;
+      max-width: 700px;
       margin: 0 auto;
+      position: relative;
+      z-index: 2;
+      animation: heroFloat 3s ease-in-out infinite alternate;
     }
+    
+    @keyframes heroFloat {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-10px); }
+    }
+    
     .hero-logo {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 3rem;
     }
     .hero-brand .sichrplace-text {
-      font-size: 3rem;
-      font-weight: 800;
+      font-size: 4rem;
+      font-weight: 700;
       margin-left: 1rem;
+      color: #fff;
+      text-shadow: 
+        0 0 10px rgba(255,255,255,0.8),
+        0 0 20px rgba(255,255,255,0.6),
+        0 0 30px rgba(255,255,255,0.4),
+        2px 2px 4px rgba(0,0,0,0.3);
+      animation: textPulse 2s ease-in-out infinite alternate;
+      position: relative;
+    }
+    
+    @keyframes textPulse {
+      0% { 
+        transform: scale(1);
+        text-shadow: 
+          0 0 10px rgba(255,255,255,0.8),
+          0 0 20px rgba(255,255,255,0.6),
+          0 0 30px rgba(255,255,255,0.4),
+          2px 2px 4px rgba(0,0,0,0.3);
+      }
+      100% { 
+        transform: scale(1.05);
+        text-shadow: 
+          0 0 15px rgba(255,255,255,1),
+          0 0 25px rgba(255,255,255,0.8),
+          0 0 35px rgba(255,255,255,0.6),
+          2px 2px 6px rgba(0,0,0,0.4);
+      }
+    }
+    
+    .sichrplace-text.hero-text {
+      color: #fff !important;
+      font-weight: 700;
+      font-size: 4rem;
+      text-shadow: 
+        0 0 10px rgba(255,255,255,0.8),
+        0 0 20px rgba(255,255,255,0.6),
+        0 0 30px rgba(255,255,255,0.4),
+        2px 2px 4px rgba(0,0,0,0.3);
+      animation: textPulse 2s ease-in-out infinite alternate;
     }
     .hero-brand {
       display: inline-flex;
@@ -220,20 +326,52 @@
     }
     .hero h1 {
       font-family: var(--heading-font);
-      font-size: 3rem;
+      font-size: 3.5rem;
       font-weight: 700;
-      margin-bottom: 18px;
+      margin-bottom: 24px;
       letter-spacing: -1px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      animation: slideInFromTop 1s ease-out;
+      position: relative;
+      z-index: 3;
     }
+    
+    @keyframes slideInFromTop {
+      0% {
+        opacity: 0;
+        transform: translateY(-50px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
     .hero p {
-      font-size: 1.25rem;
-      margin-bottom: 32px;
+      font-size: 1.4rem;
+      margin-bottom: 40px;
       color: #e0e7ff;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+      animation: slideInFromBottom 1s ease-out 0.3s both;
+      line-height: 1.6;
+      position: relative;
+      z-index: 3;
+    }
+    
+    @keyframes slideInFromBottom {
+      0% {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     .search-bar {
       display: flex;
       background: #fff;
-      "
+      border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow: hidden;
       max-width: 480px;
@@ -245,7 +383,7 @@
       border: none;
       padding: 18px 24px;
       font-size: 1.1rem;
-      "
+      border-radius: var(--radius);
       outline: none;
     }
     .search-bar button {
@@ -256,7 +394,7 @@
       font-size: 1.1rem;
       font-family: var(--heading-font);
       font-weight: 600;
-      "
+      border-radius: var(--radius);
       cursor: pointer;
       transition: background 0.2s;
     }
@@ -273,7 +411,7 @@
       background: #fff;
       color: var(--primary);
       padding: 12px 32px;
-      "
+      border-radius: var(--radius);
       font-family: var(--heading-font);
       font-weight: 600;
       text-decoration: none;
@@ -761,12 +899,9 @@
 </head>
 <body>
   <header>
-    <img src="img/SichrPlaceLogo_944x944.jpg" class="logo" data-type="logo" alt="SichrPlace" style="height: 70px;">
-    <a href="index.html" class="logo-placeholder" data-type="navbar">
-      <span class="sichrplace-text" data-translate="nav.home">SichrPlace</span>
-        <span class="german-certification">Certified</span>
+    <div class="header-logo">
       </div>
-    </a>
+    </div>
     <nav>
       <a href="apartments-listing.html" data-translate="nav.apartments">Apartments</a>
       <a href="marketplace.html" class="cart-icon" title="Marketplace" aria-label="Marketplace">
@@ -805,7 +940,7 @@
   <div id="viewing-request-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.7);z-index:9999;justify-content:center;align-items:center;">
     <div style="background:#fff;border-radius:18px;max-width:600px;width:95vw;max-height:90vh;overflow-y:auto;padding:32px 24px;box-shadow:0 2px 12px rgba(0,0,0,0.12);position:relative;">
       <div style="font-family:'Poppins',sans-serif;font-size:1.4rem;font-weight:700;color:#2563eb;text-align:center;margin-bottom:24px;">
-        <i class="fa fa-calendar-check"></i> Apartment Viewing Request
+        <i class="fa fa-calendar"></i> Apartment Viewing Request
       </div>
       <button onclick="closeViewingRequestModal()" style="position:absolute;top:16px;right:18px;background:none;border:none;font-size:1.5rem;color:#e11d48;cursor:pointer;">&times;</button>
       
@@ -909,7 +1044,7 @@
       <div id="paypal-result-message" style="display:none;margin-bottom:16px;padding:12px;border-radius:8px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:14px;text-align:center;"></div>
       
       <div style="text-align:center;color:#6b7280;font-size:13px;">
-        <i class="fa fa-shield-alt"></i> Secure payment processed by PayPal
+        <i class="fa fa-lock"></i> Secure payment processed by PayPal
       </div>
     </div>
   </div>
@@ -918,12 +1053,6 @@
     <!-- Hero Section (Landing) -->
     <section class="hero">
       <div class="hero-content">
-        <div class="hero-logo">
-          <div class="sichrplace-logo hero-brand">
-            <div class="sichrplace-shield xlarge sichrplace-certified"></div>
-            <span class="sichrplace-text hero-text">SichrPlace</span>
-          </div>
-        </div>
         <h1>Find Your Next Apartment<br>with Confidence</h1>
         <p>Secure, transparent, and easy apartment search for students and professionals in Germany.</p>
         <form class="search-bar" action="apartments-listing.html" method="get">
@@ -940,9 +1069,9 @@
     <!-- Features Section -->
     <section class="features">
       <div class="feature-card">
-        <i class="fa fa-shield-alt"></i>
+        <i class="fa fa-home"></i>
         <h3>Verified Listings</h3>
-        <p>All apartments are checked for authenticity to protect you from scams.</p>
+        <p>All apartments are verified for authenticity to protect you from scams.</p>
       </div>
       <div class="feature-card">
         <i class="fa fa-comments"></i>
@@ -1010,7 +1139,7 @@
                   <strong>123 Main St</strong>
                   <span>⭐ 4.8 (32 reviews)</span>
                   <span class="badge">12 applicants</span>
-                  <span class="interview"><i class="fa fa-user-check"></i> Interview Required</span>
+                  <span class="interview">Interview Required</span>
                 </div>
                 <button class="wishlist-btn" onclick="toggleWishlist(this)" title="Add to wishlist"><i class="fa fa-heart"></i></button>
               </div>
@@ -1029,7 +1158,7 @@
                   <strong>789 Oak Ave</strong>
                   <span>⭐ 4.9 (18 reviews)</span>
                   <span class="badge">3 applicants</span>
-                  <span class="interview"><i class="fa fa-user-check"></i> Interview Required</span>
+                  <span class="interview">Interview Required</span>
                 </div>
                 <button class="wishlist-btn" onclick="toggleWishlist(this)" title="Add to wishlist"><i class="fa fa-heart"></i></button>
               </div>
@@ -1168,7 +1297,7 @@
           <div class="feedback-footer" style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(37,99,235,0.08);">
             <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
               <div style="display:flex;align-items:center;gap:8px;">
-                <i class="fas fa-shield-alt" style="color:var(--accent);font-size:16px;"></i>
+                <i class="fas fa-user-secret" style="color:var(--accent);font-size:16px;"></i>
                 <span style="color:var(--muted);font-size:0.9rem;">100% Anonymous</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
@@ -1235,6 +1364,29 @@
         </ol>
       </div>
     </section>
+
+    <!-- German Certification Section -->
+    <section class="certification-section" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 40px 20px; margin-top: 40px; text-align: center;">
+      <div style="max-width: 1000px; margin: 0 auto;">
+        <div class="certification-badges" style="display: flex; justify-content: center; gap: 24px; margin-bottom: 24px; flex-wrap: wrap;">
+          <div class="cert-badge" style="background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🏛️</span>
+            <span style="font-weight: 600; color: var(--primary);">German Certified Platform</span>
+          </div>
+          <div class="cert-badge" style="background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🔒</span>
+            <span style="font-weight: 600; color: var(--primary);">Security Verified</span>
+          </div>
+          <div class="cert-badge" style="background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🛡️</span>
+            <span style="font-weight: 600; color: var(--primary);">GDPR Compliant</span>
+          </div>
+        </div>
+        <p style="color: var(--muted); font-size: 0.95rem; max-width: 600px; margin: 0 auto;">
+          German Certified Platform - Our security measures and data protection protocols meet the highest European standards.
+        </p>
+      </div>
+    </section>
   </main>
 
  <!-- Social CTA Bar for Instagram/TikTok/Facebook (BOTTOM) -->
@@ -1278,25 +1430,6 @@
 
 
   <footer>
-    <!-- German Certification Footer -->
-    <div class="footer-certification">
-      <div class="certification-badges">
-        <div class="certification-badge german-authority">
-          <span data-translate="footer.certified">German Authority Certified</span>
-        </div>
-        <div class="certification-badge security-verified">
-          <span>Security Verified</span>
-        </div>
-        <div class="certification-badge data-protection">
-          <span>GDPR Compliant</span>
-        </div>
-      </div>
-      <div class="certification-text">
-        <span data-translate="footer.certified">SichrPlace is certified by German authorities as a trusted rental platform.</span>
-        Our security measures and data protection protocols meet the highest European standards.
-      </div>
-    </div>
-    
     <div class="footer-links">
       <a href="about.html" data-translate="footer.about">About</a>
       <a href="faq.html">FAQ</a>
@@ -1314,7 +1447,7 @@
     
     <!-- SichrPlace Footer Logo -->
     <div class="footer-brand" style="text-align: center; margin: 20px 0;">
-      <img src="img/SichrPlaceLogo_944x944.jpg" alt="SichrPlace Logo" class="footer-logo" style="height: 48px; width: auto; margin-bottom: 10px;">
+
       <div class="footer-brand-text" style="color: #6B7280; font-size: 14px;">
         Your Trusted Rental Platform
       </div>
@@ -1550,7 +1683,7 @@
       successModal.innerHTML = `
         <div style="background: #fff; border-radius: 18px; max-width: 600px; width: 95vw; padding: 32px 24px; text-align: center;">
           <div style="color: #10b981; font-size: 3rem; margin-bottom: 16px;">
-            <i class="fa fa-check-circle"></i>
+            <i class="fa fa-thumbs-up"></i>
           </div>
           <h3 style="margin: 0 0 16px 0; color: #2563eb; font-family: 'Poppins', sans-serif;">
             Payment Successful!

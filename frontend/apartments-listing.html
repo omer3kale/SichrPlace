@@ -40,13 +40,35 @@
       background: var(--card);
       box-shadow: var(--shadow);
       padding: 0 40px;
-      height: 70px;
+      height: 80px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 10;
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .sichrplace-text {
+      font-family: var(--heading-font);
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .certified-badge {
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-top: 2px;
     }
     .logo {
       display: flex;
@@ -295,9 +317,13 @@
 </head>
 <body>
   <header>
-    <img src="img/SichrPlaceLogo_944x944.jpg" class="logo" data-type="logo" alt="SichrPlace" style="height: 70px;">
-    <a href="index.html" class="logo-placeholder" data-type="navbar">
-      <span class="sichrplace-text" data-translate="nav.home">SichrPlace</span>
+    <div class="header-logo">
+
+      <div class="brand-text">
+        <span class="sichrplace-text">SichrPlace</span>
+        <span class="certified-badge">🇩🇪 Certified</span>
+      </div>
+    </div>
     <nav id="main-nav">
       <a href="apartments-listing.html" data-translate="nav.apartments" style="color: var(--accent);">Apartments</a>
       <a href="add-property.html">Rent</a>
@@ -656,7 +682,12 @@
     
     function toggleFilters() {
       const filtersContainer = document.getElementById('filters-container');
-      filtersContainer.classList.toggle('active');
+      if (filtersContainer) {
+        filtersContainer.classList.toggle('active');
+        console.log('Filter modal toggled. Active:', filtersContainer.classList.contains('active'));
+      } else {
+        console.error('Filters container not found!');
+      }
     }
   
     // Track apartment view for recently viewed
@@ -1524,8 +1555,8 @@
   <!-- SichrPlace Footer -->
   <footer style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #E5E7EB; background: var(--secondary);">
       <div class="footer-brand" style="text-align: center; margin: 20px 0;">
-          <img src="img/SichrPlaceLogo_944x944.jpg" alt="SichrPlace Logo" class="footer-logo" style="height: 48px; width: auto; margin-bottom: 10px;">
-          <div class="footer-brand-text" style="color: #6B7280; font-size: 14px;">
+
+        <div class="footer-brand-text" style="color: #6B7280; font-size: 14px;">
               Your Trusted Rental Platform
           </div>
       </div>
