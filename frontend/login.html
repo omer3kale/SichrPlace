@@ -121,13 +121,13 @@
             font-family: var(--heading-font);
             font-size: 2rem;
             font-weight: 700;
-            color: var(--primary);
+            color: var(--text);
             margin-bottom: 0.5rem;
         }
 
         .logo-section p {
             color: var(--muted);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         .form-group {
@@ -415,7 +415,8 @@
     <div class="container">
         <div class="login-card">
             <div class="logo-section">
-
+                <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:60px;width:auto;display:block;margin:0 auto 1rem auto;">
+                <h1>SichrPlace</h1>
                 <p>Sign in to your secure apartment viewing account</p>
             </div>
 
@@ -431,6 +432,17 @@
                         class="form-control" 
                         placeholder="Enter your email address"
                         required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input 
+                        type="tel" 
+                        id="phone" 
+                        name="phone" 
+                        class="form-control" 
+                        placeholder="Enter your phone number (optional)"
                     >
                 </div>
 
