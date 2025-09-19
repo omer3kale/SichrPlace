@@ -86,6 +86,7 @@
             align-items: center;
             justify-content: center;
             padding: 2rem;
+            min-height: calc(100vh - 80px);
         }
 
         .login-card {
@@ -292,28 +293,6 @@
             text-decoration: underline;
         }
 
-        .nav-back {
-            position: absolute;
-            top: 2rem;
-            left: 2rem;
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-
-        .nav-back:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateX(-2px);
-        }
-
         @media (max-width: 640px) {
             .container {
                 padding: 1rem;
@@ -321,13 +300,6 @@
             
             .login-card {
                 padding: 2rem;
-            }
-            
-            .nav-back {
-                position: static;
-                margin-bottom: 2rem;
-                color: var(--primary);
-                background: var(--secondary);
             }
         }
         
@@ -440,11 +412,6 @@
         </nav>
     </header>
     
-    <a href="index.html" class="nav-back">
-        <i class="fas fa-arrow-left"></i>
-        Back to Home
-    </a>
-
     <div class="container">
         <div class="login-card">
             <div class="logo-section">
@@ -645,21 +612,5 @@
             new AuthHandler();
         });
     </script>
-
-    <!-- SichrPlace Footer -->
-    <footer style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #E5E7EB; background: var(--secondary);">
-        <div class="footer-brand" style="text-align: center; margin: 20px 0;">
-
-            <div class="footer-brand-text" style="color: #6B7280; font-size: 14px;">
-                Your Trusted Rental Platform
-            </div>
-        </div>
-        <div class="footer-links" style="text-align: center; margin: 15px 0;">
-            <a href="privacy-policy.html" style="color: #6B7280; text-decoration: none; margin: 0 15px; font-size: 14px;">Privacy Policy</a>
-            <a href="terms-of-service.html" style="color: #6B7280; text-decoration: none; margin: 0 15px; font-size: 14px;">Terms of Service</a>
-            <a href="index.html" style="color: #6B7280; text-decoration: none; margin: 0 15px; font-size: 14px;">Home</a>
-        </div>
-        <p style="text-align: center; color: #9CA3AF; font-size: 12px; margin: 10px 0 0 0;">&copy; 2025 SichrPlace. All rights reserved.</p>
-    </footer>
 </body>
 </html>
