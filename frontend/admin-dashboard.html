@@ -47,16 +47,43 @@
       .overview-cards { flex-direction: column; }
       .card { min-width: 0; }
     }
+    
+    /* Admin Dashboard specific - White SichrPlace text for visibility on blue header */
+    .sichrplace-text {
+      color: #ffffff !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      font-weight: 600;
+    }
+    
+    /* Ensure header text visibility with multiple selectors */
+    header .sichrplace-text,
+    header .logo .sichrplace-text,
+    .header-logo .sichrplace-text,
+    .header-logo .logo .sichrplace-text,
+    .brand-text .sichrplace-text {
+      color: #ffffff !important;
+      text-decoration: none !important;
+    }
+    
+    /* Override any link styles */
+    a .sichrplace-text,
+    .logo .sichrplace-text {
+      color: #ffffff !important;
+    }
   </style>
     <script src="js/language-switcher.js" defer></script>
     <script src="js/logo-cookie-manager.js" defer></script>
 </head>
 <body>
   <header>
-    <a href="index.html" class="logo" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: #2563EB; font-weight: 700;">
-
-      SichrPlace
-    </a>
+    <div class="header-logo">
+      <a href="index.html" class="logo" aria-label="SichrPlace">
+        <img src="img/sichrplace-logo.jpg" alt="SichrPlace logo" style="height:48px;width:auto;display:block;">
+        <span class="brand-text">
+          <span class="sichrplace-text" style="color: #ffffff !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">SichrPlace</span>
+          <span class="certified-badge" style="display:none;">Verified</span>
+        </span>
+      </a>
     <div style="display: flex; align-items: center; gap: 16px;">
       <i class="fa fa-user-shield"></i> 
       <span>Admin Dashboard</span>

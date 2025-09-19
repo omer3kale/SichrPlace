@@ -64,9 +64,32 @@
             text-decoration: none;
         }
 
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-text {
+            display: flex;
+            align-items: baseline;
+            font-family: var(--heading-font);
+            font-weight: 700;
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .sichr-text {
+            color: var(--primary);
+        }
+
+        .place-text {
+            color: var(--primary);
+        }
+
         .logo img {
             height: 40px;
-            "
+            width: auto;
         }
 
         nav {
@@ -94,7 +117,6 @@
             margin: 2rem auto;
             background: var(--card);
             padding: 3rem;
-            "
             box-shadow: var(--shadow);
         }
 
@@ -142,7 +164,6 @@
         .effective-date {
             background: var(--secondary);
             padding: 1.5rem;
-            "
             margin-bottom: 2rem;
             border-left: 4px solid var(--accent);
         }
@@ -153,14 +174,12 @@
             padding: 1.5rem;
             border-left: 4px solid #f59e0b;
             margin: 2rem 0;
-            "
         }
 
         .contact-info {
             background: #d1fae5;
             color: #065f46;
             padding: 1.5rem;
-            "
             margin-top: 2rem;
             border-left: 4px solid #10b981;
         }
@@ -171,7 +190,6 @@
             padding: 1.5rem;
             border-left: 4px solid #ef4444;
             margin: 2rem 0;
-            "
         }
 
         ul {
@@ -274,15 +292,17 @@
 </head>
 <body>
     <header>
-
-        <a href="index.html" class="logo">
-            SichrPlace
-        </a>
+        <div class="header-logo">
+            <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:48px;width:auto;display:block;">
+            <div class="brand-text">
+                <span class="sichr-text">Sichr</span><span class="place-text">Place</span>
+            </div>
+        </div>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="apartments-listing.html">Apartments</a>
-            <a href="marketplace.html">Marketplace</a>
-            <a href="privacy-policy.html">Privacy</a>
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="apartments-listing.html"><i class="fas fa-building"></i> Apartments</a>
+            <a href="marketplace.html"><i class="fas fa-shopping-cart"></i> Marketplace</a>
+            <a href="privacy-policy.html"><i class="fas fa-shield-alt"></i> Privacy</a>
         </nav>
     </header>
 
@@ -614,3 +634,4 @@
     </footer>
 
 </html>
+

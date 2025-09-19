@@ -59,8 +59,33 @@
       color: var(--primary);
       text-decoration: none;
     }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-text {
+      display: flex;
+      align-items: baseline;
+      font-family: var(--heading-font);
+      font-weight: 700;
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .sichr-text {
+      color: var(--primary);
+    }
+
+    .place-text {
+      color: var(--primary);
+    }
+
     .logo img {
       height: 40px;
+      width: auto;
     }
     nav {
       display: flex;
@@ -186,7 +211,6 @@
       background: linear-gradient(90deg, var(--primary) 70%, var(--accent) 100%);
       color: #fff;
       border: none;
-      "
       padding: 14px 0;
       font-family: var(--heading-font);
       font-weight: 700;
@@ -336,14 +360,19 @@
 </head>
 <body>
   <header>
-    <a href="index.html" class="logo">
-
-    </a>
+    <div class="header-logo">
+      <a href="index.html" class="logo" aria-label="SichrPlace">
+        <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:48px;width:auto;display:block;">
+        <div class="brand-text">
+          <span class="sichr-text">Sichr</span><span class="place-text">Place</span>
+        </div>
+      </a>
+    </div>
     <nav>
-      <a href="apartments-listing.html">Apartments</a>
-      <a href="login.html">Login</a>
-      <a href="create-account.html">Create Account</a>
-      <a href="marketplace.html">Marketplace</a>
+      <a href="apartments-listing.html"><i class="fas fa-building"></i> Apartments</a>
+      <a href="login.html"><i class="fas fa-sign-in-alt"></i> Login</a>
+      <a href="create-account.html"><i class="fas fa-user-plus"></i> Create Account</a>
+      <a href="marketplace.html"><i class="fas fa-shopping-cart"></i> Marketplace</a>
     </nav>
   </header>
   <main>

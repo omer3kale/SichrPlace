@@ -28,7 +28,7 @@
             color: var(--text);
         }
 
-        .header {
+        header {
             background: var(--card);
             box-shadow: var(--shadow);
             padding: 0 40px;
@@ -39,6 +39,29 @@
             position: sticky;
             top: 0;
             z-index: 10;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-text {
+            display: flex;
+            align-items: baseline;
+            font-family: var(--heading-font);
+            font-weight: 700;
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .sichr-text {
+            color: var(--primary);
+        }
+
+        .place-text {
+            color: var(--primary);
         }
 
         .logo {
@@ -54,11 +77,13 @@
 
         .logo img {
             height: 40px;
+            width: auto;
         }
 
         .nav {
             display: flex;
             gap: 24px;
+            align-items: center;
         }
 
         .nav a {
@@ -72,6 +97,12 @@
 
         .nav a:hover, .nav a.active {
             color: var(--accent);
+        }
+
+        #user-nav-section {
+            display: flex;
+            gap: 16px;
+            align-items: center;
         }
 
         .main-container {
@@ -296,6 +327,115 @@
             transform: translateY(-2px);
         }
 
+        .listing-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+
+        .listing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .listing-image {
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .listing-price-tag {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--accent);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .listing-content {
+            padding: 20px;
+        }
+
+        .listing-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin: 0 0 8px 0;
+            font-family: var(--heading-font);
+        }
+
+        .listing-location {
+            color: var(--muted);
+            margin: 0 0 12px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .listing-features {
+            display: flex;
+            gap: 16px;
+            margin: 12px 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .listing-features span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .listing-tags {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .tag.pet-pet-friendly {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .tag.pet-no-pets {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .tag.furnished {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .listing-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .listing-actions .btn {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
         .apartment-image {
             width: 200px;
             height: 150px;
@@ -368,6 +508,30 @@
         }
 
         @media (max-width: 768px) {
+            header {
+                padding: 0 20px;
+                height: auto;
+                min-height: 70px;
+                flex-direction: column;
+                gap: 15px;
+                padding-top: 15px;
+                padding-bottom: 15px;
+            }
+
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 16px;
+            }
+
+            .nav a {
+                font-size: 0.9rem;
+            }
+
+            #user-nav-section {
+                gap: 12px;
+            }
+
             .search-row {
                 flex-direction: column;
             }
@@ -384,25 +548,37 @@
             .search-actions {
                 flex-direction: column;
             }
+
+            .main-container {
+                padding: 20px 15px;
+            }
+
+            .page-title {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <a href="index.html" class="logo">
-
-            SichrPlace
-        </a>
-        <nav class="nav">
-            <a href="apartments-listing.html">Browse</a>
-            <a href="advanced-search.html" class="active">Advanced Search</a>
-            <a href="add-property.html">List Property</a>
-            <span id="user-nav-section">
-                <a href="login-new.html">Login</a>
-                <a href="create-account.html">Sign Up</a>
-            </span>
-        </nav>
-    </header>
+  <header>
+    <div class="header-logo">
+      <a href="index.html" class="logo" aria-label="SichrPlace">
+        <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:48px;width:auto;display:block;">
+        <div class="brand-text">
+          <span class="sichr-text">Sichr</span><span class="place-text">Place</span>
+        </div>
+      </a>
+    </div>
+    <nav class="nav">
+      <a href="apartments-listing.html"><i class="fas fa-building"></i> Browse</a>
+      <a href="advanced-search.html" class="active"><i class="fas fa-search"></i> Advanced Search</a>
+      <a href="add-property.html"><i class="fas fa-plus"></i> List Property</a>
+      <span id="user-nav-section">
+        <a href="login.html"><i class="fas fa-sign-in-alt"></i> Login</a>
+        <a href="create-account.html"><i class="fas fa-user-plus"></i> Sign Up</a>
+      </span>
+    </nav>
+  </header>
 
     <div class="main-container">
         <h1 class="page-title">🔍 Advanced Search</h1>
@@ -462,18 +638,69 @@
                     </div>
                 </div>
 
-                <!-- Rooms & Dates -->
+                <!-- Rooms & Details -->
                 <div class="search-row">
                     <div class="search-group">
                         <label for="bedrooms">Bedrooms</label>
                         <select id="bedrooms">
                             <option value="">Any</option>
-                            <option value="1">1+</option>
-                            <option value="2">2+</option>
-                            <option value="3">3+</option>
-                            <option value="4">4+</option>
+                            <option value="0">Studio (0 bed)</option>
+                            <option value="1">1 Bedroom</option>
+                            <option value="2">2 Bedrooms</option>
+                            <option value="3">3 Bedrooms</option>
+                            <option value="4">4+ Bedrooms</option>
                         </select>
                     </div>
+                    <div class="search-group">
+                        <label for="bathrooms">Bathrooms</label>
+                        <select id="bathrooms">
+                            <option value="">Any</option>
+                            <option value="1">1+ Bath</option>
+                            <option value="2">2+ Baths</option>
+                            <option value="3">3+ Baths</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <label for="min-area">Min Area (m²)</label>
+                        <input type="number" id="min-area" placeholder="0" min="0">
+                    </div>
+                </div>
+
+                <!-- Property Preferences -->
+                <div class="search-row">
+                    <div class="search-group">
+                        <label for="furnished">Furnished Status</label>
+                        <select id="furnished">
+                            <option value="">Any</option>
+                            <option value="furnished">Furnished</option>
+                            <option value="unfurnished">Unfurnished</option>
+                            <option value="semi-furnished">Semi-furnished</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <label for="pet-policy">Pet Policy</label>
+                        <select id="pet-policy">
+                            <option value="">Any</option>
+                            <option value="pet-friendly">Pet Friendly</option>
+                            <option value="no-pets">No Pets</option>
+                            <option value="cats-only">Cats Only</option>
+                            <option value="dogs-only">Dogs Only</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <label for="parking-type">Parking</label>
+                        <select id="parking-type">
+                            <option value="">Any</option>
+                            <option value="included">Included</option>
+                            <option value="garage">Garage</option>
+                            <option value="street">Street Parking</option>
+                            <option value="none">No Parking</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dates -->
+                <div class="search-row">
                     <div class="search-group">
                         <label for="move-in-date">Move-in Date</label>
                         <input type="date" id="move-in-date">
@@ -482,16 +709,33 @@
                         <label for="move-out-date">Move-out Date</label>
                         <input type="date" id="move-out-date">
                     </div>
+                    <div class="search-group">
+                        <label for="min-rating">Minimum Rating</label>
+                        <select id="min-rating">
+                            <option value="">Any Rating</option>
+                            <option value="4">4+ Stars</option>
+                            <option value="4.5">4.5+ Stars</option>
+                            <option value="5">5 Stars Only</option>
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Amenities -->
+                <!-- Enhanced Amenities -->
                 <div class="search-row">
                     <div class="search-group wide">
-                        <label>Amenities</label>
+                        <label>Essential Amenities</label>
                         <div class="amenities-grid">
                             <label class="amenity-checkbox">
                                 <input type="checkbox" name="amenities" value="wifi">
                                 <span>📶 WiFi</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="heating">
+                                <span>🔥 Heating</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="air-conditioning">
+                                <span>❄️ Air Conditioning</span>
                             </label>
                             <label class="amenity-checkbox">
                                 <input type="checkbox" name="amenities" value="washing-machine">
@@ -502,16 +746,74 @@
                                 <span>🍽️ Dishwasher</span>
                             </label>
                             <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="kitchen">
+                                <span>🍳 Full Kitchen</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lifestyle Amenities -->
+                <div class="search-row">
+                    <div class="search-group wide">
+                        <label>Lifestyle & Comfort</label>
+                        <div class="amenities-grid">
+                            <label class="amenity-checkbox">
                                 <input type="checkbox" name="amenities" value="balcony">
-                                <span>🌿 Balcony</span>
+                                <span>🌿 Balcony/Terrace</span>
                             </label>
                             <label class="amenity-checkbox">
-                                <input type="checkbox" name="amenities" value="parking">
-                                <span>🚗 Parking</span>
+                                <input type="checkbox" name="amenities" value="garden">
+                                <span>🌳 Garden Access</span>
                             </label>
                             <label class="amenity-checkbox">
-                                <input type="checkbox" name="amenities" value="pet-friendly">
-                                <span>🐕 Pet Friendly</span>
+                                <input type="checkbox" name="amenities" value="elevator">
+                                <span>🏢 Elevator</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="gym">
+                                <span>� Gym/Fitness</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="pool">
+                                <span>🏊 Swimming Pool</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="security">
+                                <span>🔒 Security System</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location & Transport -->
+                <div class="search-row">
+                    <div class="search-group wide">
+                        <label>Location Features</label>
+                        <div class="amenities-grid">
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="location-features" value="public-transport">
+                                <span>� Near Public Transport</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="location-features" value="shopping">
+                                <span>🛒 Near Shopping</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="location-features" value="schools">
+                                <span>🎓 Near Schools</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="location-features" value="restaurants">
+                                <span>🍽️ Near Restaurants</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="location-features" value="parks">
+                                <span>🌲 Near Parks</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="location-features" value="city-center">
+                                <span>🏙️ City Center</span>
                             </label>
                         </div>
                     </div>
@@ -632,6 +934,9 @@
         function buildSearchParams() {
             const amenities = Array.from(document.querySelectorAll('input[name="amenities"]:checked'))
                 .map(cb => cb.value);
+            
+            const locationFeatures = Array.from(document.querySelectorAll('input[name="location-features"]:checked'))
+                .map(cb => cb.value);
                 
             return {
                 query: document.getElementById('query').value.trim(),
@@ -640,9 +945,16 @@
                 minPrice: document.getElementById('min-price').value,
                 maxPrice: document.getElementById('max-price').value,
                 bedrooms: document.getElementById('bedrooms').value,
+                bathrooms: document.getElementById('bathrooms').value,
+                minArea: document.getElementById('min-area').value,
+                furnished: document.getElementById('furnished').value,
+                petPolicy: document.getElementById('pet-policy').value,
+                parkingType: document.getElementById('parking-type').value,
                 moveInDate: document.getElementById('move-in-date').value,
                 moveOutDate: document.getElementById('move-out-date').value,
+                minRating: document.getElementById('min-rating').value,
                 amenities: amenities.join(','),
+                locationFeatures: locationFeatures.join(','),
                 sortBy: currentSortBy.includes('_desc') ? currentSortBy.replace('_desc', '') : currentSortBy,
                 sortOrder: currentSortBy.includes('_desc') ? 'desc' : 'asc',
                 limit: 20
@@ -747,7 +1059,7 @@
         async function saveSearchAlert() {
             const token = localStorage.getItem('userToken');
             if (!token) {
-                alert('Please login to save search alerts');
+                window.location.href = 'login.html';
                 return;
             }
 
@@ -773,14 +1085,18 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('Search alert saved! You\'ll be notified of new matches.');
+                    // Show success notification without alert
+                    const notification = document.createElement('div');
+                    notification.innerHTML = '✅ Search alert saved successfully!';
+                    notification.style.cssText = 'position:fixed;top:20px;right:20px;background:#10b981;color:white;padding:12px 20px;border-radius:8px;z-index:1000;';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 3000);
                 } else {
-                    alert('Failed to save search alert: ' + data.error);
+                    console.error('Failed to save search alert:', data.error);
                 }
                 
             } catch (error) {
                 console.error('Save alert error:', error);
-                alert('Failed to save search alert');
             }
         }
 
@@ -799,7 +1115,7 @@
                     ).join('');
                 }
             } catch (error) {
-                console.error('Failed to load popular searches:', error);
+                // Silently handle error - keep default suggestions
             }
         }
 
@@ -813,17 +1129,116 @@
             return icons[type] || '🔍';
         }
 
-        // Navigation functions
-        function openApartmentDetails(apartmentId) {
-            window.location.href = `offer.html?id=${apartmentId}`;
+        // Clear search form
+        function clearSearchForm() {
+            document.getElementById('advanced-search-form').reset();
+            document.getElementById('apartments-list').innerHTML = '';
+            document.getElementById('results-info').textContent = 'Ready to search';
+            
+            // Uncheck all checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            
+            // Reset results
+            currentSearchResults = [];
         }
 
-        function scheduleViewing(apartmentId) {
-            window.location.href = `viewing-request.html?id=${apartmentId}`;
+        // Quick search from suggestions
+        function quickSearch(query) {
+            document.getElementById('query').value = query;
+            performSearch();
         }
 
-        function contactOwner(apartmentId) {
-            window.location.href = `chat.html?apartmentId=${apartmentId}`;
+        // Handle sort changes
+        function handleSortChange() {
+            const sortSelect = document.getElementById('sort-by');
+            currentSortBy = sortSelect.value;
+            
+            if (currentSearchResults.length > 0) {
+                // Re-sort current results
+                const sortedResults = sortApartments(currentSearchResults, currentSortBy);
+                displayApartments(sortedResults);
+            }
+        }
+
+        // Sort apartments locally
+        function sortApartments(apartments, sortBy) {
+            return [...apartments].sort((a, b) => {
+                switch (sortBy) {
+                    case 'price':
+                        return (a.price || 0) - (b.price || 0);
+                    case 'price_desc':
+                        return (b.price || 0) - (a.price || 0);
+                    case 'size':
+                        return (b.area || b.size || 0) - (a.area || a.size || 0);
+                    case 'created_at':
+                    default:
+                        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                }
+            });
+        }
+
+        // Display apartments in results
+        function displayApartments(apartments) {
+            const apartmentsList = document.getElementById('apartments-list');
+            
+            apartmentsList.innerHTML = apartments.map(apartment => `
+                <div class="listing-card" onclick="openApartmentDetails('${apartment.id}')">
+                    <div class="listing-image" style="background-image: url('${getApartmentImage(apartment)}');">
+                        <div class="listing-price-tag">€${apartment.price}/month</div>
+                    </div>
+                    <div class="listing-content">
+                        <h3 class="listing-title">${apartment.title || apartment.address}</h3>
+                        <p class="listing-location">
+                            <i class="fas fa-map-marker-alt"></i> ${apartment.location}
+                        </p>
+                        <div class="listing-features">
+                            <span><i class="fas fa-bed"></i> ${apartment.bedrooms || apartment.rooms || 'N/A'}</span>
+                            <span><i class="fas fa-bath"></i> ${apartment.bathrooms || 'N/A'}</span>
+                            <span><i class="fas fa-expand-arrows-alt"></i> ${apartment.area || apartment.size}m²</span>
+                        </div>
+                        <div class="listing-tags">
+                            ${apartment.petPolicy ? `<span class="tag pet-${apartment.petPolicy}">${formatPetPolicy(apartment.petPolicy)}</span>` : ''}
+                            ${apartment.furnished ? `<span class="tag furnished">${formatFurnished(apartment.furnished)}</span>` : ''}
+                        </div>
+                        <div class="listing-actions">
+                            <button class="btn btn-primary" onclick="event.stopPropagation(); scheduleViewing('${apartment.id}')">
+                                <i class="fas fa-calendar"></i> Schedule Viewing
+                            </button>
+                            <button class="btn btn-secondary" onclick="event.stopPropagation(); contactOwner('${apartment.id}')">
+                                <i class="fas fa-message"></i> Contact
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Helper functions
+        function getApartmentImage(apartment) {
+            if (apartment.images && apartment.images.length > 0) {
+                return apartment.images[0];
+            }
+            const defaultImages = ['apartment1.jpg', 'apartment2.jpg', 'koeln.jpg', 'koeln2.jpg'];
+            return `./img/${defaultImages[Math.floor(Math.random() * defaultImages.length)]}`;
+        }
+
+        function formatPetPolicy(policy) {
+            const policies = {
+                'pet-friendly': 'Pet Friendly',
+                'no-pets': 'No Pets',
+                'cats-only': 'Cats Only', 
+                'dogs-only': 'Dogs Only'
+            };
+            return policies[policy] || policy;
+        }
+
+        function formatFurnished(status) {
+            const statuses = {
+                'furnished': 'Furnished',
+                'unfurnished': 'Unfurnished',
+                'semi-furnished': 'Semi-furnished'
+            };
+            return statuses[status] || status;
         }
 
         // Update navigation based on login status

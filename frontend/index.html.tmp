@@ -159,112 +159,6 @@
     .cart-icon i {
       font-size: 1.1rem;
     }
-    
-    /* Language Switcher Styles */
-    .language-switcher {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .language-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: var(--heading-font);
-      font-weight: 600;
-      font-size: 0.9rem;
-      transition: all 0.2s ease;
-      outline: none;
-    }
-    
-    .language-btn:hover {
-      background: var(--primary-dark);
-      transform: translateY(-1px);
-    }
-    
-    .language-btn i:last-child {
-      font-size: 0.7rem;
-      transition: transform 0.2s ease;
-    }
-    
-    .language-btn.active i:last-child {
-      transform: rotate(180deg);
-    }
-    
-    .language-dropdown {
-      display: none;
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      min-width: 140px;
-      z-index: 1000;
-      overflow: hidden;
-      margin-top: 8px;
-      border: 1px solid var(--border);
-    }
-    
-    .language-dropdown.active {
-      display: block;
-      animation: fadeInDown 0.2s ease-out;
-    }
-    
-    .language-dropdown.show {
-      display: block;
-      animation: fadeInDown 0.2s ease-out;
-    }
-    
-    .lang-option {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      color: var(--text);
-      text-decoration: none;
-      font-family: var(--body-font);
-      font-weight: 500;
-      font-size: 0.9rem;
-      transition: background 0.2s ease;
-      border-bottom: 1px solid #f1f1f1;
-    }
-    
-    .lang-option:last-child {
-      border-bottom: none;
-    }
-    
-    .lang-option:hover {
-      background: var(--secondary);
-    }
-    
-    .lang-option.active {
-      background: var(--primary);
-      color: white;
-    }
-    
-    .flag-emoji {
-      font-size: 16px;
-      line-height: 1;
-    }
-    
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
     /* Hero Section */
     .hero {
       background: linear-gradient(135deg, var(--primary) 0%, #1e40af 25%, var(--accent) 75%, #06b6d4 100%);
@@ -541,7 +435,6 @@
     }
     .feature-card {
       background: var(--card);
-      border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 32px 28px;
       flex: 1 1 260px;
@@ -579,7 +472,6 @@
     .slider-container {
       overflow: hidden;
       position: relative;
-      "
       box-shadow: var(--shadow);
       background: var(--card);
     }
@@ -606,7 +498,6 @@
     .slider-dot {
       width: 12px;
       height: 12px;
-      "
       background: #d1d5db;
       cursor: pointer;
       transition: background 0.2s;
@@ -626,7 +517,6 @@
     }
     .apartment-card {
       background: #f3f4f6;
-      "
       padding: 12px;
       display: flex;
       align-items: center;
@@ -637,7 +527,6 @@
     .apartment-card img {
       width: 60px;
       height: 60px;
-      "
       object-fit: cover;
     }
     .apartment-card .apartment-info {
@@ -660,7 +549,6 @@
     .apartment-card .badge {
       background: var(--primary);
       color: #fff;
-      "
       padding: 2px 10px;
       font-size: 0.85rem;
       margin-left: 8px;
@@ -677,7 +565,6 @@
       max-width: 600px;
       margin: 0 auto;
       background: #f9fafb;
-      "
       box-shadow: 0 1px 4px rgba(0,0,0,0.04);
       padding: 24px 18px;
       margin-top: 18px;
@@ -691,7 +578,6 @@
     #opinion-form textarea {
       width: 100%;
       min-height: 60px;
-      "
       border: 1px solid #d1d5db;
       margin-bottom: 10px;
       font-family: var(--body-font);
@@ -701,7 +587,6 @@
       background: var(--primary);
       color: #fff;
       border: none;
-      "
       padding: 8px 24px;
       font-family: var(--heading-font);
       font-weight: 600;
@@ -713,7 +598,6 @@
     }
     .opinion-item {
       background: #f3f4f6;
-      "
       padding: 10px;
       margin-bottom: 8px;
     }
@@ -725,7 +609,6 @@
     }
     .customer-service-faq-container {
       background: #fff;
-      "
       box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       padding: 32px;
     }
@@ -762,7 +645,6 @@
     .customer-service-faq-container input,
     .customer-service-faq-container textarea {
       padding: 8px;
-      "
       border: 1px solid #d1d5db;
       font-size: 1rem;
       font-family: inherit;
@@ -772,7 +654,6 @@
       color: #fff;
       border: none;
       padding: 10px 0;
-      "
       font-weight: 600;
       cursor: pointer;
       font-size: 1rem;
@@ -946,7 +827,7 @@
 <body>
   <header>
     <div class="header-logo">
-      <a href="index.html" class="logo" aria-label="SichrPlace">
+      <a href="/" class="logo" aria-label="SichrPlace">
         <img src="img/sichrplace-logo.jpg" alt="SichrPlace logo" style="height:48px;width:auto;display:block;">
         <span class="brand-text">
           <span class="sichrplace-text">SichrPlace</span>
@@ -958,36 +839,16 @@
       <a href="login.html" data-translate="nav.login">Login</a>
       <a href="apartments-listing.html" data-translate="nav.apartments">Apartments</a>
       
+      <!-- Language Switcher -->
+      <div class="language-switcher"></div>
+      
       <!-- View link for viewing requests -->
       <a href="viewing-request.html" data-translate="nav.view">View</a>
       
-      <!-- Marketplace -->
-      <a href="marketplace.html" class="cart-icon" title="Marketplace" aria-label="Marketplace" data-translate-title="nav.marketplace.title" data-translate-aria="nav.marketplace.aria">
+      <!-- Marketplace moved to the rightmost position -->
+      <a href="marketplace.html" class="cart-icon" title="Marketplace" aria-label="Marketplace">
         <i class="fas fa-shopping-cart"></i>
       </a>
-      
-      <!-- Language Switcher moved to the rightmost position -->
-      <div class="language-switcher">
-        <button class="language-btn" id="language-btn" aria-label="Switch Language">
-          <i class="fas fa-globe"></i>
-          <span id="current-lang">EN</span>
-          <i class="fas fa-chevron-down"></i>
-        </button>
-        <div class="language-dropdown" id="language-dropdown">
-          <a href="#" data-lang="en" class="lang-option active">
-            <span class="flag-emoji">🇺🇸</span>
-            English
-          </a>
-          <a href="#" data-lang="de" class="lang-option">
-            <span class="flag-emoji">🇩🇪</span>
-            Deutsch
-          </a>
-          <a href="#" data-lang="tr" class="lang-option">
-            <span class="flag-emoji">🇹🇷</span>
-            Türkçe
-          </a>
-        </div>
-      </div>
     </nav>
   </header>
 
@@ -1108,15 +969,15 @@
     <!-- Hero Section (Landing) -->
     <section class="hero">
       <div class="hero-content">
-        <h1 data-translate="hero.title">Find Your Next Apartment<br>with Confidence</h1>
-        <p data-translate="hero.subtitle">Secure, transparent, and easy apartment search for students and professionals in Germany.</p>
+        <h1>Find Your Next Apartment<br>with Confidence</h1>
+        <p>Secure, transparent, and easy apartment search for students and professionals in Germany.</p>
         <form class="search-bar" action="apartments-listing.html" method="get">
-          <input type="text" name="q" placeholder="Search by city, address, or keyword..." aria-label="Search apartments" data-translate-placeholder="hero.search.placeholder" data-translate-aria="hero.search.aria">
-          <button type="submit"><i class="fa fa-search"></i> <span data-translate="hero.search.button">Search</span></button>
+          <input type="text" name="q" placeholder="Search by city, address, or keyword..." aria-label="Search apartments">
+          <button type="submit"><i class="fa fa-search"></i> Search</button>
         </form>
         <div class="hero-cta">
-          <a href="create-account.html" class="primary" data-translate="hero.cta.getstarted">Get Started</a>
-          <a href="apartments-listing.html" data-translate="hero.cta.browse">Browse Apartments</a>
+          <a href="create-account.html" class="primary">Get Started</a>
+          <a href="apartments-listing.html">Browse Apartments</a>
         </div>
       </div>
     </section>
@@ -1125,23 +986,23 @@
     <section class="features">
       <div class="feature-card">
         <i class="fa fa-home"></i>
-        <h3 data-translate="features.verified.title">Verified Listings</h3>
-        <p data-translate="features.verified.description">All apartments are verified for authenticity to protect you from scams.</p>
+        <h3>Verified Listings</h3>
+        <p>All apartments are verified for authenticity to protect you from scams.</p>
       </div>
       <div class="feature-card">
         <i class="fa fa-comments"></i>
-        <h3 data-translate="features.messaging.title">Secure Messaging</h3>
-        <p data-translate="features.messaging.description">Chat safely with landlords and renters using our built-in messaging system.</p>
+        <h3>Secure Messaging</h3>
+        <p>Chat safely with landlords and renters using our built-in messaging system.</p>
       </div>
       <div class="feature-card">
         <i class="fa fa-filter"></i>
-        <h3 data-translate="features.filters.title">Advanced Filters</h3>
-        <p data-translate="features.filters.description">Find your perfect home with filters for price, location, facilities, and more.</p>
+        <h3>Advanced Filters</h3>
+        <p>Find your perfect home with filters for price, location, facilities, and more.</p>
       </div>
       <div class="feature-card">
         <i class="fa fa-star"></i>
-        <h3 data-translate="features.rated.title">Top Rated Apartments</h3>
-        <p data-translate="features.rated.description">See the best-rated apartments and reviews from real tenants.</p>
+        <h3>Top Rated Apartments</h3>
+        <p>See the best-rated apartments and reviews from real tenants.</p>
       </div>
     </section>
 
@@ -1417,6 +1278,29 @@
           <li>Landlords receive payments from the platform after successful rental agreements.</li>
           <li>Deposit repayments from landlords to renters are managed and released by SichrPlace after move-out.</li>
         </ol>
+      </div>
+    </section>
+
+    <!-- German Certification Section -->
+    <section class="certification-section" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 40px 20px; margin-top: 40px; text-align: center;">
+      <div style="max-width: 1000px; margin: 0 auto;">
+        <div class="certification-badges" style="display: flex; justify-content: center; gap: 24px; margin-bottom: 24px; flex-wrap: wrap;">
+          <div class="cert-badge" style="background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🏛️</span>
+            <span style="font-weight: 600; color: var(--primary);">German Certified Platform</span>
+          </div>
+          <div class="cert-badge" style="background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🔒</span>
+            <span style="font-weight: 600; color: var(--primary);">Security Verified</span>
+          </div>
+          <div class="cert-badge" style="background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🛡️</span>
+            <span style="font-weight: 600; color: var(--primary);">GDPR Compliant</span>
+          </div>
+        </div>
+        <p style="color: var(--muted); font-size: 0.95rem; max-width: 600px; margin: 0 auto;">
+          German Certified Platform - Our security measures and data protection protocols meet the highest European standards.
+        </p>
       </div>
     </section>
   </main>
@@ -1853,53 +1737,6 @@
         });
       }
 
-    // Language Switcher Logic
-    const languageBtn = document.getElementById('language-btn');
-    const languageDropdown = document.getElementById('language-dropdown');
-    const currentLangSpan = document.getElementById('current-lang');
-    
-    if (languageBtn && languageDropdown) {
-      // Toggle dropdown
-      languageBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        languageDropdown.classList.toggle('active');
-        languageBtn.classList.toggle('active');
-      });
-      
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!languageBtn.contains(e.target) && !languageDropdown.contains(e.target)) {
-          languageDropdown.classList.remove('active');
-          languageBtn.classList.remove('active');
-        }
-      });
-      
-      // Handle language selection
-      const langOptions = document.querySelectorAll('.lang-option');
-      langOptions.forEach(option => {
-        option.addEventListener('click', function(e) {
-          e.preventDefault();
-          
-          // Remove active class from all options
-          langOptions.forEach(opt => opt.classList.remove('active'));
-          // Add active class to selected option
-          this.classList.add('active');
-          
-          // Update current language display
-          const selectedLang = this.getAttribute('data-lang').toUpperCase();
-          currentLangSpan.textContent = selectedLang;
-          
-          // Close dropdown
-          languageDropdown.classList.remove('active');
-          languageBtn.classList.remove('active');
-          
-          // Here you can add actual language switching logic
-          // For example: loadLanguage(this.getAttribute('data-lang'));
-          console.log('Language switched to:', this.getAttribute('data-lang'));
-        });
-      });
-    }
-
     // Customer Service form logic
       const csForm = document.getElementById('customer-service-form');
       if (csForm) {
@@ -1914,6 +1751,27 @@
           document.getElementById('customer-service-status').textContent =
             'Your message has been sent. Our team will contact you soon!';
           csForm.reset();
+        });
+      }
+
+      // Notification bell logic
+      const bell = document.getElementById('notification-bell');
+      const dropdown = document.getElementById('notification-dropdown');
+      if (bell && dropdown) {
+        bell.addEventListener('click', function(e) {
+          dropdown.classList.toggle('active');
+          e.stopPropagation();
+        });
+        bell.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            dropdown.classList.toggle('active');
+            e.preventDefault();
+          }
+        });
+        document.addEventListener('click', function(e) {
+          if (!bell.contains(e.target)) {
+            dropdown.classList.remove('active');
+          }
         });
       }
     });

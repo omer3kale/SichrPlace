@@ -50,6 +50,29 @@
             z-index: 10;
         }
 
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-text {
+            display: flex;
+            align-items: baseline;
+            font-family: var(--heading-font);
+            font-weight: 700;
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .sichr-text {
+            color: var(--primary);
+        }
+
+        .place-text {
+            color: var(--primary);
+        }
+
         .logo {
             display: flex;
             align-items: center;
@@ -63,7 +86,7 @@
 
         .logo img {
             height: 40px;
-            "
+            width: auto;
         }
 
         nav {
@@ -91,7 +114,6 @@
             margin: 2rem auto;
             background: var(--card);
             padding: 3rem;
-            "
             box-shadow: var(--shadow);
         }
 
@@ -123,7 +145,6 @@
         .setting-group {
             background: var(--secondary);
             padding: 2rem;
-            "
             margin: 2rem 0;
             border-left: 4px solid var(--accent);
         }
@@ -175,7 +196,6 @@
             bottom: 0;
             background-color: #ccc;
             transition: .4s;
-            "
         }
 
         .slider:before {
@@ -187,7 +207,6 @@
             bottom: 4px;
             background-color: white;
             transition: .4s;
-            "
         }
         
         input:checked + .slider {
@@ -208,7 +227,6 @@
             color: white;
             border: none;
             padding: 12px 24px;
-            "
             cursor: pointer;
             font-size: 16px;
             margin-right: 10px;
@@ -234,7 +252,6 @@
         .alert {
             padding: 15px;
             margin: 20px 0;
-            "
         }
         
         .alert-success {
@@ -268,7 +285,6 @@
         .gdpr-section {
             background: var(--secondary);
             padding: 2rem;
-            "
             margin: 30px 0;
             border-left: 4px solid var(--accent);
         }
@@ -293,7 +309,6 @@
             width: 100%;
             padding: 12px;
             border: 2px solid #e5e7eb;
-            "
             box-sizing: border-box;
             font-family: var(--body-font);
             transition: border-color 0.2s;
@@ -384,14 +399,19 @@
 </head>
 <body>
     <header>
-        <a href="index.html" class="logo">
-            SichrPlace
-        </a>
+        <div class="header-logo">
+            <a href="index.html" class="logo" aria-label="SichrPlace">
+                <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:48px;width:auto;display:block;">
+                <div class="brand-text">
+                    <span class="sichr-text">Sichr</span><span class="place-text">Place</span>
+                </div>
+            </a>
+        </div>
         <nav>
-            <a href="index.html">Home</a>
-            <a href="apartments-listing.html">Apartments</a>
-            <a href="marketplace.html">Marketplace</a>
-            <a href="privacy-policy.html">Privacy</a>
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="apartments-listing.html"><i class="fas fa-building"></i> Apartments</a>
+            <a href="marketplace.html"><i class="fas fa-shopping-cart"></i> Marketplace</a>
+            <a href="privacy-policy.html"><i class="fas fa-shield-alt"></i> Privacy</a>
         </nav>
     </header>
 
@@ -772,3 +792,4 @@
 </footer>
 
 </html>
+

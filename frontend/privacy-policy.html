@@ -53,6 +53,29 @@
             z-index: 10;
         }
 
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-text {
+            display: flex;
+            align-items: baseline;
+            font-family: var(--heading-font);
+            font-weight: 700;
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+
+        .sichr-text {
+            color: var(--primary);
+        }
+
+        .place-text {
+            color: var(--primary);
+        }
+
         .logo {
             display: flex;
             align-items: center;
@@ -66,7 +89,7 @@
 
         .logo img {
             height: 40px;
-            "
+            width: auto;
         }
 
         nav {
@@ -94,7 +117,6 @@
             margin: 2rem auto;
             background: var(--card);
             padding: 3rem;
-            "
             box-shadow: var(--shadow);
         }
         h1 { 
@@ -125,7 +147,6 @@
         .effective-date { 
             background: var(--secondary); 
             padding: 1.5rem; 
-            " 
             margin-bottom: 2rem;
             border-left: 4px solid var(--primary);
         }
@@ -135,13 +156,11 @@
             padding: 1.5rem; 
             border-left: 4px solid var(--accent); 
             margin: 2rem 0; 
-            "
         }
         
         .contact-info { 
             background: #d4edda; 
             padding: 1.5rem; 
-            " 
             margin-top: 2rem; 
         }
         
@@ -149,7 +168,6 @@
             width: 100%; 
             border-collapse: collapse; 
             margin: 2rem 0; 
-            "
             overflow: hidden;
             box-shadow: var(--shadow);
         }
@@ -176,7 +194,6 @@
             font-weight: 600;
             padding: 0.75rem 1.5rem;
             background: var(--secondary);
-            "
             transition: all 0.3s ease;
         }
         
@@ -249,15 +266,19 @@
 </head>
 <body>
     <header>
-
-        <a href="index.html" class="logo">
-            SichrPlace
-        </a>
+        <div class="header-logo">
+            <a href="index.html" class="logo" aria-label="SichrPlace">
+                <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:48px;width:auto;display:block;">
+                <div class="brand-text">
+                    <span class="sichr-text">Sichr</span><span class="place-text">Place</span>
+                </div>
+            </a>
+        </div>
         <nav>
-            <a href="apartments-listing.html">Apartments</a>
-            <a href="login.html">Login</a>
-            <a href="create-account.html">Create Account</a>
-            <a href="marketplace.html">Marketplace</a>
+            <a href="apartments-listing.html"><i class="fas fa-building"></i> Apartments</a>
+            <a href="login.html"><i class="fas fa-sign-in-alt"></i> Login</a>
+            <a href="create-account.html"><i class="fas fa-user-plus"></i> Create Account</a>
+            <a href="marketplace.html"><i class="fas fa-shopping-cart"></i> Marketplace</a>
         </nav>
     </header>
 
@@ -551,3 +572,4 @@
     </footer>
 </body>
 </html>
+

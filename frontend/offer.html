@@ -62,9 +62,33 @@
       color: var(--primary);
       text-decoration: none;
     }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-text {
+      display: flex;
+      align-items: baseline;
+      font-family: var(--heading-font);
+      font-weight: 700;
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .sichr-text {
+      color: var(--primary);
+    }
+
+    .place-text {
+      color: var(--primary);
+    }
+
     .logo img {
       height: 40px;
-      "
+      width: auto;
     }
     .header-buttons {
       display: flex;
@@ -76,7 +100,6 @@
       background: var(--primary);
       color: #fff;
       border: none;
-      "
       padding: 10px 24px;
       font-family: var(--heading-font);
       font-weight: 600;
@@ -99,6 +122,10 @@
     }
     .header-buttons button.booking-btn {
       background: var(--primary-dark);
+      color: #fff;
+    }
+    .header-buttons button.filter-btn {
+      background: #6366f1;
       color: #fff;
     }
     .header-buttons button:hover,
@@ -124,7 +151,6 @@
     }
     .offer-left, .offer-right {
       background: var(--card);
-      "
       box-shadow: var(--shadow);
       padding: 32px 28px;
       flex: 1 1 400px;
@@ -146,7 +172,6 @@
       align-items: center;
       margin: 0 0 20px 0;
       border: 2px solid #D1D5DB;
-      "
       padding: 10px;
       background-color: #F9FAFB;
       position: relative;
@@ -154,7 +179,6 @@
     .image-gallery img {
       width: 75%;
       height: auto;
-      "
     }
     .image-gallery button {
       position: absolute;
@@ -163,7 +187,6 @@
       background-color: rgba(0, 0, 0, 0.5);
       color: white;
       border: none;
-      "
       width: 40px;
       height: 40px;
       cursor: pointer;
@@ -189,7 +212,6 @@
       background: var(--primary);
       color: #fff;
       border: none;
-      "
       padding: 10px 18px;
       font-family: var(--heading-font);
       font-weight: 600;
@@ -226,7 +248,6 @@
     .offer-right button, .offer-right a {
       width: 100%;
       margin-bottom: 8px;
-      "
       padding: 10px 0;
       font-size: 1rem;
       font-family: var(--heading-font);
@@ -277,7 +298,6 @@
     }
     .chat-page-content {
       background: #fff;
-      "
       box-shadow: var(--shadow);
       width: 95vw;
       max-width: 500px;
@@ -295,7 +315,6 @@
       font-size: 20px;
       font-weight: bold;
       position: relative;
-      "
       text-align: center;
     }
     .chat-page-header .close-button {
@@ -324,7 +343,6 @@
     .chat-message {
       max-width: 80%;
       padding: 10px 16px;
-      "
       font-size: 15px;
       word-break: break-word;
       margin-bottom: 4px;
@@ -348,13 +366,11 @@
       padding: 16px;
       background: #fff;
       border-top: 1px solid #e5e7eb;
-      "
     }
     .chat-page-footer input[type="text"] {
       flex: 1;
       padding: 10px;
       border: 1px solid #d1d5db;
-      "
       font-size: 15px;
       font-family: inherit;
     }
@@ -362,7 +378,6 @@
       background: #2563eb;
       color: #fff;
       border: none;
-      "
       padding: 10px 18px;
       font-size: 15px;
       font-family: var(--heading-font);
@@ -391,7 +406,6 @@
       background: white;
       width: 90%;
       max-width: 400px;
-      "
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -406,7 +420,6 @@
       font-size: 18px;
       font-weight: bold;
       position: relative;
-      "
     }
     .messaging-header .close-button,
     .how-to-book-close,
@@ -432,7 +445,6 @@
       width: 100%;
       padding: 10px;
       border: 1px solid #D1D5DB;
-      "
       outline: none;
       margin-bottom: 10px;
       font-family: var(--body-font);
@@ -453,7 +465,6 @@
       background-color: var(--primary);
       color: white;
       border: none;
-      "
       cursor: pointer;
       width: 100%;
       font-family: var(--heading-font);
@@ -513,15 +524,145 @@
         padding: 18px 4px 12px 4px;
       }
     }
+
+    /* Filter Popup Styles */
+    .filter-popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      z-index: 2000;
+      width: 90%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .filter-popup.active {
+      display: block;
+    }
+    .filter-popup-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1999;
+    }
+    .filter-popup-overlay.active {
+      display: block;
+    }
+    .filter-popup-header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .filter-popup-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: white;
+    }
+    .filter-close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .filter-popup-content {
+      padding: 20px;
+    }
+    .filter-group {
+      margin-bottom: 20px;
+    }
+    .filter-group h4 {
+      margin: 0 0 10px 0;
+      color: var(--primary);
+      font-size: 16px;
+    }
+    .filter-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .filter-option {
+      padding: 8px 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .filter-option:hover {
+      border-color: var(--primary);
+      background: #f0f9ff;
+    }
+    .filter-option.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .filter-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .filter-actions button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .apply-filters-btn {
+      background: var(--primary);
+      color: white;
+    }
+    .apply-filters-btn:hover {
+      background: var(--primary-darker);
+    }
+    .clear-filters-btn {
+      background: #f3f4f6;
+      color: #6b7280;
+    }
+    .clear-filters-btn:hover {
+      background: #e5e7eb;
+    }
   </style>
 </head>
 <body>
   <header>
-    <a href="index.html" class="logo">
-
-    </a>
+    <div class="header-logo">
+      <a href="index.html" class="logo" aria-label="SichrPlace">
+        <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:48px;width:auto;display:block;">
+        <div class="brand-text">
+          <span class="sichr-text">Sichr</span><span class="place-text">Place</span>
+        </div>
+      </a>
+    </div>
     <div class="header-buttons">
       <a href="apartments-listing.html" class="back-link"><i class="fa fa-arrow-left"></i> Back to Listings</a>
+      <button class="filter-btn" onclick="openFiltersPopup()"><i class="fa fa-filter"></i> Filters</button>
       <button class="booking-btn" onclick="openBookingModal()"><i class="fa fa-bed"></i> Request Booking</button>
       <button onclick="openHowToBookModal()"><i class="fa fa-question-circle"></i> How to Book?</button>
     </div>
@@ -596,6 +737,54 @@
       </div>
     </div>
   </main>
+
+  <!-- Filter Popup -->
+  <div class="filter-popup-overlay" id="filter-popup-overlay" onclick="closeFiltersPopup()"></div>
+  <div class="filter-popup" id="filter-popup">
+    <div class="filter-popup-header">
+      <h3><i class="fa fa-filter"></i> Filters</h3>
+      <button class="filter-close-btn" onclick="closeFiltersPopup()">&times;</button>
+    </div>
+    <div class="filter-popup-content">
+      <!-- View Options -->
+      <div class="filter-group">
+        <h4>View Options</h4>
+        <div class="filter-options">
+          <div class="filter-option" data-filter="images">Show Images Only</div>
+          <div class="filter-option" data-filter="amenities">Show Amenities</div>
+          <div class="filter-option" data-filter="description">Show Description</div>
+          <div class="filter-option" data-filter="location">Show Location</div>
+        </div>
+      </div>
+      
+      <!-- Amenities Filter -->
+      <div class="filter-group">
+        <h4>Amenity Categories</h4>
+        <div class="filter-options">
+          <div class="filter-option" data-filter="kitchen">Kitchen</div>
+          <div class="filter-option" data-filter="bathroom">Bathroom</div>
+          <div class="filter-option" data-filter="living">Living Space</div>
+          <div class="filter-option" data-filter="tech">Technology</div>
+          <div class="filter-option" data-filter="outdoor">Outdoor</div>
+        </div>
+      </div>
+      
+      <!-- Image Gallery Options -->
+      <div class="filter-group">
+        <h4>Image Display</h4>
+        <div class="filter-options">
+          <div class="filter-option" data-filter="large-images">Large View</div>
+          <div class="filter-option" data-filter="grid-view">Grid View</div>
+          <div class="filter-option" data-filter="slideshow">Slideshow Mode</div>
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="clear-filters-btn" onclick="clearAllFilters()">Clear All</button>
+        <button class="apply-filters-btn" onclick="applyFilters()">Apply Filters</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Chat Page Modal -->
   <div class="chat-page-modal" id="chat-page-modal">
@@ -800,6 +989,57 @@ document.getElementById('booking-request-form').onsubmit = async function(e) {
     // Carousel navigation (dummy for now)
     function prevImage() {}
     function nextImage() {}
+
+    // Filter Popup Functions
+    function openFiltersPopup() {
+      document.getElementById('filter-popup-overlay').classList.add('active');
+      document.getElementById('filter-popup').classList.add('active');
+      document.body.style.overflow = 'hidden'; // Prevent scrolling
+    }
+
+    function closeFiltersPopup() {
+      document.getElementById('filter-popup-overlay').classList.remove('active');
+      document.getElementById('filter-popup').classList.remove('active');
+      document.body.style.overflow = 'auto'; // Re-enable scrolling
+    }
+
+    function clearAllFilters() {
+      // Remove active class from all filter options
+      const filterOptions = document.querySelectorAll('.filter-option');
+      filterOptions.forEach(option => {
+        option.classList.remove('active');
+      });
+      
+      // Reset any applied filters
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const activeFilters = document.querySelectorAll('.filter-option.active');
+      const filterTypes = Array.from(activeFilters).map(filter => filter.dataset.filter);
+      
+      console.log('Applied filters:', filterTypes);
+      
+      // Show success message
+      if (filterTypes.length > 0) {
+        alert(`Applied ${filterTypes.length} filter(s): ${filterTypes.join(', ')}`);
+      } else {
+        alert('All filters cleared');
+      }
+      
+      // Close the popup
+      closeFiltersPopup();
+    }
+
+    // Initialize filter option clicking
+    document.addEventListener('DOMContentLoaded', function() {
+      const filterOptions = document.querySelectorAll('.filter-option');
+      filterOptions.forEach(option => {
+        option.addEventListener('click', function() {
+          this.classList.toggle('active');
+        });
+      });
+    });
 
     // Initialize location services and distance calculation
     document.addEventListener('DOMContentLoaded', async function() {

@@ -231,51 +231,154 @@
     }
 
     .listings {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto 60px auto;
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
-      padding: 0 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+      padding: 0 20px;
     }
+    
     .listing {
       background: var(--card);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 24px 20px;
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 32px;
-      transition: background 0.3s;
+      overflow: hidden;
+      transition: all 0.3s ease;
       cursor: pointer;
       position: relative;
       text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
+    
     .listing:hover {
-      background: #F3F4F6;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
+    
     .listing-image {
-      flex: 0 0 180px;
-      height: 130px;
+      width: 100%;
+      height: 240px;
       background-size: cover;
       background-position: center;
-      border-radius: var(--radius);
+      position: relative;
     }
+    
+    .listing-image::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.1) 100%);
+    }
+    
     .listing-details {
+      padding: 20px;
       flex: 1;
       display: flex;
       flex-direction: column;
+      gap: 12px;
+    }
+    
+    .listing-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin: 0;
+      font-family: var(--heading-font);
+      line-height: 1.3;
+    }
+    
+    .listing-location {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
       gap: 6px;
     }
-    .listing-details p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 1rem;
+    
+    .listing-price {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin: 8px 0;
+      font-family: var(--heading-font);
     }
-    .listing-details p strong {
-      color: var(--primary);
-      font-size: 1.1rem;
+    
+    .listing-features {
+      display: flex;
+      gap: 16px;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+    
+    .listing-feature {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    
+    .listing-tags {
+      display: flex;
+      gap: 8px;
+      margin: 12px 0;
+      flex-wrap: wrap;
+    }
+    
+    .property-tag {
+      background: #f3f4f6;
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    
+    .property-tag.pet-friendly {
+      background: #dcfce7;
+      color: #166534;
+    }
+    
+    .property-tag.no-pets {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    
+    .property-tag.furnished {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    
+    .listing-actions {
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid #f3f4f6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .view-details-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .view-details-btn:hover {
+      background: var(--primary-dark);
     }
     .favorite-button {
       padding: 10px 18px;
@@ -310,6 +413,189 @@
         height: 180px;
       }
     }
+
+    /* =============================================
+       🎨 ENHANCED PROPERTY TAGS & AMENITIES
+       ============================================= */
+    .property-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+      border: 1px solid;
+    }
+
+    .property-tag.pet-friendly {
+      background: #e8f5e8;
+      color: #2d5a2d;
+      border-color: #4caf50;
+    }
+
+    .property-tag.no-pets {
+      background: #ffebee;
+      color: #c62828;
+      border-color: #f44336;
+    }
+
+    .property-tag.pets-conditional {
+      background: #fff3e0;
+      color: #ef6c00;
+      border-color: #ff9800;
+    }
+
+    .property-tag.furnished {
+      background: #e3f2fd;
+      color: #1565c0;
+      border-color: #2196f3;
+    }
+
+    .property-tag.parking {
+      background: #f3e5f5;
+      color: #6a1b9a;
+      border-color: #9c27b0;
+    }
+
+    /* Map container styling */
+    #map-container {
+      display: none;
+      width: 100%;
+      height: 400px;
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6c757d;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    #map-container.visible {
+      display: flex;
+    }
+
+    /* Advanced Search Toggle Styles */
+    #advanced-filters {
+      overflow: hidden;
+      transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+      max-height: 0;
+      opacity: 0;
+    }
+
+    #advanced-filters.visible {
+      max-height: 1000px;
+      opacity: 1;
+    }
+
+    #advanced-search-toggle {
+      transition: background-color 0.3s ease;
+    }
+
+    /* Language Switcher Styles */
+    .language-switcher {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .language-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--heading-font);
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+    
+    .language-btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-1px);
+    }
+    
+    .language-btn i:last-child {
+      font-size: 0.7rem;
+      transition: transform 0.2s ease;
+    }
+    
+    .language-btn.active i:last-child {
+      transform: rotate(180deg);
+    }
+    
+    .language-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      min-width: 140px;
+      z-index: 1000;
+      overflow: hidden;
+      margin-top: 8px;
+      border: 1px solid #e1e5e9;
+    }
+    
+    .language-dropdown.active {
+      display: block;
+      animation: fadeInDown 0.2s ease-out;
+    }
+    
+    .lang-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      text-decoration: none;
+      font-family: var(--body-font);
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: background 0.2s ease;
+      border-bottom: 1px solid #f1f1f1;
+    }
+    
+    .lang-option:last-child {
+      border-bottom: none;
+    }
+    
+    .lang-option:hover {
+      background: var(--secondary);
+    }
+    
+    .lang-option.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .flag-emoji {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
     <script src="js/language-switcher.js" defer></script>
     <script src="js/logo-cookie-manager.js" defer></script>
@@ -318,22 +604,48 @@
 <body>
   <header>
     <div class="header-logo">
-
-      <div class="brand-text">
-        <span class="sichrplace-text">SichrPlace</span>
-        <span class="certified-badge">🇩🇪 Certified</span>
-      </div>
+      <a href="index.html" class="logo" aria-label="SichrPlace">
+        <img src="img/sichrplace-logo.jpg" alt="SichrPlace logo" style="height:48px;width:auto;display:block;">
+        <span class="brand-text">
+          <span class="sichrplace-text">SichrPlace</span>
+          <span class="certified-badge" style="display:none;">Verified</span>
+        </span>
+      </a>
     </div>
-    <nav id="main-nav">
-      <a href="apartments-listing.html" data-translate="nav.apartments" style="color: var(--accent);">Apartments</a>
-      <a href="add-property.html">Rent</a>
-      <!-- Language Switcher -->
-      <div class="language-switcher" style="margin-right: 15px;"></div>
-      <!-- Dynamic navigation based on login status -->
-      <span id="user-nav-section">
-        <a href="login-new.html" data-translate="nav.login">Login</a>
-        <a href="create-account.html">Create Account</a>
-      </span>
+    <nav>
+      <a href="login.html" data-translate="nav.login">Login</a>
+      <a href="apartments-listing.html" data-translate="nav.apartments">Apartments</a>
+      
+      <!-- View link for viewing requests -->
+      <a href="viewing-request.html" data-translate="nav.view">View</a>
+      
+      <!-- Marketplace -->
+      <a href="marketplace.html" class="cart-icon" title="Marketplace" aria-label="Marketplace">
+        <i class="fas fa-shopping-cart"></i>
+      </a>
+      
+      <!-- Language Switcher moved to the rightmost position -->
+      <div class="language-switcher">
+        <button class="language-btn" id="language-btn" aria-label="Switch Language">
+          <i class="fas fa-globe"></i>
+          <span id="current-lang">EN</span>
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="language-dropdown" id="language-dropdown">
+          <a href="#" data-lang="en" class="lang-option active">
+            <span class="flag-emoji">🇺🇸</span>
+            English
+          </a>
+          <a href="#" data-lang="de" class="lang-option">
+            <span class="flag-emoji">🇩🇪</span>
+            Deutsch
+          </a>
+          <a href="#" data-lang="tr" class="lang-option">
+            <span class="flag-emoji">🇹🇷</span>
+            Türkçe
+          </a>
+        </div>
+      </div>
     </nav>
   </header>
 
@@ -342,10 +654,12 @@
   <!-- Enhanced Search and Filters -->
   <div style="max-width: 1200px; margin: 0 auto 32px auto; padding: 0 20px;">
     <div style="background: white; padding: 24px; border-radius: 18px; box-shadow: var(--shadow); margin-bottom: 20px;">
-      <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+      
+      <!-- Main Search Row -->
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;">
         <!-- Search Input -->
         <div style="flex: 1; min-width: 280px;">
-          <input type="text" id="search-input" placeholder="Search by location, price, or description..." style="
+          <input type="text" id="search-input" placeholder="Search by location, address, or keywords..." style="
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e1e5e9;
@@ -355,78 +669,648 @@
           " oninput="handleSearch()" onkeyup="if(event.key==='Enter') handleSearch()">
         </div>
         
+        <!-- Map View Toggle -->
+        <div>
+          <button id="map-toggle" onclick="showMapView()" 
+                  onmouseover="this.style.background='var(--primary)'; this.style.color='white'" 
+                  onmouseout="this.style.background='var(--secondary)'; this.style.color='var(--primary)'"
+                  style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--secondary); color: var(--primary); border: 2px solid var(--primary); border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+            <i class="fas fa-map-marked-alt"></i>
+            <span id="map-toggle-text">Map View</span>
+          </button>
+        </div>
+        
         <!-- Advanced Search Button -->
         <div>
-          <a href="advanced-search.html" style="
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 20px;
-            background: var(--primary);
+          <button onclick="showAdvancedSearch()" id="advanced-search-toggle" 
+                  onmouseover="this.style.background='#1d4ed8'" 
+                  onmouseout="this.style.background='var(--primary)'"
+                  style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; transition: all 0.2s; white-space: nowrap; cursor: pointer;">
+            <i class="fas fa-search-plus" id="advanced-search-icon"></i>
+            <span id="advanced-search-text">Advanced Search</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Unified Display Container -->
+      <div id="display-container" style="display: none; background: white; border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; position: relative; max-height: 0; transition: max-height 0.3s ease-in-out;">
+
+        <!-- Map View Content -->
+        <div id="map-view-content" style="display: none; position: relative;">
+          <!-- Map Close Button -->
+          <button onclick="hideDisplayContainer()" style="
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #dc3545;
             color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: all 0.2s;
-            white-space: nowrap;
-          " onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='var(--primary)'">
-            <i class="fas fa-search-plus"></i>
-            Advanced Search
-          </a>
-        </div>
-        
-        <!-- Price Range -->
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-weight: 600; color: var(--text); white-space: nowrap;">Price:</label>
-          <input type="number" id="min-price" placeholder="Min" style="
-            width: 80px;
-            padding: 8px 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 14px;
-          " oninput="handlePriceFilter()">
-          <span style="color: var(--text);">-</span>
-          <input type="number" id="max-price" placeholder="Max" style="
-            width: 80px;
-            padding: 8px 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 14px;
-          " oninput="handlePriceFilter()">
+            z-index: 10;
+            transition: background 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+          " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'" title="Close Map">
+            <i class="fa fa-times"></i>
+          </button>
+          
+          <div style="height: 450px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; color: var(--muted);">
+            <div style="text-align: center;">
+              <i class="fas fa-map" style="font-size: 48px; color: var(--primary); margin-bottom: 16px;"></i>
+              <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Interactive Map View</div>
+              <div style="font-size: 14px;">Google Maps integration will display apartment locations here</div>
+            </div>
+          </div>
         </div>
+
+        <!-- Advanced Search Content -->
+        <div id="advanced-search-content" style="display: none; padding: 30px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e1e5e9; padding-bottom: 15px;">
+            <h3 style="margin: 0; color: var(--primary); font-family: var(--heading-font); font-size: 1.4rem;">
+              <i class="fas fa-search-plus" style="color: var(--accent); margin-right: 8px;"></i>
+              Advanced Search Filters
+            </h3>
+            <!-- Close Button for Advanced Search -->
+            <button onclick="hideDisplayContainer()" style="
+              background: #dc3545;
+              color: white;
+              border: none;
+              border-radius: 50%;
+              padding: 8px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 14px;
+              font-weight: 600;
+              transition: background 0.2s;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+              width: 32px;
+              height: 32px;
+            " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'" title="Close Advanced Search">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+          
+          <!-- Filters Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            <!-- Property Type -->
+            <div>
+              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+                <i class="fas fa-home" style="color: var(--accent);"></i> Property Type
+              </label>
+              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="">All Types</option>
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+                <option value="studio">Studio</option>
+                <option value="loft">Loft</option>
+              </select>
+            </div>
+            
+            <!-- Bathrooms -->
+            <div>
+              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+                <i class="fas fa-bath" style="color: var(--accent);"></i> Bathrooms
+              </label>
+              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="">Any</option>
+                <option value="1">1+</option>
+                <option value="2">2+</option>
+                <option value="3">3+</option>
+              </select>
+            </div>
+            
+            <!-- Furnished Status -->
+            <div>
+              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+                <i class="fas fa-couch" style="color: var(--accent);"></i> Furnished
+              </label>
+              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="">Any</option>
+                <option value="furnished">Furnished</option>
+                <option value="unfurnished">Unfurnished</option>
+                <option value="semi-furnished">Semi-Furnished</option>
+              </select>
+            </div>
+            
+            <!-- Pet Policy -->
+            <div>
+              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+                <i class="fas fa-paw" style="color: var(--accent);"></i> Pet Policy
+              </label>
+              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="">Any</option>
+                <option value="pets-allowed">Pets Allowed</option>
+                <option value="no-pets">No Pets</option>
+                <option value="cats-only">Cats Only</option>
+                <option value="dogs-only">Dogs Only</option>
+              </select>
+            </div>
+            
+            <!-- Parking -->
+            <div>
+              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+                <i class="fas fa-car" style="color: var(--accent);"></i> Parking
+              </label>
+              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="">Any</option>
+                <option value="included">Included</option>
+                <option value="available">Available (Extra Cost)</option>
+                <option value="street-parking">Street Parking</option>
+                <option value="no-parking">No Parking</option>
+              </select>
+            </div>
+            
+            <!-- Price Range -->
+            <div>
+              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+                <i class="fas fa-euro-sign" style="color: var(--accent);"></i> Price Range
+              </label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="number" placeholder="Min €" style="flex: 1; padding: 10px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px;">
+                <span style="color: var(--muted);">-</span>
+                <input type="number" placeholder="Max €" style="flex: 1; padding: 10px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px;">
+              </div>
+            </div>
+          </div>
+          
+          <!-- Amenities Section -->
+          <div style="margin-top: 25px; border-top: 1px solid #e1e5e9; padding-top: 20px;">
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 15px;">
+              <i class="fas fa-star" style="color: var(--accent);"></i> Amenities
+            </label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                <input type="checkbox" style="margin-right: 8px;"> 🌿 Balcony
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                <input type="checkbox" style="margin-right: 8px;"> 🍽️ Dishwasher
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                <input type="checkbox" style="margin-right: 8px;"> 🧺 Washing Machine
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                <input type="checkbox" style="margin-right: 8px;"> ❄️ Air Conditioning
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                <input type="checkbox" style="margin-right: 8px;"> 📶 WiFi
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                <input type="checkbox" style="margin-right: 8px;"> 🔥 Heating
+              </label>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div style="margin-top: 25px; display: flex; gap: 12px; justify-content: center; border-top: 1px solid #e1e5e9; padding-top: 20px;">
+            <button onclick="applyAdvancedFilters()" style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='var(--primary)'">
+              <i class="fas fa-search"></i> Apply Filters
+            </button>
+            <button onclick="clearAdvancedFilters()" style="background: var(--muted); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#374151'" onmouseout="this.style.background='var(--muted)'">
+              <i class="fas fa-eraser"></i> Clear All
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Listings Container -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="margin: 0; color: var(--text); font-size: 18px; font-weight: 600;">
+            <i class="fas fa-filter" style="color: var(--primary); margin-right: 8px;"></i>
+            Advanced Filters
+          </h3>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="clearAllFilters()" style="
+              background: rgb(108, 117, 125);
+              color: white;
+              border: none;
+              padding: 10px 16px;
+              border-radius: 8px;
+              font-size: 14px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: background 0.2s;
+            " onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
+              <i class="fa fa-times"></i> Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
         
-        <!-- Bedrooms Filter -->
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-weight: 600; color: var(--text); white-space: nowrap;">Bedrooms:</label>
+        <!-- Price Range Slider -->
+        <div style="min-width: 200px;">
+          <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+            <i class="fas fa-euro-sign" style="color: var(--primary);"></i> Price Range
+          </label>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+            <input type="number" id="min-price" placeholder="Min €" style="
+              width: 80px; padding: 6px 8px; border: 1px solid #e1e5e9; border-radius: 6px; font-size: 14px;
+            " oninput="handlePriceFilter()">
+            <span style="color: var(--muted);">-</span>
+            <input type="number" id="max-price" placeholder="Max €" style="
+              width: 80px; padding: 6px 8px; border: 1px solid #e1e5e9; border-radius: 6px; font-size: 14px;
+            " oninput="handlePriceFilter()">
+          </div>
+          <div style="position: relative;">
+            <input type="range" id="price-range" min="200" max="2000" value="1000" style="
+              width: 100%; height: 6px; border-radius: 3px; background: #e1e5e9; outline: none;
+              -webkit-appearance: none; cursor: pointer;
+            " oninput="updatePriceSlider()">
+            <div id="price-display" style="font-size: 12px; color: var(--muted); text-align: center; margin-top: 4px;">
+              €200 - €2000
+            </div>
+          </div>
+        </div>
+
+        <!-- Room Count -->
+        <div>
+          <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+            <i class="fas fa-bed" style="color: var(--primary);"></i> Bedrooms
+          </label>
           <select id="bedrooms-filter" style="
-            padding: 8px 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 14px;
-            background: white;
-          " onchange="handleBedroomsFilter()">
+            width: 100%; padding: 8px 12px; border: 1px solid #e1e5e9; border-radius: 6px; font-size: 14px;
+          " onchange="applyFilters()">
             <option value="">Any</option>
-            <option value="1">1+</option>
-            <option value="2">2+</option>
-            <option value="3">3+</option>
-            <option value="4">4+</option>
+            <option value="1">1 Bedroom</option>
+            <option value="2">2 Bedrooms</option>
+            <option value="3">3 Bedrooms</option>
+            <option value="4">4+ Bedrooms</option>
           </select>
         </div>
+
+        <!-- Bathrooms -->
+        <div>
+          <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+            <i class="fas fa-bath" style="color: var(--primary);"></i> Bathrooms
+          </label>
+          <select id="bathrooms-filter" style="
+            width: 100%; padding: 8px 12px; border: 1px solid #e1e5e9; border-radius: 6px; font-size: 14px;
+          " onchange="applyFilters()">
+            <option value="">Any</option>
+            <option value="1">1 Bathroom</option>
+            <option value="2">2 Bathrooms</option>
+            <option value="3">3+ Bathrooms</option>
+          </select>
+        </div>
+
+        <!-- Pet-Friendly -->
+        <div>
+          <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+            <i class="fas fa-paw" style="color: var(--primary);"></i> Pet Policy
+          </label>
+          <select id="pet-filter" style="
+            width: 100%; padding: 8px 12px; border: 1px solid #e1e5e9; border-radius: 6px; font-size: 14px;
+          " onchange="applyFilters()">
+            <option value="">Any</option>
+            <option value="pet-friendly">Pet-Friendly</option>
+            <option value="no-pets">No Pets</option>
+            <option value="cats-only">Cats Only</option>
+            <option value="dogs-only">Dogs Only</option>
+          </select>
+        </div>
+
+        <!-- Furnished Status -->
+        <div>
+          <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+            <i class="fas fa-couch" style="color: var(--primary);"></i> Furnished
+          </label>
+          <select id="furnished-filter" style="
+            width: 100%; padding: 8px 12px; border: 1px solid #e1e5e9; border-radius: 6px; font-size: 14px;
+          " onchange="applyFilters()">
+            <option value="">Any</option>
+            <option value="furnished">Furnished</option>
+            <option value="unfurnished">Unfurnished</option>
+            <option value="semi-furnished">Semi-Furnished</option>
+          </select>
+        </div>
+
+        <!-- Parking -->
+        <div>
+          <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+            <i class="fas fa-car" style="color: var(--primary);"></i> Parking
+          </label>
+          <select id="parking-filter" style="
+            width: 100%; padding: 8px 12px; border: 1px solid #e1e5e9; border-radius: 6px; font-size: 14px;
+          " onchange="applyFilters()">
+            <option value="">Any</option>
+            <option value="included">Parking Included</option>
+            <option value="garage">Garage</option>
+            <option value="street">Street Parking</option>
+            <option value="none">No Parking</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Premium Amenities (Checkboxes) -->
+      <div style="border-top: 1px solid #e1e5e9; padding-top: 20px;">
+        <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 12px;">
+          <i class="fas fa-star" style="color: var(--accent);"></i> Premium Amenities
+        </label>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+          
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="amenity-wifi" onchange="applyFilters()" style="margin: 0;">
+            <i class="fas fa-wifi" style="color: var(--primary); width: 16px;"></i>
+            WiFi Included
+          </label>
+          
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="amenity-laundry" onchange="applyFilters()" style="margin: 0;">
+            <i class="fas fa-tshirt" style="color: var(--primary); width: 16px;"></i>
+            Laundry
+          </label>
+          
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="amenity-ac" onchange="applyFilters()" style="margin: 0;">
+            <i class="fas fa-snowflake" style="color: var(--primary); width: 16px;"></i>
+            Air Conditioning
+          </label>
+          
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="amenity-balcony" onchange="applyFilters()" style="margin: 0;">
+            <i class="fas fa-tree" style="color: var(--primary); width: 16px;"></i>
+            Balcony/Terrace
+          </label>
+          
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="amenity-transport" onchange="applyFilters()" style="margin: 0;">
+            <i class="fas fa-subway" style="color: var(--primary); width: 16px;"></i>
+            Near Public Transport
+          </label>
+          
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="amenity-gym" onchange="applyFilters()" style="margin: 0;">
+            <i class="fas fa-dumbbell" style="color: var(--primary); width: 16px;"></i>
+            Gym/Fitness
+          </label>
+          
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="amenity-dishwasher" onchange="applyFilters()" style="margin: 0;">
+            <i class="fas fa-utensils" style="color: var(--primary); width: 16px;"></i>
+            Dishwasher
+          </label>
+          
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+            <input type="checkbox" id="amenity-elevator" onchange="applyFilters()" style="margin: 0;">
+            <i class="fas fa-arrows-alt-v" style="color: var(--primary); width: 16px;"></i>
+            Elevator
+          </label>
+        </div>
+      </div>
+
+      <!-- Filter Results Summary -->
+      <div style="border-top: 1px solid #e1e5e9; padding-top: 16px; margin-top: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div id="filter-summary" style="color: var(--muted); font-size: 14px;">
+            Showing all apartments
+          </div>
+          <button onclick="clearAllFilters()" style="
+            padding: 6px 12px;
+            background: var(--secondary);
+            color: var(--muted);
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+          " onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='var(--secondary)'">
+            <i class="fas fa-times"></i> Clear All Filters
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Container (Initially Hidden) -->
+    <div id="map-container" style="display: none; background: white; border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; position: relative;">
+      <!-- Close Map Button -->
+      <button onclick="document.getElementById('map-container').style.display='none';" style="
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        z-index: 10;
+        transition: background 0.2s;
+      " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'" title="Close Map">
+        <i class="fa fa-times"></i>
+      </button>
+      
+      <div style="height: 400px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; color: var(--muted);">
+        <div style="text-align: center;">
+          <i class="fas fa-map" style="font-size: 48px; color: var(--primary); margin-bottom: 16px;"></i>
+          <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Interactive Map View</div>
+          <div style="font-size: 14px;">Map integration with Google Maps API will be loaded here</div>
+        </div>
+      </div>
+    </div>
+  </div>
         
-        <!-- Clear Filters -->
-        <button onclick="clearFilters()" style="
-          background: #6c757d;
-          color: white;
-          border: none;
-          padding: 10px 16px;
-          border-radius: 8px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s;
-        " onmouseover="this.style.background='#5a6268'" onmouseout="this.style.background='#6c757d'">
-          <i class="fa fa-times"></i> Clear
-        </button>
+        </div> <!-- End Filters Grid -->
+      </div> <!-- End Advanced Filters -->
+      
+      <!-- Map Section (Initially Hidden) -->
+      <div id="map-section" style="
+        display: none;
+        border-top: 1px solid #e1e5e9;
+        background: #f8f9fa;
+        border-radius: 0 0 12px 12px;
+        padding: 20px;
+        margin-top: 0;
+        transition: all 0.3s ease-in-out;
+      ">
+        <!-- Map Header with Close Button -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="margin: 0; color: var(--text); font-size: 18px; font-weight: 600;">
+            <i class="fas fa-map-marked-alt" style="color: var(--primary); margin-right: 8px;"></i>
+            Interactive Map
+          </h3>
+          <button onclick="document.getElementById('map-section').style.display='none'; document.getElementById('map-toggle-text').textContent='Show Map';" style="
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+          " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'" title="Close Map">
+            <i class="fa fa-times"></i> Close
+          </button>
+        </div>
+        
+        <div style="height: 400px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; color: var(--muted); border-radius: 8px;">
+          <div style="text-align: center;">
+            <i class="fas fa-map" style="font-size: 48px; color: var(--primary); margin-bottom: 16px;"></i>
+            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Interactive Map View</div>
+            <div style="font-size: 14px;">Map integration with Google Maps API will be loaded here</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Filters Section (Initially Hidden) -->
+      <div id="filters-section" style="
+        display: none;
+        border-top: 1px solid #e1e5e9;
+        background: #f8f9fa;
+        border-radius: 0 0 12px 12px;
+        padding: 20px;
+        margin-top: 0;
+        transition: all 0.3s ease-in-out;
+      ">
+        <!-- Filters Header with Close Button -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="margin: 0; color: var(--text); font-size: 18px; font-weight: 600;">
+            <i class="fas fa-filter" style="color: var(--accent); margin-right: 8px;"></i>
+            Property Filters
+          </h3>
+          <button onclick="document.getElementById('filters-section').style.display='none';" style="
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+          " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'" title="Close Filters">
+            <i class="fa fa-times"></i> Close
+          </button>
+        </div>
+        
+        <!-- Filters Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <!-- Property Type -->
+          <div>
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+              <i class="fas fa-home" style="color: var(--accent);"></i> Property Type
+            </label>
+            <select style="width: 100%; padding: 8px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+              <option value="">All Types</option>
+              <option value="apartment">Apartment</option>
+              <option value="house">House</option>
+              <option value="studio">Studio</option>
+              <option value="loft">Loft</option>
+            </select>
+          </div>
+          
+          <!-- Bathrooms -->
+          <div>
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+              <i class="fas fa-bath" style="color: var(--accent);"></i> Bathrooms
+            </label>
+            <select style="width: 100%; padding: 8px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+              <option value="">Any</option>
+              <option value="1">1+</option>
+              <option value="2">2+</option>
+              <option value="3">3+</option>
+            </select>
+          </div>
+          
+          <!-- Furnished Status -->
+          <div>
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+              <i class="fas fa-couch" style="color: var(--accent);"></i> Furnished
+            </label>
+            <select style="width: 100%; padding: 8px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+              <option value="">Any</option>
+              <option value="furnished">Furnished</option>
+              <option value="unfurnished">Unfurnished</option>
+              <option value="semi-furnished">Semi-Furnished</option>
+            </select>
+          </div>
+          
+          <!-- Pet Policy -->
+          <div>
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+              <i class="fas fa-paw" style="color: var(--accent);"></i> Pet Policy
+            </label>
+            <select style="width: 100%; padding: 8px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+              <option value="">Any</option>
+              <option value="pets-allowed">Pets Allowed</option>
+              <option value="no-pets">No Pets</option>
+              <option value="cats-only">Cats Only</option>
+              <option value="dogs-only">Dogs Only</option>
+            </select>
+          </div>
+          
+          <!-- Parking -->
+          <div>
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+              <i class="fas fa-car" style="color: var(--accent);"></i> Parking
+            </label>
+            <select style="width: 100%; padding: 8px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+              <option value="">Any</option>
+              <option value="included">Included</option>
+              <option value="available">Available (Extra Cost)</option>
+              <option value="street-parking">Street Parking</option>
+              <option value="no-parking">No Parking</option>
+            </select>
+          </div>
+          
+          <!-- Amenities -->
+          <div style="grid-column: span 2;">
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+              <i class="fas fa-star" style="color: var(--accent);"></i> Amenities
+            </label>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px;">
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" style="margin-right: 6px;"> Balcony
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" style="margin-right: 6px;"> Dishwasher
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" style="margin-right: 6px;"> Washing Machine
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" style="margin-right: 6px;"> Air Conditioning
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" style="margin-right: 6px;"> Elevator
+              </label>
+              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" style="margin-right: 6px;"> Garden Access
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Apply Filters Button -->
+        <div style="margin-top: 20px; text-align: center;">
+          <button style="
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+          " onmouseover="this.style.background='#2BC4B6'" onmouseout="this.style.background='var(--accent)'">
+            <i class="fas fa-check"></i> Apply Filters
+          </button>
+        </div>
       </div>
       
       <!-- Results Summary -->
@@ -449,7 +1333,7 @@
     <div class="filters-modal">
       <div class="filters-header">
         <h2>Filters</h2>
-        <button class="close-filters" onclick="toggleFilters()">×</button>
+        <button class="close-filters" onclick="document.getElementById('filters-container').classList.remove('active');">×</button>
       </div>
       <div class="filters-row">
         <div class="filter-group">
@@ -516,18 +1400,6 @@
   </div>
 
     <div class="listings" id="listings-container">
-    <!-- Loading message -->
-    <div id="loading-message" style="text-align: center; padding: 40px; color: var(--muted);">
-      <i class="fa fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 16px;"></i>
-      <p>Loading apartments...</p>
-    </div>
-    
-    <!-- Error message (hidden by default) -->
-    <div id="error-message" style="display: none; text-align: center; padding: 40px; color: #F87171;">
-      <i class="fa fa-exclamation-circle" style="font-size: 24px; margin-bottom: 16px;"></i>
-      <p>Failed to load apartments. Please try again later.</p>
-    </div>
-    
     <!-- Dynamic apartments will be loaded here -->
   </div>
 
@@ -558,7 +1430,6 @@
     const favoriteOffers = new Set();
     const API_BASE_URL = 'http://localhost:3000'; // Your working backend
     
-    // Load apartments from backend API on page load
     async function loadApartments() {
       try {
         const response = await fetch(`${API_BASE_URL}/api/apartments`);
@@ -567,13 +1438,11 @@
         if (data.success && data.data) {
           apartmentsData = data.data;
           renderApartments(apartmentsData);
-          hideLoadingMessage();
         } else {
-          showErrorMessage('Failed to load apartments');
+          console.error('Failed to load apartments:', data.error);
         }
       } catch (error) {
         console.error('Failed to load apartments:', error);
-        showErrorMessage('Connection error. Please check if the server is running.');
       }
     }
     
@@ -595,22 +1464,60 @@
         <div class="listing" onclick="openOfferDetails('${apartment.id}')" style="cursor: pointer;">
           <div class="listing-image" style="background-image: url('${getApartmentImage(apartment)}');"></div>
           <div class="listing-details">
-            <p><strong>${apartment.title || apartment.address}</strong></p>
-            <p>Price: €${apartment.price}/month</p>
-            <p>Deposit: €${apartment.deposit || (apartment.price * 2)}</p>
-            <p>Property Type: ${formatPropertyType(apartment.property_type)}</p>
-            <p>Size: ${apartment.size}m²</p>
-            <p>Rooms: ${apartment.rooms || 'N/A'}</p>
-            <p>Bathrooms: ${apartment.bathrooms || 'N/A'}</p>
-            <p>Move-in: ${formatDate(apartment.move_in_date)}</p>
-            <p>Move-out: ${formatDate(apartment.move_out_date) || 'Flexible'}</p>
-            ${apartment.average_rating ? `
-              <p>Rating: ${renderStars(apartment.average_rating)} (${apartment.review_count || 0} reviews)</p>
+            <h3 class="listing-title">${apartment.title || apartment.address}</h3>
+            <p class="listing-location">
+              <i class="fas fa-map-marker-alt"></i> ${apartment.location}
+            </p>
+            <div class="listing-price">€${apartment.price}/month</div>
+            
+            <div class="listing-features">
+              <div class="listing-feature">
+                <i class="fas fa-bed"></i> 
+                <span>${apartment.bedrooms || apartment.rooms || 'N/A'} bed${(apartment.bedrooms || apartment.rooms) > 1 ? 's' : ''}</span>
+              </div>
+              <div class="listing-feature">
+                <i class="fas fa-bath"></i> 
+                <span>${apartment.bathrooms || 'N/A'} bath${apartment.bathrooms > 1 ? 's' : ''}</span>
+              </div>
+              <div class="listing-feature">
+                <i class="fas fa-expand-arrows-alt"></i> 
+                <span>${apartment.area || apartment.size}m²</span>
+              </div>
+            </div>
+            
+            <div class="listing-tags">
+              ${apartment.petPolicy ? `<span class="property-tag ${apartment.petPolicy === 'pet-friendly' ? 'pet-friendly' : apartment.petPolicy === 'no-pets' ? 'no-pets' : 'pets-conditional'}">
+                ${formatPetPolicy(apartment.petPolicy)}
+              </span>` : ''}
+              
+              ${apartment.furnished ? `<span class="property-tag ${apartment.furnished === 'furnished' ? 'furnished' : ''}">
+                ${formatFurnished(apartment.furnished)}
+              </span>` : ''}
+              
+              ${apartment.parking ? `<span class="property-tag parking">
+                ${formatParking(apartment.parking)}
+              </span>` : ''}
+            </div>
+            
+            ${apartment.amenities && apartment.amenities.length > 0 ? `
+              <div class="listing-amenities">
+                ${apartment.amenities.slice(0, 3).map(amenity => `
+                  <span class="property-tag">${formatAmenity(amenity)}</span>
+                `).join('')}
+                ${apartment.amenities.length > 3 ? `<span class="property-tag">+${apartment.amenities.length - 3} more</span>` : ''}
+              </div>
             ` : ''}
+            
+            <div class="listing-actions">
+              <div style="font-size: 0.9rem; color: var(--muted);">
+                Move-in: ${formatDate(apartment.move_in_date)}
+                ${apartment.average_rating ? ` | ⭐ ${apartment.average_rating}` : ''}
+              </div>
+              <button class="view-details-btn" onclick="event.stopPropagation(); openOfferDetails('${apartment.id}')">
+                View Details
+              </button>
+            </div>
           </div>
-          <button class="favorite-button" onclick="toggleFavorite(event, '${apartment.id}')">
-            <i class="fa fa-heart"></i> Add to Favorites
-          </button>
         </div>
       `).join('');
     }
@@ -628,10 +1535,53 @@
     
     function formatPropertyType(type) {
       if (!type) return 'N/A';
-      return type.split('_').map(word => 
-        word.charAt(0).toUpperCase() + word.slice(1)
-      ).join(' ');
+      return type.charAt(0).toUpperCase() + type.slice(1).replace(/[_-]/g, ' ');
     }
+    
+    // New formatting functions for enhanced filters
+    function formatPetPolicy(policy) {
+      const policies = {
+        'pet-friendly': 'Pet-friendly',
+        'no-pets': 'No pets',
+        'cats-only': 'Cats only',
+        'dogs-only': 'Dogs only'
+      };
+      return policies[policy] || policy;
+    }
+    
+    function formatFurnished(status) {
+      const statuses = {
+        'furnished': 'Furnished',
+        'unfurnished': 'Unfurnished',
+        'semi-furnished': 'Semi-furnished'
+      };
+      return statuses[status] || status;
+    }
+    
+    function formatParking(parking) {
+      const types = {
+        'included': 'Parking included',
+        'garage': 'Garage parking',
+        'street': 'Street parking',
+        'none': 'No parking'
+      };
+      return types[parking] || parking;
+    }
+    
+    function formatAmenity(amenity) {
+      const amenities = {
+        'wifi': '📶 WiFi',
+        'laundry': '🧺 Laundry',
+        'ac': '❄️ A/C',
+        'balcony': '🏠 Balcony',
+        'transport': '🚇 Transport',
+        'gym': '💪 Gym',
+        'dishwasher': '🍽️ Dishwasher',
+        'elevator': '🛗 Elevator'
+      };
+      return amenities[amenity] || amenity;
+    }
+    
     
     function formatDate(dateString) {
       if (!dateString) return null;
@@ -662,31 +1612,20 @@
       return stars.join('');
     }
     
-    function hideLoadingMessage() {
-      const loading = document.getElementById('loading-message');
-      if (loading) loading.style.display = 'none';
-    }
-    
-    function showErrorMessage(message) {
-      hideLoadingMessage();
-      const errorDiv = document.getElementById('error-message');
-      if (errorDiv) {
-        errorDiv.querySelector('p').textContent = message;
-        errorDiv.style.display = 'block';
-      }
-    }
-    
     // ================================
     // 🔄 EXISTING FUNCTIONALITY (Updated)
     // ================================
     
+    // Toggle filters functionality
     function toggleFilters() {
-      const filtersContainer = document.getElementById('filters-container');
-      if (filtersContainer) {
-        filtersContainer.classList.toggle('active');
-        console.log('Filter modal toggled. Active:', filtersContainer.classList.contains('active'));
-      } else {
-        console.error('Filters container not found!');
+      var element = document.getElementById('filters-container');
+      
+      if (element) {
+        if (element.classList.contains('active')) {
+          element.classList.remove('active');
+        } else {
+          element.classList.add('active');
+        }
       }
     }
   
@@ -730,7 +1669,7 @@
         
         window.location.href = `offer.html?${params.toString()}`;
       } else {
-        alert('Apartment details not found!');
+        console.error('Apartment details not found for ID:', apartmentId);
       }
     }
   
@@ -873,7 +1812,7 @@
         padding: 12px 20px;
         background: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#3B82F6'};
         color: white;
-        "
+        border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         z-index: 1000;
         opacity: 0;
@@ -901,6 +1840,21 @@
         }, 300);
       }, 3000);
     }
+
+    // Load user favorites from API
+    async function loadUserFavorites() {
+      const token = localStorage.getItem('userToken');
+      if (!token) return;
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/user/favorites`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
           const data = await response.json();
           if (data.success && data.data) {
             // Update local favorites set
@@ -942,6 +1896,43 @@
       loadApartments();
       updateNavigation();
       
+      // Initialize price slider display
+      const priceSlider = document.getElementById('price-range');
+      const priceDisplay = document.getElementById('price-display');
+      if (priceSlider && priceDisplay) {
+        priceDisplay.textContent = `€200 - €${priceSlider.value}`;
+      }
+      
+      // Set up event listeners for real-time filtering
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+      }
+      
+      const priceInputs = ['min-price', 'max-price'];
+      priceInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+          input.addEventListener('input', applyFilters);
+        }
+      });
+      
+      const filterSelects = ['bedrooms-filter', 'bathrooms-filter', 'pet-filter', 'furnished-filter', 'parking-filter'];
+      filterSelects.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+          select.addEventListener('change', applyFilters);
+        }
+      });
+      
+      const amenityCheckboxes = ['amenity-wifi', 'amenity-laundry', 'amenity-ac', 'amenity-balcony', 'amenity-transport', 'amenity-gym', 'amenity-dishwasher', 'amenity-elevator'];
+      amenityCheckboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) {
+          checkbox.addEventListener('change', applyFilters);
+        }
+      });
+      
       // Check authentication status
       const token = localStorage.getItem('userToken');
       if (token) {
@@ -949,6 +1940,8 @@
         loadUserFavorites();
         updateNotificationCounter();
       }
+      
+      console.log('🎯 Advanced search system initialized with comprehensive filters!');
     });
     
     // Update navigation based on login status
@@ -1259,6 +2252,7 @@
     // ================================
     
     let filteredApartments = [];
+    let mapVisible = false;
     
     // Handle search input
     function handleSearch() {
@@ -1270,8 +2264,112 @@
       applyFilters();
     }
     
-    // Handle bedrooms filter
-    function handleBedroomsFilter() {
+    // Update price slider display
+    function updatePriceSlider() {
+      const slider = document.getElementById('price-range');
+      const display = document.getElementById('price-display');
+      const minPrice = document.getElementById('min-price');
+      const maxPrice = document.getElementById('max-price');
+      
+      const value = parseInt(slider.value);
+      display.textContent = `€200 - €${value}`;
+      maxPrice.value = value;
+      applyFilters();
+    }
+    
+    // Toggle map view functionality
+    function toggleMapView() {
+      var element = document.getElementById('map-container');
+      
+      if (element) {
+        if (element.style.display === 'none' || element.style.display === '') {
+          element.style.display = 'block';
+        } else {
+          element.style.display = 'none';
+        }
+      }
+    }
+    
+    // Initialize map (placeholder for Google Maps integration)
+    function initializeMap() {
+      // This is where Google Maps initialization would go
+    }
+    
+    // ABSOLUTE SIMPLEST POSSIBLE TEST FUNCTION
+    function toggleAdvancedSearch() {
+      console.log('toggleAdvancedSearch() called');
+      var element = document.getElementById('advanced-filters');
+      if (element) {
+        if (element.style.display === 'none' || element.style.display === '') {
+          element.style.display = 'block';
+          document.getElementById('advanced-search-text').textContent = 'Hide Advanced';
+        } else {
+          element.style.display = 'none';
+          document.getElementById('advanced-search-text').textContent = 'Advanced Search';
+        }
+      }
+    }
+    
+    // Expand Map in Container
+    function expandMapInContainer() {
+      console.log('expandMapInContainer() called');
+      // Hide other sections first
+      document.getElementById('advanced-filters').style.display = 'none';
+      document.getElementById('filters-section').style.display = 'none';
+      
+      var mapSection = document.getElementById('map-section');
+      if (mapSection.style.display === 'none' || mapSection.style.display === '') {
+        mapSection.style.display = 'block';
+        document.getElementById('map-toggle-text').textContent = 'Hide Map';
+      } else {
+        mapSection.style.display = 'none';
+        document.getElementById('map-toggle-text').textContent = 'Show Map';
+      }
+    }
+    
+    // Expand Filters in Container
+    function expandFiltersInContainer() {
+      console.log('expandFiltersInContainer() called');
+      // Hide other sections first
+      document.getElementById('advanced-filters').style.display = 'none';
+      document.getElementById('map-section').style.display = 'none';
+      
+      var filtersSection = document.getElementById('filters-section');
+      if (filtersSection.style.display === 'none' || filtersSection.style.display === '') {
+        filtersSection.style.display = 'block';
+      } else {
+        filtersSection.style.display = 'none';
+      }
+    }
+    
+    // Clear all filters
+    function clearAllFilters() {
+      // Clear text inputs
+      document.getElementById('search-input').value = '';
+      document.getElementById('min-price').value = '';
+      document.getElementById('max-price').value = '';
+      
+      // Reset selects
+      document.getElementById('bedrooms-filter').value = '';
+      document.getElementById('bathrooms-filter').value = '';
+      document.getElementById('pet-filter').value = '';
+      document.getElementById('furnished-filter').value = '';
+      document.getElementById('parking-filter').value = '';
+      
+      // Reset checkboxes
+      const checkboxes = ['amenity-wifi', 'amenity-laundry', 'amenity-ac', 'amenity-balcony', 'amenity-transport', 'amenity-gym', 'amenity-dishwasher', 'amenity-elevator'];
+      checkboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) checkbox.checked = false;
+      });
+      
+      // Reset price slider
+      const priceSlider = document.getElementById('price-range');
+      const priceDisplay = document.getElementById('price-display');
+      priceSlider.value = 1000;
+      priceDisplay.textContent = '€200 - €2000';
+      
+      // Reapply filters
       applyFilters();
     }
     
@@ -1280,7 +2378,25 @@
       const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
       const minPrice = parseFloat(document.getElementById('min-price').value) || 0;
       const maxPrice = parseFloat(document.getElementById('max-price').value) || Infinity;
-      const minBedrooms = parseInt(document.getElementById('bedrooms-filter').value) || 0;
+      
+      // Room filters
+      const bedrooms = document.getElementById('bedrooms-filter').value;
+      const bathrooms = document.getElementById('bathrooms-filter').value;
+      
+      // Property filters
+      const petPolicy = document.getElementById('pet-filter').value;
+      const furnished = document.getElementById('furnished-filter').value;
+      const parking = document.getElementById('parking-filter').value;
+      
+      // Amenity filters
+      const needsWifi = document.getElementById('amenity-wifi').checked;
+      const needsLaundry = document.getElementById('amenity-laundry').checked;
+      const needsAC = document.getElementById('amenity-ac').checked;
+      const needsBalcony = document.getElementById('amenity-balcony').checked;
+      const needsTransport = document.getElementById('amenity-transport').checked;
+      const needsGym = document.getElementById('amenity-gym').checked;
+      const needsDishwasher = document.getElementById('amenity-dishwasher').checked;
+      const needsElevator = document.getElementById('amenity-elevator').checked;
       
       filteredApartments = apartmentsData.filter(apartment => {
         // Search term filter
@@ -1293,40 +2409,82 @@
         // Price range filter
         const matchesPrice = apartment.price >= minPrice && apartment.price <= maxPrice;
         
-        // Bedrooms filter
-        const matchesBedrooms = minBedrooms === 0 || apartment.bedrooms >= minBedrooms;
+        // Room filters
+        const matchesBedrooms = !bedrooms || 
+          (bedrooms === '4' ? apartment.bedrooms >= 4 : apartment.bedrooms == bedrooms);
+        const matchesBathrooms = !bathrooms || 
+          (bathrooms === '3' ? apartment.bathrooms >= 3 : apartment.bathrooms == bathrooms);
         
-        return matchesSearch && matchesPrice && matchesBedrooms;
+        // Property filters
+        const matchesPets = !petPolicy || apartment.petPolicy === petPolicy;
+        const matchesFurnished = !furnished || apartment.furnished === furnished;
+        const matchesParking = !parking || apartment.parking === parking;
+        
+        // Amenity filters
+        const matchesAmenities = 
+          (!needsWifi || apartment.amenities?.includes('wifi')) &&
+          (!needsLaundry || apartment.amenities?.includes('laundry')) &&
+          (!needsAC || apartment.amenities?.includes('ac')) &&
+          (!needsBalcony || apartment.amenities?.includes('balcony')) &&
+          (!needsTransport || apartment.amenities?.includes('transport')) &&
+          (!needsGym || apartment.amenities?.includes('gym')) &&
+          (!needsDishwasher || apartment.amenities?.includes('dishwasher')) &&
+          (!needsElevator || apartment.amenities?.includes('elevator'));
+        
+        return matchesSearch && matchesPrice && matchesBedrooms && matchesBathrooms && 
+               matchesPets && matchesFurnished && matchesParking && matchesAmenities;
       });
       
       // Update display
       renderApartments(filteredApartments);
-      updateResultsSummary(filteredApartments.length, apartmentsData.length);
+      updateFilterSummary(filteredApartments.length, apartmentsData.length);
     }
     
-    // Update results summary
-    function updateResultsSummary(filtered, total) {
-      const summary = document.getElementById('results-summary');
-      if (filtered === total) {
-        summary.innerHTML = `<i class="fa fa-home"></i> Showing all ${total} apartments`;
-      } else {
-        summary.innerHTML = `<i class="fa fa-filter"></i> Showing ${filtered} of ${total} apartments`;
-      }
-      
-      // Add filter indicators
+    // Update filter summary
+    function updateFilterSummary(filtered, total) {
+      const summary = document.getElementById('filter-summary');
       const activeFilters = [];
+      
+      // Check active filters
       const searchTerm = document.getElementById('search-input').value.trim();
       const minPrice = document.getElementById('min-price').value;
       const maxPrice = document.getElementById('max-price').value;
       const bedrooms = document.getElementById('bedrooms-filter').value;
+      const bathrooms = document.getElementById('bathrooms-filter').value;
+      const petPolicy = document.getElementById('pet-filter').value;
+      const furnished = document.getElementById('furnished-filter').value;
+      const parking = document.getElementById('parking-filter').value;
       
+      // Count checked amenities
+      const checkedAmenities = ['amenity-wifi', 'amenity-laundry', 'amenity-ac', 'amenity-balcony', 'amenity-transport', 'amenity-gym', 'amenity-dishwasher', 'amenity-elevator']
+        .filter(id => document.getElementById(id).checked).length;
+      
+      // Build summary
       if (searchTerm) activeFilters.push(`Search: "${searchTerm}"`);
-      if (minPrice || maxPrice) activeFilters.push(`Price: ${minPrice || '0'}-${maxPrice || '∞'}€`);
-      if (bedrooms) activeFilters.push(`${bedrooms}+ bedrooms`);
+      if (minPrice || maxPrice) activeFilters.push(`Price: €${minPrice || '0'} - €${maxPrice || '∞'}`);
+      if (bedrooms) activeFilters.push(`${bedrooms}${bedrooms === '4' ? '+' : ''} bedrooms`);
+      if (bathrooms) activeFilters.push(`${bathrooms}${bathrooms === '3' ? '+' : ''} bathrooms`);
+      if (petPolicy) activeFilters.push(`${petPolicy.replace('-', ' ')}`);
+      if (furnished) activeFilters.push(furnished);
+      if (parking) activeFilters.push(`${parking} parking`);
+      if (checkedAmenities > 0) activeFilters.push(`${checkedAmenities} amenity filter${checkedAmenities > 1 ? 's' : ''}`);
       
-      if (activeFilters.length > 0) {
-        summary.innerHTML += `<br><small style="color: var(--primary); font-weight: 600;">Active filters: ${activeFilters.join(', ')}</small>`;
+      // Display summary
+      if (filtered === total) {
+        summary.innerHTML = `<i class="fas fa-home"></i> Showing all ${total} apartments`;
+      } else {
+        summary.innerHTML = `<i class="fas fa-filter"></i> Showing ${filtered} of ${total} apartments`;
+        if (activeFilters.length > 0) {
+          summary.innerHTML += `<br><small style="color: var(--primary); font-weight: 500; margin-top: 4px; display: block;">
+            Active filters: ${activeFilters.join(', ')}
+          </small>`;
+        }
       }
+    }
+    
+    // Update results summary (keeping old function for compatibility)
+    function updateResultsSummary(filtered, total) {
+      updateFilterSummary(filtered, total);
     }
     
     // Apply modal filters
@@ -1550,6 +2708,70 @@
         `;
       }).join('');
     }
+    
+    // Unified Display Functions for Map and Advanced Search
+    function showMapView() {
+      const container = document.getElementById('display-container');
+      const mapContent = document.getElementById('map-view-content');
+      const searchContent = document.getElementById('advanced-search-content');
+      
+      // Show map content, hide search content
+      mapContent.style.display = 'block';
+      searchContent.style.display = 'none';
+      
+      // Show container with smooth animation
+      container.style.display = 'block';
+      setTimeout(() => {
+        container.style.maxHeight = '500px';
+      }, 10);
+    }
+    
+    function showAdvancedSearch() {
+      const container = document.getElementById('display-container');
+      const mapContent = document.getElementById('map-view-content');
+      const searchContent = document.getElementById('advanced-search-content');
+      
+      // Show search content, hide map content
+      searchContent.style.display = 'block';
+      mapContent.style.display = 'none';
+      
+      // Show container with smooth animation
+      container.style.display = 'block';
+      setTimeout(() => {
+        container.style.maxHeight = '600px';
+      }, 10);
+    }
+    
+    function hideDisplayContainer() {
+      const container = document.getElementById('display-container');
+      
+      // Animate out
+      container.style.maxHeight = '0';
+      setTimeout(() => {
+        container.style.display = 'none';
+      }, 300);
+    }
+    
+    function applyAdvancedFilters() {
+      // Collect values from advanced search form
+      console.log('Advanced filters applied');
+      hideDisplayContainer();
+      // Add your filter logic here
+    }
+    
+    function clearAdvancedFilters() {
+      // Clear all advanced search form values
+      const selects = document.querySelectorAll('#advanced-search-content select');
+      const checkboxes = document.querySelectorAll('#advanced-search-content input[type="checkbox"]');
+      const inputs = document.querySelectorAll('#advanced-search-content input[type="number"]');
+      
+      selects.forEach(select => select.value = '');
+      checkboxes.forEach(checkbox => checkbox.checked = false);
+      inputs.forEach(input => input.value = '');
+      
+      console.log('Advanced filters cleared');
+    }
+
   </script>
 
   <!-- SichrPlace Footer -->

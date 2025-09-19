@@ -28,12 +28,39 @@
 
     body { font-family: var(--body-font); background: var(--secondary); color: var(--text); margin: 0; }
     header { 
-      background: var(--primary); 
-      color: #fff; 
-      padding: 24px; 
-      font-family: var(--heading-font); 
-      font-size: 1.5rem; 
-      font-weight: 600;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      padding: 0 40px;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-text {
+      display: flex;
+      align-items: baseline;
+      font-family: var(--heading-font);
+      font-weight: 700;
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .sichr-text {
+      color: var(--primary);
+    }
+
+    .place-text {
+      color: var(--primary);
     }
     nav { 
       background: var(--card); 
@@ -80,7 +107,6 @@
       background: var(--primary); 
       color: #fff; 
       border: none; 
-      " 
       padding: 8px 18px; 
       font-weight: 600; 
       cursor: pointer; 
@@ -118,7 +144,6 @@
       color: #fff;
       border: none;
       padding: 12px 28px;
-      "
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
@@ -130,7 +155,6 @@
     .form-container {
       background: var(--card);
       padding: 32px;
-      "
       box-shadow: var(--shadow);
     }
     .search-btn {
@@ -138,7 +162,6 @@
       color: white !important;
       border: none !important;
       padding: 8px 15px !important;
-      "
       margin-left: 5px !important;
       cursor: pointer !important;
     }
@@ -147,7 +170,6 @@
       color: white !important;
       border: none !important;
       padding: 10px !important;
-      "
       cursor: pointer !important;
       font-weight: 600 !important;
     }
@@ -173,7 +195,6 @@
       padding: 10px;
       margin-top: 5px;
       border: 1px solid #d1d5db;
-      "
       font-family: inherit;
       font-size: 15px;
     }
@@ -187,7 +208,6 @@
       background-color: #10B981;
       color: white;
       border: none;
-      "
       cursor: pointer;
       font-size: 15px;
     }
@@ -198,7 +218,6 @@
       background: #e0f7fa;
       color: #2563eb;
       padding: 18px;
-      "
       margin-top: 18px;
       font-size: 16px;
       font-weight: 500;
@@ -208,11 +227,16 @@
 </head>
 <body>
   <header>
-    <a href="index.html" class="logo" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: #2563EB; font-weight: 700;">
-
-    </a>
+    <div class="header-logo">
+      <a href="index.html" class="logo" aria-label="SichrPlace">
+        <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:48px;width:auto;display:block;">
+        <div class="brand-text">
+          <span class="sichr-text">Sichr</span><span class="place-text">Place</span>
+        </div>
+      </a>
+    </div>
     <div style="display: flex; align-items: center; gap: 16px;">
-      <span><i class="fa fa-user-shield"></i> Admin Dashboard</span>
+      <span style="color: var(--primary); font-weight: 600;"><i class="fa fa-user-shield"></i> Admin Dashboard</span>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </header>

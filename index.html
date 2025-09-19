@@ -1,12 +1,173 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SichrPlace Demo</title>
+    <title>SichrPlace - Verified Student Apartments in Germany</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563EB;
+            --secondary: #F9FAFB;
+            --accent: #40E0D0;
+            --muted: #6B7280;
+            --border: #E5E7EB;
+            --shadow: 0 2px 12px rgba(0,0,0,0.06);
+            --radius: 18px;
+            --card: #FFFFFF;
+            --background: #FFFFFF;
+            --foreground: #222222;
+            --heading-font: "Poppins", sans-serif;
+            --body-font: "Roboto", sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            font-family: var(--body-font);
+            background: var(--secondary);
+            color: var(--foreground);
+            min-height: 100vh;
+        }
+        
+        header {
+            background: var(--card);
+            box-shadow: var(--shadow);
+            padding: 0 40px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+        .sichrplace-text {
+            font-family: var(--heading-font);
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: var(--primary);
+            line-height: 1;
+        }
+        .certified-badge {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-top: 2px;
+        }
+        .logo img {
+            height: 40px;
+            width: auto;
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.1));
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--heading-font);
+            font-weight: 600;
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-decoration: none;
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            border: none;
+            box-shadow: none;
+        }
+        header nav {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            position: relative;
+        }
+        header nav a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-family: var(--heading-font);
+            font-size: 1rem;
+            transition: color 0.2s;
+        }
+        header nav a:hover {
+            color: var(--accent);
+        }
+        .cart-icon {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .cart-icon:hover {
+            background: var(--primary) !important;
+            color: white !important;
+            transform: translateY(-2px);
+        }
+        .cart-icon i {
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            padding: 40px;
+            text-align: center;
+        }
+        h1 {
+            font-family: var(--heading-font);
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.1rem;
+            color: var(--muted);
+            margin-bottom: 15px;
+        }
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+        a:hover {
+            color: var(--accent);
+        }
+    </style>
 </head>
 <body>
-    <h1>🏠 SichrPlace - Student Apartment Platform</h1>
-    <p>Welcome to SichrPlace Demo!</p>
-    <p>This is a test page to verify GitHub Pages is working.</p>
-    <p><a href="https://github.com/omer3kale/SichrPlace77">View Repository</a></p>
+    <header>
+        <div class="header-logo">
+            <a href="index.html" class="logo" aria-label="SichrPlace">
+                <img src="frontend/img/sichrplace-logo.jpg" alt="SichrPlace logo" style="height:48px;width:auto;display:block;">
+                <span class="brand-text">
+                    <span class="sichrplace-text">SichrPlace</span>
+                    <span class="certified-badge" style="display:none;">Verified</span>
+                </span>
+            </a>
+        </div>
+        <nav>
+            <a href="frontend/login.html">Login</a>
+            <a href="frontend/apartments-listing.html">Apartments</a>
+            <a href="frontend/marketplace.html" class="cart-icon" title="Marketplace" aria-label="Marketplace">
+                <i class="fas fa-shopping-cart"></i>
+            </a>
+        </nav>
+    </header>
+    
+    <div class="main-content">
+        <h1>🏠 SichrPlace - Student Apartment Platform</h1>
+        <p>Welcome to SichrPlace - Your trusted platform for verified student apartments in Germany!</p>
+        <p>This is the main landing page. Visit our <a href="frontend/index.html">full platform</a> to explore apartments.</p>
+        <p><a href="https://github.com/omer3kale/SichrPlace77">View Repository</a></p>
+    </div>
 </body>
 </html>
