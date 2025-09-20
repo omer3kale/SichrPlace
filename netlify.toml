@@ -2,7 +2,7 @@
   base = "/"
   publish = "frontend"
   command = "echo 'Frontend ready for deployment'"
-  functions = "functions"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
