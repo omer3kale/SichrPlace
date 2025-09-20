@@ -14,6 +14,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/simple-health"
+  to = "/.netlify/functions/simple-health"
+  status = 200
+
+[[redirects]]
   from = "/api/paypal-config"
   to = "/.netlify/functions/paypal-config"
   status = 200
@@ -38,11 +43,12 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# SPA redirect - all other routes to index.html
+# SPA redirect - all other routes to index.html (excluding API and function calls)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
 
 [functions]
   directory = "netlify/functions"
