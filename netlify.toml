@@ -1,7 +1,7 @@
 [build]
   base = "/"
   publish = "frontend"
-  command = "echo 'Frontend ready for deployment'"
+  command = "echo 'Building functions and frontend...' && cd netlify/functions && npm install"
   functions = "netlify/functions"
 
 [build.environment]
