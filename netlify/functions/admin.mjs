@@ -1,5 +1,5 @@
-const { createClient } = require('@supabase/supabase-js');
-const jwt = require('jsonwebtoken');
+import { createClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -21,7 +21,7 @@ const isAdmin = (user) => {
   return user && (user.role === 'admin' || user.role === 'super_admin');
 };
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {

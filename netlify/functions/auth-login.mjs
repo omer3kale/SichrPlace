@@ -1,6 +1,6 @@
-const { createClient } = require('@supabase/supabase-js');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+import { createClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -8,7 +8,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {
