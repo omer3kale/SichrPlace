@@ -1,7 +1,6 @@
 [build]
   base = "/"
   publish = "frontend"
-  command = "echo 'Build completed successfully'"
   functions = "netlify/functions"
 
 [build.environment]

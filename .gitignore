@@ -171,6 +171,8 @@ video-generator.html
 .env.staging
 .env.supabase.template
 backend/config/*.env
+NETLIFY_ENV_VARS.txt
+NETLIFY_ENV_VARS_COMPLETE.txt
 
 # Local Netlify folder
 .netlify
