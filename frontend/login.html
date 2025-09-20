@@ -54,11 +54,11 @@
             font-family: var(--body-font);
             background: linear-gradient(135deg, var(--primary-lighter) 0%, var(--secondary) 50%, var(--primary-light) 100%);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
             color: var(--text);
             position: relative;
             overflow-x: hidden;
+            margin: 0;
+            padding: 0;
         }
 
         body::before {
@@ -86,7 +86,13 @@
             align-items: center;
             justify-content: center;
             padding: 2rem;
-            min-height: calc(100vh - 80px);
+            min-height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
         }
 
         .login-card {
@@ -104,10 +110,11 @@
 
         .sichrplace-logo {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             font-family: var(--heading-font);
             font-weight: 700;
             font-size: 1.8rem;
+            padding-top: 0.5rem;
         }
 
         .login-card::before {
@@ -122,7 +129,7 @@
 
         .logo-section {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         .logo-section h1 {
@@ -307,22 +314,18 @@
             }
             
             .login-card {
-                padding: 2rem;
+                padding: 2rem 1.5rem;
+                max-width: 95%;
+            }
+            
+            .sichrplace-logo {
+                font-size: 1.5rem;
             }
         }
         
-        /* Header Styles */
+        /* Header Styles - Hidden for centered login */
         header {
-            background: var(--card);
-            box-shadow: var(--shadow);
-            padding: 0 40px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            display: none;
         }
         .header-logo {
             display: flex;
