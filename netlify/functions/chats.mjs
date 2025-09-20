@@ -169,7 +169,8 @@ export const handler = async (event, context) => {
     }
 
     if (event.httpMethod === 'POST') {
-      const { apartmentId, receiverId, message } = JSON.parse(event.body);
+      const { apartmentId, message } = JSON.parse(event.body);
+      let { receiverId } = JSON.parse(event.body);
 
       if (!message || (!apartmentId && !receiverId)) {
         return {
