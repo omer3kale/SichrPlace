@@ -1,0 +1,359 @@
+{
+  "summary": {
+    "passed": 56,
+    "failed": 0,
+    "skipped": 0,
+    "total": 56,
+    "duration": 19.312,
+    "successRate": "100.0"
+  },
+  "details": [
+    {
+      "name": "auth-login",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:31.728Z"
+    },
+    {
+      "name": "auth-register",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:31.867Z"
+    },
+    {
+      "name": "auth-me",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:32.278Z"
+    },
+    {
+      "name": "auth-forgot-password",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:32.511Z"
+    },
+    {
+      "name": "auth-reset-password",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:32.753Z"
+    },
+    {
+      "name": "auth-verify",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:32.991Z"
+    },
+    {
+      "name": "auth-verify-reset-token",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:33.292Z"
+    },
+    {
+      "name": "auth-resend-verification",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:33.584Z"
+    },
+    {
+      "name": "apartments",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:34.036Z"
+    },
+    {
+      "name": "add-property",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:34.282Z"
+    },
+    {
+      "name": "search",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:34.570Z"
+    },
+    {
+      "name": "advanced-search",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:34.818Z"
+    },
+    {
+      "name": "favorites",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:35.070Z"
+    },
+    {
+      "name": "recently-viewed",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:35.411Z"
+    },
+    {
+      "name": "conversations",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:35.653Z"
+    },
+    {
+      "name": "messages",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:36.032Z"
+    },
+    {
+      "name": "chats",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:36.269Z"
+    },
+    {
+      "name": "realtime-chat",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:36.709Z"
+    },
+    {
+      "name": "notifications",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:37.231Z"
+    },
+    {
+      "name": "admin",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:37.574Z"
+    },
+    {
+      "name": "system-administration",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:37.831Z"
+    },
+    {
+      "name": "user-management",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:38.191Z"
+    },
+    {
+      "name": "content-moderation",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:38.647Z"
+    },
+    {
+      "name": "analytics-stats",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:38.992Z"
+    },
+    {
+      "name": "revenue-analytics",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:39.377Z"
+    },
+    {
+      "name": "user-engagement-analytics",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:39.826Z"
+    },
+    {
+      "name": "performance-overview",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:40.093Z"
+    },
+    {
+      "name": "user-activity-tracking",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:40.434Z"
+    },
+    {
+      "name": "maps-geocode",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:40.881Z"
+    },
+    {
+      "name": "maps-reverse-geocode",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:41.149Z"
+    },
+    {
+      "name": "maps-distance",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:41.402Z"
+    },
+    {
+      "name": "maps-nearby-places",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:41.727Z"
+    },
+    {
+      "name": "maps-search-by-location",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:41.977Z"
+    },
+    {
+      "name": "maps-place-types",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:42.444Z"
+    },
+    {
+      "name": "gdpr-compliance",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:42.693Z"
+    },
+    {
+      "name": "gdpr-tracking",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:42.920Z"
+    },
+    {
+      "name": "consent-management",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:43.518Z"
+    },
+    {
+      "name": "privacy-controls",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:43.978Z"
+    },
+    {
+      "name": "paypal-integration",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:44.333Z"
+    },
+    {
+      "name": "paypal-payments",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:44.564Z"
+    },
+    {
+      "name": "booking-requests",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:44.906Z"
+    },
+    {
+      "name": "viewing-requests",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:45.164Z"
+    },
+    {
+      "name": "reviews",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:45.419Z"
+    },
+    {
+      "name": "email-management",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:45.873Z"
+    },
+    {
+      "name": "email-notifications",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:46.105Z"
+    },
+    {
+      "name": "email-service",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:46.445Z"
+    },
+    {
+      "name": "file-upload",
+      "status": "PASS",
+      "message": "Status: 404",
+      "timestamp": "2025-09-22T08:41:46.687Z"
+    },
+    {
+      "name": "third-party-integrations",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:47.126Z"
+    },
+    {
+      "name": "user-profile",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:47.478Z"
+    },
+    {
+      "name": "cache-management",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:47.933Z"
+    },
+    {
+      "name": "health",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:48.381Z"
+    },
+    {
+      "name": "simple-health",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:48.638Z"
+    },
+    {
+      "name": "system-health-check",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:49.076Z"
+    },
+    {
+      "name": "csrf-token",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:49.549Z"
+    },
+    {
+      "name": "hello",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:49.799Z"
+    },
+    {
+      "name": "test",
+      "status": "PASS",
+      "message": "Status: 200",
+      "timestamp": "2025-09-22T08:41:50.264Z"
+    }
+  ],
+  "config": {
+    "BASE_URL": "https://sichrplace.netlify.app",
+    "FUNCTIONS_PATH": "/.netlify/functions",
+    "TIMEOUT": 10000,
+    "TEST_USER": {
+      "email": "test@sichrplace.com",
+      "password": "TestPassword123!",
+      "username": "testuser"
+    }
+  },
+  "timestamp": "2025-09-22T08:41:50.379Z"
+}

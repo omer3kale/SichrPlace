@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SichrPlace Monitoring Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #3498db;
+            font-size: 1.4rem;
+        }
+
+        .overview-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-healthy { background: #27ae60; }
+        .status-warning { background: #f39c12; }
+        .status-error { background: #e74c3c; }
+
+        .service-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .service-item:last-child {
+            border-bottom: none;
+        }
+
+        .service-name {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .service-details {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .alert-item {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .alert-critical {
+            border-color: #e53e3e;
+            background: #fff5f5;
+        }
+
+        .alert-warning {
+            border-color: #dd6b20;
+            background: #fffaf0;
+        }
+
+        .recommendation-item {
+            background: #f7fafc;
+            border-left: 4px solid #4299e1;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .priority-high { border-left-color: #e53e3e; }
+        .priority-medium { border-left-color: #dd6b20; }
+        .priority-low { border-left-color: #38a169; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+            background: #fff5f5;
+            border-radius: 10px;
+        }
+
+        .refresh-info {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        .metric-bar {
+            background: #ecf0f1;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .overview-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 SichrPlace Monitoring Dashboard</h1>
+            <p class="subtitle">Real-time system monitoring and performance analytics</p>
+            <div id="last-updated"></div>
+        </div>
+
+        <div id="loading" class="loading">
+            <h3>Loading monitoring data...</h3>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <h3>Error loading monitoring data</h3>
+            <p id="error-message"></p>
+        </div>
+
+        <div id="dashboard-content" style="display: none;">
+            <div class="dashboard-grid">
+                <!-- Overview Card -->
+                <div class="card">
+                    <h2>📊 System Overview</h2>
+                    <div class="overview-stats" id="overview-stats">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Service Health Card -->
+                <div class="card">
+                    <h2>🔧 Service Health</h2>
+                    <div id="service-health">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Database Performance Card -->
+                <div class="card">
+                    <h2>🗄️ Database Performance</h2>
+                    <div id="database-performance">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Security Status Card -->
+                <div class="card">
+                    <h2>🔐 Security Status</h2>
+                    <div id="security-status">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Performance Metrics Card -->
+                <div class="card">
+                    <h2>⚡ Performance Metrics</h2>
+                    <div id="performance-metrics">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- External Services Card -->
+                <div class="card">
+                    <h2>🌐 External Services</h2>
+                    <div id="external-services">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Active Alerts Card -->
+                <div class="card">
+                    <h2>🚨 Active Alerts</h2>
+                    <div id="active-alerts">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- Recommendations Card -->
+                <div class="card">
+                    <h2>💡 Recommendations</h2>
+                    <div id="recommendations">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="refresh-info">
+            🔄 Dashboard refreshes every 60 seconds | Last update: <span id="refresh-time"></span>
+        </div>
+    </div>
+
+    <script>
+        async function loadMonitoringData() {
+            try {
+                const response = await fetch('/.netlify/functions/monitoring-dashboard');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                populateDashboard(data);
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading monitoring data:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+            }
+        }
+
+        function populateDashboard(data) {
+            // Update last updated time
+            document.getElementById('last-updated').textContent = 
+                `Last updated: ${new Date().toLocaleString()}`;
+            document.getElementById('refresh-time').textContent = 
+                new Date().toLocaleString();
+
+            // Overview stats
+            const overviewHtml = `
+                <div class="stat-item">
+                    <div class="stat-value">${data.overview.total_functions}</div>
+                    <div class="stat-label">Total Functions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.overview.healthy_functions}</div>
+                    <div class="stat-label">Healthy Functions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.overview.response_time_avg}</div>
+                    <div class="stat-label">Avg Response Time</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${data.overview.uptime_percentage}%</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
+            `;
+            document.getElementById('overview-stats').innerHTML = overviewHtml;
+
+            // Service health
+            let serviceHealthHtml = '';
+            data.function_health.forEach(service => {
+                const statusClass = service.status === 'healthy' ? 'status-healthy' : 
+                                  service.status === 'warning' ? 'status-warning' : 'status-error';
+                serviceHealthHtml += `
+                    <div class="service-item">
+                        <div>
+                            <span class="status-indicator ${statusClass}"></span>
+                            <span class="service-name">${service.name}</span>
+                        </div>
+                        <div class="service-details">${service.response_time}ms</div>
+                    </div>
+                `;
+            });
+            document.getElementById('service-health').innerHTML = serviceHealthHtml;
+
+            // Database performance
+            const dbStatusClass = data.database.status === 'healthy' ? 'status-healthy' : 'status-error';
+            const databaseHtml = `
+                <div class="service-item">
+                    <div>
+                        <span class="status-indicator ${dbStatusClass}"></span>
+                        <span class="service-name">Connection Status</span>
+                    </div>
+                    <div class="service-details">${data.database.status}</div>
+                </div>
+                <div class="service-item">
+                    <div class="service-name">Response Time</div>
+                    <div class="service-details">${data.database.response_time}</div>
+                </div>
+                <div class="service-item">
+                    <div class="service-name">Connection Pool</div>
+                    <div class="service-details">${data.database.connection_pool}</div>
+                </div>
+            `;
+            document.getElementById('database-performance').innerHTML = databaseHtml;
+
+            // Security status
+            const securityHtml = `
+                <div class="service-item">
+                    <div>
+                        <span class="status-indicator status-healthy"></span>
+                        <span class="service-name">Rate Limiting</span>
+                    </div>
+                    <div class="service-details">${data.security.rate_limiting.status}</div>
+                </div>
+                <div class="service-item">
+                    <div>
+                        <span class="status-indicator status-healthy"></span>
+                        <span class="service-name">Authentication</span>
+                    </div>
+                    <div class="service-details">${data.security.authentication.jwt_validation}</div>
+                </div>
+                <div class="service-item">
+                    <div>
+                        <span class="status-indicator status-healthy"></span>
+                        <span class="service-name">Input Validation</span>
+                    </div>
+                    <div class="service-details">${data.security.input_validation.status}</div>
+                </div>
+                <div class="service-item">
+                    <div>
+                        <span class="status-indicator status-healthy"></span>
+                        <span class="service-name">SSL Certificate</span>
+                    </div>
+                    <div class="service-details">Valid until ${data.security.ssl_certificate.expires}</div>
+                </div>
+            `;
+            document.getElementById('security-status').innerHTML = securityHtml;
+
+            // Performance metrics
+            const performanceHtml = `
+                <div class="service-item">
+                    <div class="service-name">Average Response Time</div>
+                    <div class="service-details">${data.performance.api_endpoints.avg_response_time}</div>
+                </div>
+                <div class="service-item">
+                    <div class="service-name">Error Rate</div>
+                    <div class="service-details">${data.performance.api_endpoints.error_rate}</div>
+                </div>
+                <div class="service-item">
+                    <div class="service-name">Cache Hit Rate</div>
+                    <div class="service-details">${data.performance.cdn.cache_hit_rate}</div>
+                </div>
+                <div class="service-item">
+                    <div class="service-name">Memory Usage</div>
+                    <div class="service-details">${data.performance.functions.memory_usage}</div>
+                </div>
+            `;
+            document.getElementById('performance-metrics').innerHTML = performanceHtml;
+
+            // External services
+            let externalServicesHtml = '';
+            Object.entries(data.external_services).forEach(([service, details]) => {
+                const statusClass = details.status === 'operational' ? 'status-healthy' : 'status-error';
+                externalServicesHtml += `
+                    <div class="service-item">
+                        <div>
+                            <span class="status-indicator ${statusClass}"></span>
+                            <span class="service-name">${service.charAt(0).toUpperCase() + service.slice(1).replace('_', ' ')}</span>
+                        </div>
+                        <div class="service-details">${details.status}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('external-services').innerHTML = externalServicesHtml;
+
+            // Active alerts
+            let alertsHtml = '';
+            if (data.alerts.length === 0) {
+                alertsHtml = '<div style="text-align: center; color: #27ae60; padding: 20px;">✅ No active alerts</div>';
+            } else {
+                data.alerts.forEach(alert => {
+                    const alertClass = alert.type === 'critical' ? 'alert-critical' : 'alert-warning';
+                    alertsHtml += `
+                        <div class="alert-item ${alertClass}">
+                            <strong>${alert.service}:</strong> ${alert.message}
+                            <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                                ${new Date(alert.timestamp).toLocaleString()}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('active-alerts').innerHTML = alertsHtml;
+
+            // Recommendations
+            let recommendationsHtml = '';
+            data.recommendations.forEach(rec => {
+                recommendationsHtml += `
+                    <div class="recommendation-item priority-${rec.priority}">
+                        <strong>${rec.title}</strong>
+                        <p style="margin: 8px 0; color: #666;">${rec.description}</p>
+                        <div style="font-size: 0.9rem;">
+                            <strong>Action:</strong> ${rec.action}
+                        </div>
+                        <div style="font-size: 0.9rem; color: #666;">
+                            <strong>Time:</strong> ${rec.estimated_time}
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('recommendations').innerHTML = recommendationsHtml;
+        }
+
+        // Load data on page load
+        loadMonitoringData();
+
+        // Refresh every 60 seconds
+        setInterval(loadMonitoringData, 60000);
+    </script>
+</body>
+</html>

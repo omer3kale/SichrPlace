@@ -1,0 +1,359 @@
+{
+  "summary": {
+    "passed": 0,
+    "failed": 56,
+    "skipped": 0,
+    "total": 56,
+    "duration": 13.267,
+    "successRate": "0.0"
+  },
+  "details": [
+    {
+      "name": "auth-login",
+      "status": "FAIL",
+      "message": "Unexpected status: 502",
+      "timestamp": "2025-09-22T07:51:43.581Z"
+    },
+    {
+      "name": "auth-register",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:43.702Z"
+    },
+    {
+      "name": "auth-me",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:43.932Z"
+    },
+    {
+      "name": "auth-forgot-password",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:44.161Z"
+    },
+    {
+      "name": "auth-reset-password",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:44.400Z"
+    },
+    {
+      "name": "auth-verify",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:44.631Z"
+    },
+    {
+      "name": "auth-verify-reset-token",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:44.864Z"
+    },
+    {
+      "name": "auth-resend-verification",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:45.101Z"
+    },
+    {
+      "name": "apartments",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:45.335Z"
+    },
+    {
+      "name": "add-property",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:45.565Z"
+    },
+    {
+      "name": "search",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:45.796Z"
+    },
+    {
+      "name": "advanced-search",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:46.052Z"
+    },
+    {
+      "name": "favorites",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:46.278Z"
+    },
+    {
+      "name": "recently-viewed",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:46.501Z"
+    },
+    {
+      "name": "conversations",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:46.735Z"
+    },
+    {
+      "name": "messages",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:46.976Z"
+    },
+    {
+      "name": "chats",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:47.201Z"
+    },
+    {
+      "name": "realtime-chat",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:47.431Z"
+    },
+    {
+      "name": "notifications",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:47.674Z"
+    },
+    {
+      "name": "admin",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:47.898Z"
+    },
+    {
+      "name": "system-administration",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:48.132Z"
+    },
+    {
+      "name": "user-management",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:48.367Z"
+    },
+    {
+      "name": "content-moderation",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:48.597Z"
+    },
+    {
+      "name": "analytics-stats",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:48.833Z"
+    },
+    {
+      "name": "revenue-analytics",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:49.067Z"
+    },
+    {
+      "name": "user-engagement-analytics",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:49.298Z"
+    },
+    {
+      "name": "performance-overview",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:49.533Z"
+    },
+    {
+      "name": "user-activity-tracking",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:49.768Z"
+    },
+    {
+      "name": "maps-geocode",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:49.995Z"
+    },
+    {
+      "name": "maps-reverse-geocode",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:50.217Z"
+    },
+    {
+      "name": "maps-distance",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:50.450Z"
+    },
+    {
+      "name": "maps-nearby-places",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:50.684Z"
+    },
+    {
+      "name": "maps-search-by-location",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:50.916Z"
+    },
+    {
+      "name": "maps-place-types",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:51.156Z"
+    },
+    {
+      "name": "gdpr-compliance",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:51.384Z"
+    },
+    {
+      "name": "gdpr-tracking",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:51.619Z"
+    },
+    {
+      "name": "consent-management",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:51.857Z"
+    },
+    {
+      "name": "privacy-controls",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:52.090Z"
+    },
+    {
+      "name": "paypal-integration",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:52.313Z"
+    },
+    {
+      "name": "paypal-payments",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:52.554Z"
+    },
+    {
+      "name": "booking-requests",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:52.787Z"
+    },
+    {
+      "name": "viewing-requests",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:53.016Z"
+    },
+    {
+      "name": "reviews",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:53.240Z"
+    },
+    {
+      "name": "email-management",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:53.470Z"
+    },
+    {
+      "name": "email-notifications",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:53.734Z"
+    },
+    {
+      "name": "email-service",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:53.967Z"
+    },
+    {
+      "name": "file-upload",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:54.193Z"
+    },
+    {
+      "name": "third-party-integrations",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:54.416Z"
+    },
+    {
+      "name": "user-profile",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:54.650Z"
+    },
+    {
+      "name": "cache-management",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:54.891Z"
+    },
+    {
+      "name": "health",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:55.119Z"
+    },
+    {
+      "name": "simple-health",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:55.372Z"
+    },
+    {
+      "name": "system-health-check",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:55.605Z"
+    },
+    {
+      "name": "csrf-token",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:55.839Z"
+    },
+    {
+      "name": "hello",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:56.071Z"
+    },
+    {
+      "name": "test",
+      "status": "FAIL",
+      "message": "Status: 502",
+      "timestamp": "2025-09-22T07:51:56.304Z"
+    }
+  ],
+  "config": {
+    "BASE_URL": "https://0d051410--sichrplace.netlify.live",
+    "FUNCTIONS_PATH": "/.netlify/functions",
+    "TIMEOUT": 10000,
+    "TEST_USER": {
+      "email": "test@sichrplace.com",
+      "password": "TestPassword123!",
+      "username": "testuser"
+    }
+  },
+  "timestamp": "2025-09-22T07:51:56.419Z"
+}

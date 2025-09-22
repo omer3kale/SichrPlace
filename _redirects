@@ -7,5 +7,5 @@
 /api/upload-apartment /.netlify/functions/upload-apartment 200
 /api/health /.netlify/functions/health 200
 
-# Frontend routing - serve index.html for all routes
-/* /index.html 200
+# TEMPORARY: Removed catch-all redirect to test functions
+/api/* /.netlify/functions/:splat 200

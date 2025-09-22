@@ -1,0 +1,359 @@
+{
+  "summary": {
+    "passed": 0,
+    "failed": 56,
+    "skipped": 0,
+    "total": 56,
+    "duration": 6.171,
+    "successRate": "0.0"
+  },
+  "details": [
+    {
+      "name": "auth-login",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:31.442Z"
+    },
+    {
+      "name": "auth-register",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:31.446Z"
+    },
+    {
+      "name": "auth-me",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:31.555Z"
+    },
+    {
+      "name": "auth-forgot-password",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:31.671Z"
+    },
+    {
+      "name": "auth-reset-password",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:31.787Z"
+    },
+    {
+      "name": "auth-verify",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:31.904Z"
+    },
+    {
+      "name": "auth-verify-reset-token",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:32.021Z"
+    },
+    {
+      "name": "auth-resend-verification",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:32.138Z"
+    },
+    {
+      "name": "apartments",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:32.256Z"
+    },
+    {
+      "name": "add-property",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:32.371Z"
+    },
+    {
+      "name": "search",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:32.488Z"
+    },
+    {
+      "name": "advanced-search",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:32.605Z"
+    },
+    {
+      "name": "favorites",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:32.721Z"
+    },
+    {
+      "name": "recently-viewed",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:32.840Z"
+    },
+    {
+      "name": "conversations",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:32.954Z"
+    },
+    {
+      "name": "messages",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:33.072Z"
+    },
+    {
+      "name": "chats",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:33.188Z"
+    },
+    {
+      "name": "realtime-chat",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:33.305Z"
+    },
+    {
+      "name": "notifications",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:33.420Z"
+    },
+    {
+      "name": "admin",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:33.522Z"
+    },
+    {
+      "name": "system-administration",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:33.634Z"
+    },
+    {
+      "name": "user-management",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:33.746Z"
+    },
+    {
+      "name": "content-moderation",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:33.858Z"
+    },
+    {
+      "name": "analytics-stats",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:33.968Z"
+    },
+    {
+      "name": "revenue-analytics",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:34.080Z"
+    },
+    {
+      "name": "user-engagement-analytics",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:34.191Z"
+    },
+    {
+      "name": "performance-overview",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:34.302Z"
+    },
+    {
+      "name": "user-activity-tracking",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:34.405Z"
+    },
+    {
+      "name": "maps-geocode",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:34.519Z"
+    },
+    {
+      "name": "maps-reverse-geocode",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:34.620Z"
+    },
+    {
+      "name": "maps-distance",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:34.724Z"
+    },
+    {
+      "name": "maps-nearby-places",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:34.838Z"
+    },
+    {
+      "name": "maps-search-by-location",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:34.956Z"
+    },
+    {
+      "name": "maps-place-types",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:35.069Z"
+    },
+    {
+      "name": "gdpr-compliance",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:35.172Z"
+    },
+    {
+      "name": "gdpr-tracking",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:35.289Z"
+    },
+    {
+      "name": "consent-management",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:35.403Z"
+    },
+    {
+      "name": "privacy-controls",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:35.506Z"
+    },
+    {
+      "name": "paypal-integration",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:35.622Z"
+    },
+    {
+      "name": "paypal-payments",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:35.735Z"
+    },
+    {
+      "name": "booking-requests",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:35.839Z"
+    },
+    {
+      "name": "viewing-requests",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:35.953Z"
+    },
+    {
+      "name": "reviews",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:36.055Z"
+    },
+    {
+      "name": "email-management",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:36.171Z"
+    },
+    {
+      "name": "email-notifications",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:36.273Z"
+    },
+    {
+      "name": "email-service",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:36.389Z"
+    },
+    {
+      "name": "file-upload",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:36.503Z"
+    },
+    {
+      "name": "third-party-integrations",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:36.620Z"
+    },
+    {
+      "name": "user-profile",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:36.722Z"
+    },
+    {
+      "name": "cache-management",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:36.838Z"
+    },
+    {
+      "name": "health",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:36.942Z"
+    },
+    {
+      "name": "simple-health",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:37.057Z"
+    },
+    {
+      "name": "system-health-check",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:37.160Z"
+    },
+    {
+      "name": "csrf-token",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:37.274Z"
+    },
+    {
+      "name": "hello",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:37.375Z"
+    },
+    {
+      "name": "test",
+      "status": "FAIL",
+      "message": "Error: ",
+      "timestamp": "2025-09-22T07:50:37.488Z"
+    }
+  ],
+  "config": {
+    "BASE_URL": "http://localhost:8888",
+    "FUNCTIONS_PATH": "/.netlify/functions",
+    "TIMEOUT": 10000,
+    "TEST_USER": {
+      "email": "test@sichrplace.com",
+      "password": "TestPassword123!",
+      "username": "testuser"
+    }
+  },
+  "timestamp": "2025-09-22T07:50:37.591Z"
+}

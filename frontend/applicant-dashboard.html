@@ -214,9 +214,9 @@
       font-size: 15px;
       font-family: var(--body-font);
     }
-    .profile-section, .messages-section, .wishlist-section, .applications-section {
+    .profile-section, .messages-section, .wishlist-section, .applications-section, .tenant-screening-section {
       background: var(--card);
-
+      border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 32px;
       margin-bottom: 32px;
@@ -410,6 +410,268 @@
         gap: 8px;
       }
     }
+
+    /* Tenant Screening Styles */
+    .tenant-screening-section {
+      padding: 32px;
+    }
+
+    .screening-intro {
+      background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+      padding: 20px;
+      border-radius: 12px;
+      color: var(--primary);
+      font-weight: 500;
+      margin-bottom: 32px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .screening-progress-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+
+    .progress-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 24px 0;
+    }
+
+    .progress-item {
+      background: var(--secondary);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .progress-item:hover {
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .progress-icon {
+      font-size: 2.5rem;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .progress-content h4 {
+      color: var(--primary);
+      margin: 0 0 8px 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .progress-status {
+      color: var(--muted);
+      margin: 0 0 16px 0;
+      font-size: 0.9rem;
+    }
+
+    .start-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      width: 100%;
+      transition: background 0.3s ease;
+    }
+
+    .start-btn:hover {
+      background: #1D4ED8;
+    }
+
+    .overall-progress {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .progress-bar {
+      background: var(--border);
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+      height: 100%;
+      transition: width 0.5s ease;
+    }
+
+    .quick-calculator-card {
+      background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 32px;
+      border: 1px solid #BBF7D0;
+    }
+
+    .calculator-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 16px;
+      align-items: end;
+      margin: 20px 0;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-weight: 500;
+      color: var(--foreground);
+      font-size: 0.9rem;
+    }
+
+    .input-group input {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .calculate-btn {
+      background: #10B981;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .calculate-btn:hover {
+      background: #059669;
+    }
+
+    .calculation-result {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    .result-status {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .result-details {
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .result-advice {
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    .benefits-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+
+    .benefits-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0 0;
+    }
+
+    .benefits-list li {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      color: var(--foreground);
+    }
+
+    .benefits-list li:last-child {
+      border-bottom: none;
+    }
+
+    .benefits-list strong {
+      color: var(--primary);
+    }
+
+    .screening-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .primary-action-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .primary-action-btn:hover {
+      background: #1D4ED8;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+    }
+
+    .secondary-action-btn {
+      background: var(--secondary);
+      color: var(--primary);
+      border: 1px solid var(--border);
+      padding: 16px 32px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .secondary-action-btn:hover {
+      background: var(--border);
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+      .calculator-inputs {
+        grid-template-columns: 1fr;
+      }
+      
+      .screening-actions {
+        flex-direction: column;
+      }
+      
+      .progress-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
     <script src="js/language-switcher.js" defer></script>
     <script src="js/logo-cookie-manager.js" defer></script>
@@ -443,6 +705,7 @@
     <nav class="sidebar-nav">
       <a href="#" id="profile-link" class="active"><i class="fa fa-user"></i> Profile</a>
       <a href="#" id="applications-link"><i class="fa fa-home"></i> My Applications</a>
+      <a href="#" id="tenant-screening-link"><i class="fa fa-shield-alt"></i> Tenant Screening</a>
       <a href="#" id="wishlist-link"><i class="fa fa-heart"></i> Wishlist</a>
       <a href="#" id="lastSeen-link"><i class="fa fa-clock"></i> Last Seen</a>
       <a href="#" id="messages-link"><i class="fa fa-comments"></i> Messages</a>
@@ -574,6 +837,109 @@
           <div id="applications-status"></div>
         </div>
       `,
+      tenantScreening: `
+        <div class="tenant-screening-section">
+          <h2><i class="fa fa-shield-alt"></i> Tenant Screening - Increase Your Chances</h2>
+          <p class="screening-intro">Complete your tenant qualification to stand out to landlords. German landlords prefer tenants with verified credentials.</p>
+          
+          <!-- Screening Progress Overview -->
+          <div class="screening-progress-card">
+            <h3>Your Screening Progress</h3>
+            <div class="progress-grid">
+              <div class="progress-item" id="schufa-progress">
+                <div class="progress-icon">🏦</div>
+                <div class="progress-content">
+                  <h4>SCHUFA Credit Check</h4>
+                  <p class="progress-status">Not Started</p>
+                  <button class="start-btn" onclick="startSchufaCheck()">Start SCHUFA Check</button>
+                </div>
+              </div>
+              
+              <div class="progress-item" id="employment-progress">
+                <div class="progress-icon">💼</div>
+                <div class="progress-content">
+                  <h4>Employment Verification</h4>
+                  <p class="progress-status">Not Started</p>
+                  <button class="start-btn" onclick="startEmploymentVerification()">Verify Employment</button>
+                </div>
+              </div>
+              
+              <div class="progress-item" id="references-progress">
+                <div class="progress-icon">🏠</div>
+                <div class="progress-content">
+                  <h4>Landlord References</h4>
+                  <p class="progress-status">Not Started</p>
+                  <button class="start-btn" onclick="startLandlordReferences()">Add References</button>
+                </div>
+              </div>
+              
+              <div class="progress-item" id="financial-progress">
+                <div class="progress-icon">💰</div>
+                <div class="progress-content">
+                  <h4>Financial Qualification</h4>
+                  <p class="progress-status">Not Started</p>
+                  <button class="start-btn" onclick="startFinancialQualification()">Calculate Income</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="overall-progress">
+              <h4>Overall Completion: <span id="overall-percentage">0%</span></h4>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Income Calculator -->
+          <div class="quick-calculator-card">
+            <h3>💡 Quick 3x Rent Rule Calculator</h3>
+            <p>Check if your income meets German rental requirements (3x monthly rent)</p>
+            
+            <div class="calculator-inputs">
+              <div class="input-group">
+                <label for="monthly-rent">Monthly Rent (€):</label>
+                <input type="number" id="monthly-rent" placeholder="1200" min="0" step="50">
+              </div>
+              
+              <div class="input-group">
+                <label for="monthly-income">Your Net Monthly Income (€):</label>
+                <input type="number" id="monthly-income" placeholder="3600" min="0" step="100">
+              </div>
+              
+              <button class="calculate-btn" onclick="calculateRentRatio()">Calculate</button>
+            </div>
+            
+            <div class="calculation-result" id="calculation-result" style="display: none;">
+              <div class="result-status" id="result-status"></div>
+              <div class="result-details" id="result-details"></div>
+              <div class="result-advice" id="result-advice"></div>
+            </div>
+          </div>
+
+          <!-- Benefits Section -->
+          <div class="benefits-card">
+            <h3>🎯 Why Complete Tenant Screening?</h3>
+            <ul class="benefits-list">
+              <li><strong>Higher Acceptance Rate:</strong> Verified tenants are 3x more likely to get approved</li>
+              <li><strong>Faster Applications:</strong> Skip the paperwork with pre-verified documents</li>
+              <li><strong>Better Apartments:</strong> Access to premium listings requiring verified tenants</li>
+              <li><strong>Landlord Trust:</strong> Show you're a reliable tenant from day one</li>
+              <li><strong>German Compliance:</strong> Meet all German rental market standards</li>
+            </ul>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="screening-actions">
+            <button class="primary-action-btn" onclick="openTenantScreeningDashboard()">
+              <i class="fa fa-chart-line"></i> Open Full Screening Dashboard
+            </button>
+            <button class="secondary-action-btn" onclick="downloadScreeningGuide()">
+              <i class="fa fa-download"></i> Download Screening Guide (PDF)
+            </button>
+          </div>
+        </div>
+      `,
       wishlist: `
         <div class="wishlist-section">
           <h2>Wishlist</h2>
@@ -629,6 +995,7 @@
       if (section === 'wishlist') loadWishlist();
       if (section === 'messages') loadConversations();
       if (section === 'applications') loadApplications();
+      if (section === 'tenantScreening') initializeTenantScreening();
     }
 
     links.forEach(link => {
@@ -853,6 +1220,138 @@
         });
       }
     });
+
+    // Tenant Screening Functions
+    function initializeTenantScreening() {
+      // Load any existing screening data and update progress
+      updateScreeningProgress();
+    }
+
+    function updateScreeningProgress() {
+      // This would typically fetch data from your API
+      // For now, we'll simulate some progress
+      const progress = {
+        schufa: 0,
+        employment: 0,
+        references: 0,
+        financial: 0
+      };
+
+      const totalProgress = (progress.schufa + progress.employment + progress.references + progress.financial) / 4;
+      
+      document.getElementById('overall-percentage').textContent = Math.round(totalProgress) + '%';
+      document.getElementById('progress-fill').style.width = totalProgress + '%';
+    }
+
+    function startSchufaCheck() {
+      window.open('tenant-screening-schufa.html', '_blank');
+    }
+
+    function startEmploymentVerification() {
+      window.open('tenant-screening-employment.html', '_blank');
+    }
+
+    function startLandlordReferences() {
+      window.open('tenant-screening-references.html', '_blank');
+    }
+
+    function startFinancialQualification() {
+      window.open('tenant-screening-financial.html', '_blank');
+    }
+
+    function calculateRentRatio() {
+      const monthlyRent = parseFloat(document.getElementById('monthly-rent').value);
+      const monthlyIncome = parseFloat(document.getElementById('monthly-income').value);
+      const resultDiv = document.getElementById('calculation-result');
+      const statusDiv = document.getElementById('result-status');
+      const detailsDiv = document.getElementById('result-details');
+      const adviceDiv = document.getElementById('result-advice');
+
+      if (!monthlyRent || !monthlyIncome) {
+        alert('Please enter both rent and income amounts');
+        return;
+      }
+
+      const requiredIncome = monthlyRent * 3;
+      const ratio = monthlyIncome / monthlyRent;
+      const meetsRequirement = ratio >= 3;
+
+      resultDiv.style.display = 'block';
+
+      if (meetsRequirement) {
+        resultDiv.style.background = '#F0FDF4';
+        resultDiv.style.border = '1px solid #BBF7D0';
+        statusDiv.innerHTML = '✅ You meet the 3x rent requirement!';
+        statusDiv.style.color = '#059669';
+        detailsDiv.innerHTML = `Your income (€${monthlyIncome}) is ${ratio.toFixed(1)}x the monthly rent.`;
+        adviceDiv.innerHTML = 'Great! You qualify for most German rental applications. Consider completing your full tenant screening to maximize your chances.';
+        adviceDiv.style.background = '#DCFCE7';
+        adviceDiv.style.color = '#059669';
+      } else {
+        resultDiv.style.background = '#FEF2F2';
+        resultDiv.style.border = '1px solid #FECACA';
+        statusDiv.innerHTML = '⚠️ Income below 3x rent requirement';
+        statusDiv.style.color = '#DC2626';
+        detailsDiv.innerHTML = `You need €${requiredIncome} monthly income. You currently have €${monthlyIncome} (${ratio.toFixed(1)}x rent).`;
+        const shortfall = requiredIncome - monthlyIncome;
+        adviceDiv.innerHTML = `You need €${shortfall} more monthly income, or consider a guarantor, or look for apartments under €${Math.floor(monthlyIncome / 3)}/month.`;
+        adviceDiv.style.background = '#FEE2E2';
+        adviceDiv.style.color = '#DC2626';
+      }
+    }
+
+    function openTenantScreeningDashboard() {
+      window.open('tenant-screening-dashboard.html', '_blank');
+    }
+
+    function downloadScreeningGuide() {
+      // Create a simple guide or link to an existing PDF
+      const guideContent = `
+🏠 SICHRPLACE TENANT SCREENING GUIDE
+
+Complete this checklist to maximize your rental application success:
+
+✅ SCHUFA Credit Check
+- Obtain your SCHUFA report online
+- Ensure credit score is above 500
+- Address any negative entries
+
+✅ Employment Verification  
+- 3 recent pay slips
+- Employment contract
+- Employer confirmation letter
+- Tax returns (last year)
+
+✅ Landlord References
+- Contact details of previous landlords
+- Rental history for past 2-3 years
+- Character references
+
+✅ Financial Qualification
+- Bank statements (3 months)
+- Proof of savings/deposits
+- Additional income sources
+- Guarantor information (if needed)
+
+🎯 Pro Tips:
+- Apply within 24 hours of viewing
+- Prepare all documents in advance
+- Be honest about your situation
+- Show enthusiasm for the property
+
+Good luck with your apartment search!
+      `;
+      
+      const blob = new Blob([guideContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sichrplace-tenant-screening-guide.txt';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    }
   </script>
 </body>
 </html>

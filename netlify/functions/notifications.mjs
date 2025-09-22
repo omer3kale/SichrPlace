@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+import webpush from 'web-push';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -11,6 +12,15 @@ if (!supabaseUrl || !supabaseKey || !jwtSecret) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Configure web push
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:support@sichrplace.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
+
 // Notification types enum
 const NOTIFICATION_TYPES = {
   VIEWING_REQUEST: 'viewing_request',
@@ -21,7 +31,14 @@ const NOTIFICATION_TYPES = {
   REVIEW_SUBMITTED: 'review_submitted',
   REVIEW_MODERATED: 'review_moderated',
   SAVED_SEARCH_ALERT: 'saved_search_alert',
-  SYSTEM_ANNOUNCEMENT: 'system_announcement'
+  SYSTEM_ANNOUNCEMENT: 'system_announcement',
+  BOOKING_CONFIRMED: 'booking_confirmed',
+  BOOKING_CANCELLED: 'booking_cancelled',
+  PAYMENT_SUCCESS: 'payment_success',
+  PAYMENT_FAILED: 'payment_failed',
+  APARTMENT_APPROVED: 'apartment_approved',
+  APARTMENT_REJECTED: 'apartment_rejected',
+  GDPR_REQUEST_COMPLETED: 'gdpr_request_completed'
 };
 
 // Helper function to authenticate token
@@ -40,7 +57,7 @@ const authenticateToken = async (headers) => {
   
   const { data: user, error } = await supabase
     .from('users')
-    .select('id, email, role')
+    .select('id, email, role, notification_preferences')
     .eq('id', decoded.id)
     .single();
 
