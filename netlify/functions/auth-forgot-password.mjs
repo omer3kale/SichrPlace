@@ -116,9 +116,9 @@ export const handler = async (event, context) => {
       headers,
       body: JSON.stringify({
         success: true,
-        message: 'Password reset instructions have been sent to your email.',
-        resetToken: resetToken, // Remove this in production
-        resetUrl: `${process.env.FRONTEND_URL || 'https://sichrplace.netlify.app'}/reset-password?token=${resetToken}`
+        message: 'Password reset instructions have been sent to your email.'
+        // resetToken: resetToken, // REMOVED FOR SECURITY - Never expose tokens in production
+        // resetUrl: resetUrl      // REMOVED FOR SECURITY - Send via email only
       })
     };
 

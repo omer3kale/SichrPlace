@@ -1,6 +1,7 @@
 {
   "name": "sichrplace",
   "version": "1.0.0",
+  "type": "module",
   "description": "Secure apartment rental platform connecting landlords and tenants",
   "main": "server.js",
   "scripts": {
