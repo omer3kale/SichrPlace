@@ -52,7 +52,8 @@ export const handler = async (event, context) => {
         .select(`
           *,
           users:landlord_id (
-            full_name,
+            first_name,
+            last_name,
             email,
             phone
           )
@@ -65,15 +66,15 @@ export const handler = async (event, context) => {
       }
       
       if (minPrice) {
-        query = query.gte('monthly_rent', parseInt(minPrice));
+        query = query.gte('rent_amount', parseInt(minPrice));
       }
       
       if (maxPrice) {
-        query = query.lte('monthly_rent', parseInt(maxPrice));
+        query = query.lte('rent_amount', parseInt(maxPrice));
       }
       
       if (bedrooms) {
-        query = query.eq('bedrooms', parseInt(bedrooms));
+        query = query.eq('rooms', parseInt(bedrooms));
       }
       
       if (bathrooms) {
@@ -85,10 +86,10 @@ export const handler = async (event, context) => {
       }
       
       if (available !== undefined) {
-        query = query.eq('available', available === 'true');
+        query = query.eq('status', available === 'true' ? 'available' : 'rented');
       } else {
         // Default to available apartments only
-        query = query.eq('available', true);
+        query = query.eq('status', 'available');
       }
 
       // Pagination
@@ -156,7 +157,7 @@ export const handler = async (event, context) => {
       const apartmentData = JSON.parse(body);
       
       // Validate required fields
-      const requiredFields = ['title', 'description', 'monthly_rent', 'city', 'address'];
+      const requiredFields = ['title', 'description', 'rent_amount', 'city', 'address'];
       const missingFields = requiredFields.filter(field => !apartmentData[field]);
       
       if (missingFields.length > 0) {
