@@ -7,8 +7,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: process.env.GMAIL_USER || 'omer3kale@gmail.com', // Use env var or fallback
-    pass: process.env.GMAIL_APP_PASSWORD || 'zbtr fcsc tqyf nxhp' // Use correct app password
+    user: process.env.GMAIL_USER || 'sichrplace@gmail.com', // Prefer env var, fallback to brand email only for dev
+    pass: process.env.GMAIL_APP_PASSWORD // App password must be provided via env
   },
   tls: {
     rejectUnauthorized: false
@@ -26,7 +26,7 @@ const transporter = nodemailer.createTransport({
  */
 async function sendMail({ to, subject, html, text }) {
   const mailOptions = {
-    from: '"SichrPlace Team" <omer3kale@gmail.com>',
+  from: `"SichrPlace Team" <${process.env.GMAIL_USER || 'sichrplace@gmail.com'}>`,
     to,
     subject,
     html,

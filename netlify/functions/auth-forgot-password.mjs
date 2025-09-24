@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+import { hashToken } from '../../utils/tokenHash.js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -72,7 +73,7 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Generate reset token
+    // Generate reset token (raw) and hash for storage
     const resetToken = jwt.sign(
       { 
         userId: user.id,
@@ -83,11 +84,13 @@ export const handler = async (event, context) => {
       { expiresIn: '1h' } // Short expiry for security
     );
 
-    // Update user with reset token
+    const resetTokenHash = hashToken(resetToken);
+
+    // Update user with reset token hash
     const { error: updateError } = await supabase
       .from('users')
       .update({
-        reset_token: resetToken,
+        reset_token_hash: resetTokenHash,
         reset_token_expires: new Date(Date.now() + 3600000).toISOString() // 1 hour
       })
       .eq('id', user.id);
@@ -109,8 +112,16 @@ export const handler = async (event, context) => {
       created_at: new Date().toISOString()
     });
 
-    // In a real application, you would send an email here
-    // For now, we'll return the token for testing purposes
+    // Send password reset email with the raw token embedded in link
+    try {
+      // Lazy import to avoid heavy dependency on cold start if not configured
+      const { default: EmailServiceClass } = await import('../../js/backend/services/emailService.js');
+      const emailService = new EmailServiceClass();
+      await emailService.sendPasswordResetEmail(user.email, user.username || user.full_name || 'there', resetToken);
+    } catch (mailErr) {
+      console.warn('Email dispatch skipped or failed:', mailErr?.message || mailErr);
+    }
+
     return {
       statusCode: 200,
       headers,

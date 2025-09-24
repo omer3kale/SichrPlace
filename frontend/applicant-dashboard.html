@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="css/logo-system.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="css/logo-system.css">
+  
+  <!-- 🔥 BULLETPROOF PAYPAL INTEGRATION -->
+  <script src="js/bulletproof-paypal-integration.js"></script>
+  
   <style>
     :root {
       --primary: #2563EB;
@@ -828,6 +832,7 @@
                 <th>Payer</th>
                 <th>Status</th>
                 <th>Last Updated</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="applications-table-body">
@@ -1171,6 +1176,13 @@
         statusDiv.textContent = "";
         applications.forEach(app => {
           const tr = document.createElement('tr');
+          const isApproved = app.status && app.status.toLowerCase() === 'approved';
+          const paymentButton = isApproved ? 
+            `<button onclick="initiateBookingPayment('${app.apartmentId}', ${app.monthlyRent || 1200}, '${app.apartmentTitle || 'Apartment'}')" 
+                     class="booking-payment-btn">
+              <i class="fa fa-credit-card"></i> Pay Booking Fee
+             </button>` : '';
+          
           tr.innerHTML = `
             <td>${app.apartmentId || ''}</td>
             <td>${app.move_in || ''}</td>
@@ -1179,8 +1191,13 @@
             <td>${app.reason || ''}</td>
             <td>${app.habits || ''}</td>
             <td>${app.payer || ''}</td>
-            <td>${app.status || 'Pending'}</td>
+            <td>
+              <span class="status-badge status-${(app.status || 'pending').toLowerCase()}">
+                ${app.status || 'Pending'}
+              </span>
+            </td>
             <td>${app.updatedAt ? new Date(app.updatedAt).toLocaleString() : ''}</td>
+            <td>${paymentButton}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -1351,6 +1368,485 @@ Good luck with your apartment search!
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+    }
+    
+    // 🔥 BULLETPROOF PAYPAL BOOKING PAYMENT INTEGRATION
+    
+    // Initialize PayPal on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize bulletproof PayPal after other scripts
+      setTimeout(initializeBulletproofPayPalBooking, 1000);
+    });
+    
+    async function initializeBulletproofPayPalBooking() {
+      try {
+        console.log('🔄 Initializing bulletproof PayPal for apartment booking...');
+        
+        // Wait for bulletproof PayPal integration to load
+        if (typeof window.bulletproofPayPal === 'undefined') {
+          console.warn('⚠️ Bulletproof PayPal integration not loaded');
+          return;
+        }
+        
+        console.log('✅ Bulletproof PayPal integration ready for booking payments!');
+        
+      } catch (error) {
+        console.error('❌ PayPal booking initialization failed:', error);
+      }
+    }
+    
+    // 🏢 APARTMENT BOOKING PAYMENT FUNCTION (5% of monthly rent)
+    async function initiateBookingPayment(apartmentId, monthlyRent, apartmentTitle = 'Apartment Booking') {
+      try {
+        // Check if user is logged in
+        const token = localStorage.getItem('userToken');
+        if (!token) {
+          alert('Please login to pay booking fee');
+          window.location.href = 'login.html';
+          return;
+        }
+        
+        // Calculate booking fee (5% of monthly rent, min €50, max €500)
+        const bookingFee = Math.max(50, Math.min(monthlyRent * 0.05, 500));
+        
+        // Show payment modal
+        const modal = createBookingPaymentModal(apartmentId, apartmentTitle, monthlyRent, bookingFee);
+        document.body.appendChild(modal);
+        
+        // Initialize PayPal button in modal
+        await window.bulletproofPayPal.createBookingPaymentButton('booking-paypal-button', {
+          apartmentId: apartmentId,
+          monthlyRent: monthlyRent,
+          apartmentTitle: apartmentTitle,
+          bookingData: {
+            moveInDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+            leaseDuration: 12
+          },
+          onSuccess: (result) => {
+            console.log('✅ Booking payment successful:', result);
+            showBookingPaymentSuccess(result, apartmentTitle, bookingFee);
+            modal.remove();
+          },
+          onError: (error) => {
+            console.error('❌ Booking payment failed:', error);
+            showBookingPaymentError(error);
+          },
+          onCancel: () => {
+            console.log('❌ Booking payment cancelled');
+            modal.remove();
+          }
+        });
+        
+      } catch (error) {
+        console.error('❌ Failed to initiate booking payment:', error);
+        alert('Failed to initialize booking payment. Please try again.');
+      }
+    }
+    
+    // 🎨 CREATE BOOKING PAYMENT MODAL
+    function createBookingPaymentModal(apartmentId, apartmentTitle, monthlyRent, bookingFee) {
+      const modal = document.createElement('div');
+      modal.className = 'booking-payment-modal';
+      modal.innerHTML = `
+        <div class="booking-payment-overlay" onclick="this.parentElement.remove()"></div>
+        <div class="booking-payment-content">
+          <div class="booking-payment-header">
+            <h2><i class="fa fa-home"></i> Apartment Booking Payment</h2>
+            <button class="close-btn" onclick="this.parentElement.parentElement.remove()">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="booking-payment-details">
+            <div class="apartment-info">
+              <h3><i class="fa fa-building"></i> ${apartmentTitle}</h3>
+              <div class="rent-info">
+                <div class="rent-item">
+                  <span class="label">Monthly Rent:</span>
+                  <span class="value">€${monthlyRent.toFixed(2)}</span>
+                </div>
+                <div class="rent-item">
+                  <span class="label">Booking Fee (5%):</span>
+                  <span class="value">€${bookingFee.toFixed(2)}</span>
+                </div>
+              </div>
+              
+              <p><i class="fa fa-info-circle"></i> Booking payment includes:</p>
+              <ul>
+                <li><i class="fa fa-check"></i> Apartment reservation for 7 days</li>
+                <li><i class="fa fa-check"></i> Priority booking status</li>
+                <li><i class="fa fa-check"></i> Landlord notification</li>
+                <li><i class="fa fa-check"></i> Booking confirmation document</li>
+                <li><i class="fa fa-check"></i> Move-in coordination</li>
+              </ul>
+            </div>
+            
+            <div class="payment-amount">
+              <div class="amount-display">
+                <span class="currency">€</span>
+                <span class="amount">${bookingFee.toFixed(2)}</span>
+              </div>
+              <p class="amount-description">Booking Fee (5% of monthly rent)</p>
+            </div>
+            
+            <div class="paypal-container">
+              <div id="booking-paypal-button"></div>
+            </div>
+            
+            <div class="payment-security">
+              <p><i class="fa fa-shield-alt"></i> Secure payment powered by PayPal</p>
+              <p><i class="fa fa-lock"></i> Booking fee applied to first month's rent</p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Add modal styles
+      const styles = `
+        <style>
+          .booking-payment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .booking-payment-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+          }
+          
+          .booking-payment-content {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            max-width: 550px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+          }
+          
+          .booking-payment-header {
+            padding: 30px 30px 20px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          
+          .booking-payment-header h2 {
+            margin: 0;
+            color: #2563EB;
+            font-size: 24px;
+            font-weight: 600;
+          }
+          
+          .booking-payment-details {
+            padding: 30px;
+          }
+          
+          .apartment-info h3 {
+            color: #374151;
+            margin: 0 0 20px 0;
+            font-size: 20px;
+          }
+          
+          .rent-info {
+            background: #F9FAFB;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+          }
+          
+          .rent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+          }
+          
+          .rent-item .label {
+            color: #6B7280;
+            font-weight: 500;
+          }
+          
+          .rent-item .value {
+            color: #374151;
+            font-weight: 600;
+            font-size: 18px;
+          }
+          
+          .apartment-info p {
+            color: #6B7280;
+            margin: 20px 0 10px 0;
+            font-weight: 500;
+          }
+          
+          .apartment-info ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+          }
+          
+          .apartment-info li {
+            padding: 8px 0;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          
+          .apartment-info li i {
+            color: #10B981;
+            width: 16px;
+          }
+          
+          .payment-amount {
+            text-align: center;
+            margin: 30px 0;
+            padding: 25px;
+            background: linear-gradient(135deg, #10B981, #40E0D0);
+            border-radius: 15px;
+            color: white;
+          }
+          
+          .amount-display {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          
+          .currency {
+            font-size: 32px;
+            opacity: 0.9;
+          }
+          
+          .amount-description {
+            font-size: 16px;
+            opacity: 0.9;
+            margin: 0;
+          }
+          
+          .paypal-container {
+            margin: 30px 0;
+          }
+          
+          .payment-security {
+            text-align: center;
+            margin-top: 20px;
+          }
+          
+          .payment-security p {
+            margin: 5px 0;
+            color: #6B7280;
+            font-size: 14px;
+          }
+          
+          .payment-security i {
+            color: #10B981;
+            margin-right: 5px;
+          }
+          
+          .booking-payment-btn {
+            background: linear-gradient(135deg, #10B981, #40E0D0);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          
+          .booking-payment-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+          }
+          
+          .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+          }
+          
+          .status-pending {
+            background: #FEF3C7;
+            color: #D97706;
+          }
+          
+          .status-approved {
+            background: #D1FAE5;
+            color: #065F46;
+          }
+          
+          .status-rejected {
+            background: #FEE2E2;
+            color: #991B1B;
+          }
+        </style>
+      `;
+      
+      modal.innerHTML = styles + modal.innerHTML;
+      return modal;
+    }
+    
+    // ✅ BOOKING PAYMENT SUCCESS
+    function showBookingPaymentSuccess(paymentResult, apartmentTitle, bookingFee) {
+      const successModal = document.createElement('div');
+      successModal.className = 'payment-success-modal';
+      successModal.innerHTML = `
+        <div class="payment-overlay" onclick="this.parentElement.remove()"></div>
+        <div class="payment-success-content">
+          <div class="success-icon">
+            <i class="fa fa-check-circle"></i>
+          </div>
+          <h2>Booking Confirmed!</h2>
+          <p>Your apartment booking for <strong>${apartmentTitle}</strong> is confirmed</p>
+          <div class="payment-details">
+            <p><strong>Payment ID:</strong> ${paymentResult.paymentId || 'N/A'}</p>
+            <p><strong>Booking Fee:</strong> €${bookingFee.toFixed(2)}</p>
+            <p><strong>Status:</strong> Reserved for 7 days</p>
+          </div>
+          <div class="success-actions">
+            <button onclick="window.location.reload()" class="btn-primary">
+              <i class="fa fa-refresh"></i> Refresh Dashboard
+            </button>
+            <button onclick="this.parentElement.parentElement.remove()" class="btn-secondary">
+              <i class="fa fa-times"></i> Close
+            </button>
+          </div>
+        </div>
+        <style>
+          .payment-success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .payment-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+          }
+          
+          .payment-success-content {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: successSlideIn 0.5s ease-out;
+          }
+          
+          .success-icon {
+            font-size: 80px;
+            color: #10B981;
+            margin-bottom: 20px;
+            animation: successBounce 0.6s ease-out 0.2s both;
+          }
+          
+          .payment-success-content h2 {
+            color: #374151;
+            margin: 0 0 15px 0;
+            font-size: 28px;
+          }
+          
+          .payment-details {
+            background: #F9FAFB;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+          }
+          
+          .payment-details p {
+            margin: 8px 0;
+            color: #374151;
+          }
+          
+          .success-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+          }
+          
+          .success-actions button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          
+          .btn-primary {
+            background: #2563EB;
+            color: white;
+          }
+          
+          .btn-primary:hover {
+            background: #1D4ED8;
+            transform: translateY(-2px);
+          }
+          
+          .btn-secondary {
+            background: #F3F4F6;
+            color: #374151;
+          }
+          
+          .btn-secondary:hover {
+            background: #E5E7EB;
+          }
+        </style>
+      `;
+      
+      document.body.appendChild(successModal);
+      
+      // Track successful booking payment
+      trackBookingPayment(paymentResult.apartmentId, paymentResult.paymentId, bookingFee);
+    }
+    
+    // ❌ BOOKING PAYMENT ERROR
+    function showBookingPaymentError(error) {
+      alert(`Booking payment failed: ${error.message || 'Unknown error occurred'}. Please try again.`);
+    }
+    
+    // 📊 TRACK BOOKING PAYMENT
+    async function trackBookingPayment(apartmentId, paymentId, amount) {
+      try {
+        console.log('📊 Tracking booking payment:', { apartmentId, paymentId, amount });
+        // Additional analytics tracking can be added here
+      } catch (error) {
+        console.error('Failed to track booking payment:', error);
+      }
     }
   </script>
 </body>

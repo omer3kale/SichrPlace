@@ -11,19 +11,18 @@
   functions = "netlify/functions"
   framework = "#static"
 
-# Custom Domain Redirects - Force HTTPS and WWW
+# Custom Domain Redirects - Normalize apex → www and force HTTPS
+# IMPORTANT: Set Primary domain in Netlify to "www.sichrplace.com" to avoid loops
+
+# Apex (sichrplace.com) → www
 [[redirects]]
-  from = "https://sichrplace.com/*"
+  from = "/*"
   to = "https://www.sichrplace.com/:splat"
   status = 301
   force = true
+  conditions = { Host = ["sichrplace.com"] }
 
-[[redirects]]
-  from = "http://sichrplace.com/*"
-  to = "https://www.sichrplace.com/:splat"
-  status = 301
-  force = true
-
+# http → https for www
 [[redirects]]
   from = "http://www.sichrplace.com/*"
   to = "https://www.sichrplace.com/:splat"

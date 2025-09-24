@@ -28,7 +28,7 @@ class EmailService {
       console.log('📧 Initializing Gmail SMTP...');
       console.log(`🔍 OAuth2 available: ${hasOAuth2 ? 'YES - Configured' : 'NO - Using App Password fallback'}`);
       console.log(`🔍 App Password available: ${!!process.env.GMAIL_APP_PASSWORD ? 'YES' : 'NO'}`);
-      console.log(`🔍 Gmail User: ${process.env.GMAIL_USER || 'omer3kale@gmail.com'}`);
+  console.log(`🔍 Gmail User: ${process.env.GMAIL_USER || 'sichrplace@gmail.com'}`);
       
       if (hasOAuth2) {
         console.log('🔐 Using OAuth2 authentication (Production Grade)');
@@ -40,7 +40,7 @@ class EmailService {
           secure: false, // Use TLS
           auth: {
             type: 'OAuth2',
-            user: process.env.GMAIL_USER || 'omer3kale@gmail.com',
+            user: process.env.GMAIL_USER || 'sichrplace@gmail.com',
             clientId: process.env.GMAIL_CLIENT_ID,
             clientSecret: process.env.GMAIL_CLIENT_SECRET,
             refreshToken: process.env.GMAIL_REFRESH_TOKEN,
@@ -56,7 +56,7 @@ class EmailService {
           port: 587,
           secure: false, // Use TLS
           auth: {
-            user: process.env.GMAIL_USER || 'omer3kale@gmail.com',
+            user: process.env.GMAIL_USER || 'sichrplace@gmail.com',
             pass: process.env.GMAIL_APP_PASSWORD // Gmail App Password
           }
         });
@@ -687,7 +687,7 @@ class EmailService {
       const mailOptions = {
         from: {
           name: 'SichrPlace Team',
-          address: process.env.GMAIL_USER || 'omer3kale@gmail.com'
+          address: process.env.GMAIL_USER || 'sichrplace@gmail.com'
         },
         to: email,
         subject: 'Welcome to SichrPlace - Verify Your Email',
@@ -779,7 +779,7 @@ class EmailService {
       const mailOptions = {
         from: {
           name: 'SichrPlace Security',
-          address: process.env.GMAIL_USER || 'omer3kale@gmail.com'
+          address: process.env.GMAIL_USER || 'sichrplace@gmail.com'
         },
         to: email,
         subject: 'Reset Your SichrPlace Password',
@@ -866,7 +866,7 @@ class EmailService {
       const mailOptions = {
         from: {
           name: 'SichrPlace Security',
-          address: process.env.GMAIL_USER || 'omer3kale@gmail.com'
+          address: process.env.GMAIL_USER || 'sichrplace@gmail.com'
         },
         to: email,
         subject: 'Password Changed Successfully - SichrPlace',
@@ -959,7 +959,7 @@ class EmailService {
       const mailOptions = {
         from: {
           name: 'SichrPlace Team',
-          address: process.env.GMAIL_USER || 'omer3kale@gmail.com'
+          address: process.env.GMAIL_USER || 'sichrplace@gmail.com'
         },
         to: email,
         subject: 'Welcome to SichrPlace - Let\'s Get Started!',

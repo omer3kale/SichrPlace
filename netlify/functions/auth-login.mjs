@@ -151,8 +151,9 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+  // Verify password (support both legacy and current column names)
+  const passwordHash = user.password_hash || user.password;
+  const isValidPassword = passwordHash ? await bcrypt.compare(password, passwordHash) : false;
     
     if (!isValidPassword) {
       // Record failed attempt for rate limiting

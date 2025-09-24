@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+import { hashToken } from '../../utils/tokenHash.js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -66,12 +67,12 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Find user by email and verification token
+    // Find user by email and verification token (hashed)
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('email', decoded.email)
-      .eq('verification_token', verificationToken)
+      .eq('verification_token_hash', hashToken(verificationToken))
       .single();
 
     if (userError || !user) {
@@ -95,7 +96,7 @@ export const handler = async (event, context) => {
       .from('users')
       .update({
         verified: true,
-        verification_token: null,
+        verification_token_hash: null,
         verified_at: new Date().toISOString()
       })
       .eq('id', user.id);

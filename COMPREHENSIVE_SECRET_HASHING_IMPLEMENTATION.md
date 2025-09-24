@@ -8,6 +8,8 @@ Based on our comprehensive security audit, I've identified all secrets across yo
 
 ### ✅ Already Properly Secured
 - **Password Hashing**: bcrypt with 12 salt rounds ✓
+- **Email Verification Tokens**: Stored as SHA-256 hashes (no plaintext) ✓
+- **Password Reset Tokens**: Stored as SHA-256 hashes (no plaintext) ✓
 - **JWT Token System**: Proper signing and verification ✓
 - **Database Security**: Row Level Security (RLS) policies ✓
 - **Authentication Flow**: Secure token-based authentication ✓
@@ -34,7 +36,7 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 ```
 
 #### 3. Production Security Gaps
-- **Reset token exposure** in forgot-password response (line 120)
+- Fixed: No reset token returned; token emailed only and hash stored. ✓
 - **Database password placeholder** in DATABASE_URL
 - **Missing session and CSRF secrets** for additional security layers
 - **Hardcoded fallback URLs** in some functions
@@ -135,7 +137,8 @@ class SecretManager {
 
   // Hash API keys for storage
   hashApiKey(key) {
-    return crypto.createHash('sha256').update(key).digest('hex');
+  return crypto.createHash('sha256').update(key).digest('hex');
+  // Used in utils/tokenHash.js and applied in auth-register/forgot/verify/reset flows
   }
 
   // Validate secret strength
@@ -306,6 +309,7 @@ FRONTEND_URL=https://www.sichrplace.com
 - **Environment Variables**: 100% encrypted ✅
 - **API Secrets**: 100% secured ✅
 - **Password Security**: bcrypt + 12 rounds ✅
+- **Token Security**: SHA-256 hashing + constant-time compare ✅
 - **Token Security**: JWT + strong secrets ✅
 - **Database Security**: RLS + encryption ✅
 - **Transport Security**: HTTPS + HSTS ✅

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+import { hashToken } from '../../utils/tokenHash.js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -72,9 +73,9 @@ export const handler = async (event, context) => {
     // Find user and verify reset token exists and hasn't been used
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('id, email, reset_token, reset_token_expires')
+      .select('id, email, reset_token_hash, reset_token_expires')
       .eq('id', decoded.userId)
-      .eq('reset_token', token)
+      .eq('reset_token_hash', hashToken(token))
       .single();
 
     if (userError || !user) {

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { hashToken } from '../../utils/tokenHash.js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -79,12 +80,13 @@ export const handler = async (event, context) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create verification token
+    // Create verification token (raw for email link) and hashed for storage
     const verificationToken = jwt.sign(
       { email, type: 'email_verification' },
       jwtSecret,
       { expiresIn: '24h' }
     );
+    const verificationTokenHash = hashToken(verificationToken);
 
     // Insert user
     const { data: newUser, error: insertError } = await supabase
@@ -97,7 +99,8 @@ export const handler = async (event, context) => {
         full_name: fullName || username,
         phone: phone || null,
         verified: false,
-        verification_token: verificationToken,
+        verification_token_hash: verificationTokenHash,
+        email_verification_expires: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
         created_at: new Date().toISOString()
       })
       .select()
@@ -133,6 +136,15 @@ export const handler = async (event, context) => {
       created_at: new Date().toISOString()
     });
 
+    // Send verification email
+    try {
+      const { default: EmailServiceClass } = await import('../../js/backend/services/emailService.js');
+      const emailService = new EmailServiceClass();
+      await emailService.sendVerificationEmail(newUser.email, newUser.full_name || newUser.username || 'there', verificationToken);
+    } catch (mailErr) {
+      console.warn('Verification email dispatch skipped or failed:', mailErr?.message || mailErr);
+    }
+
     return {
       statusCode: 201,
       headers,
@@ -145,8 +157,7 @@ export const handler = async (event, context) => {
           email: newUser.email,
           userType: newUser.user_type,
           verified: newUser.verified
-        },
-        verificationToken
+        }
       })
     };
 

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { hashToken } from '../../utils/tokenHash.js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -77,7 +78,7 @@ export const handler = async (event, context) => {
       .from('users')
       .select('*')
       .eq('id', decoded.userId)
-      .eq('reset_token', token)
+      .eq('reset_token_hash', hashToken(token))
       .single();
 
     if (userError || !user) {
@@ -105,7 +106,7 @@ export const handler = async (event, context) => {
       .from('users')
       .update({
         password: hashedPassword,
-        reset_token: null,
+        reset_token_hash: null,
         reset_token_expires: null,
         password_updated_at: new Date().toISOString()
       })

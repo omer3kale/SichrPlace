@@ -17,6 +17,10 @@
     <link rel="stylesheet" href="css/logo-system.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="css/logo-system.css">
+  
+  <!-- 🔥 BULLETPROOF PAYPAL INTEGRATION -->
+  <script src="js/bulletproof-paypal-integration.js"></script>
+  
   <style>
     :root {
       --primary: #2563EB;
@@ -1942,7 +1946,449 @@
       }
       
       console.log('🎯 Advanced search system initialized with comprehensive filters!');
+      
+      // 🔥 INITIALIZE BULLETPROOF PAYPAL FOR VIEWING PAYMENTS
+      initializeBulletproofPayPal();
     });
+    
+    // 🔥 BULLETPROOF PAYPAL VIEWING PAYMENT INTEGRATION
+    async function initializeBulletproofPayPal() {
+      try {
+        console.log('🔄 Initializing bulletproof PayPal for apartment viewing...');
+        
+        // Wait for bulletproof PayPal integration to load
+        if (typeof window.bulletproofPayPal === 'undefined') {
+          console.warn('⚠️ Bulletproof PayPal integration not loaded');
+          return;
+        }
+        
+        console.log('✅ Bulletproof PayPal integration ready for viewing payments!');
+        
+      } catch (error) {
+        console.error('❌ PayPal initialization failed:', error);
+      }
+    }
+    
+    // 🏠 APARTMENT VIEWING PAYMENT FUNCTION (€25)
+    async function initiateViewingPayment(apartmentId, apartmentTitle = 'Apartment Viewing') {
+      try {
+        // Check if user is logged in
+        const token = localStorage.getItem('userToken');
+        if (!token) {
+          alert('Please login to pay for apartment viewing');
+          window.location.href = 'login.html';
+          return;
+        }
+        
+        // Show payment modal
+        const modal = createViewingPaymentModal(apartmentId, apartmentTitle);
+        document.body.appendChild(modal);
+        
+        // Initialize PayPal button in modal
+        await window.bulletproofPayPal.createViewingPaymentButton('viewing-paypal-button', {
+          apartmentId: apartmentId,
+          viewingRequestId: 'vr_' + apartmentId + '_' + Date.now(),
+          apartmentTitle: apartmentTitle,
+          onSuccess: (result) => {
+            console.log('✅ Viewing payment successful:', result);
+            showViewingPaymentSuccess(result, apartmentTitle);
+            modal.remove();
+          },
+          onError: (error) => {
+            console.error('❌ Viewing payment failed:', error);
+            showViewingPaymentError(error);
+          },
+          onCancel: () => {
+            console.log('❌ Viewing payment cancelled');
+            modal.remove();
+          }
+        });
+        
+      } catch (error) {
+        console.error('❌ Failed to initiate viewing payment:', error);
+        alert('Failed to initialize viewing payment. Please try again.');
+      }
+    }
+    
+    // 🎨 CREATE VIEWING PAYMENT MODAL
+    function createViewingPaymentModal(apartmentId, apartmentTitle) {
+      const modal = document.createElement('div');
+      modal.className = 'viewing-payment-modal';
+      modal.innerHTML = `
+        <div class="viewing-payment-overlay" onclick="this.parentElement.remove()"></div>
+        <div class="viewing-payment-content">
+          <div class="viewing-payment-header">
+            <h2><i class="fa fa-eye"></i> Pay for Apartment Viewing</h2>
+            <button class="close-btn" onclick="this.parentElement.parentElement.remove()">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="viewing-payment-details">
+            <div class="apartment-info">
+              <h3><i class="fa fa-home"></i> ${apartmentTitle}</h3>
+              <p><i class="fa fa-info-circle"></i> Viewing access includes:</p>
+              <ul>
+                <li><i class="fa fa-check"></i> Full apartment details</li>
+                <li><i class="fa fa-check"></i> Landlord contact information</li>
+                <li><i class="fa fa-check"></i> Schedule viewing appointments</li>
+                <li><i class="fa fa-check"></i> High-resolution photos</li>
+                <li><i class="fa fa-check"></i> 24-hour access validity</li>
+              </ul>
+            </div>
+            
+            <div class="payment-amount">
+              <div class="amount-display">
+                <span class="currency">€</span>
+                <span class="amount">25.00</span>
+              </div>
+              <p class="amount-description">One-time viewing fee</p>
+            </div>
+            
+            <div class="paypal-container">
+              <div id="viewing-paypal-button"></div>
+            </div>
+            
+            <div class="payment-security">
+              <p><i class="fa fa-shield-alt"></i> Secure payment powered by PayPal</p>
+              <p><i class="fa fa-lock"></i> Your payment information is protected</p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Add modal styles
+      const styles = `
+        <style>
+          .viewing-payment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .viewing-payment-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+          }
+          
+          .viewing-payment-content {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+          }
+          
+          @keyframes modalSlideIn {
+            from {
+              opacity: 0;
+              transform: translateY(-50px) scale(0.9);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+          
+          .viewing-payment-header {
+            padding: 30px 30px 20px;
+            border-bottom: 1px solid #E5E7EB;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+          
+          .viewing-payment-header h2 {
+            margin: 0;
+            color: #2563EB;
+            font-size: 24px;
+            font-weight: 600;
+          }
+          
+          .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6B7280;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.2s;
+          }
+          
+          .close-btn:hover {
+            background: #F3F4F6;
+            color: #374151;
+          }
+          
+          .viewing-payment-details {
+            padding: 30px;
+          }
+          
+          .apartment-info h3 {
+            color: #374151;
+            margin: 0 0 15px 0;
+            font-size: 20px;
+          }
+          
+          .apartment-info p {
+            color: #6B7280;
+            margin: 15px 0 10px 0;
+            font-weight: 500;
+          }
+          
+          .apartment-info ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+          }
+          
+          .apartment-info li {
+            padding: 8px 0;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          
+          .apartment-info li i {
+            color: #10B981;
+            width: 16px;
+          }
+          
+          .payment-amount {
+            text-align: center;
+            margin: 30px 0;
+            padding: 25px;
+            background: linear-gradient(135deg, #2563EB, #40E0D0);
+            border-radius: 15px;
+            color: white;
+          }
+          
+          .amount-display {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          
+          .currency {
+            font-size: 32px;
+            opacity: 0.9;
+          }
+          
+          .amount-description {
+            font-size: 16px;
+            opacity: 0.9;
+            margin: 0;
+          }
+          
+          .paypal-container {
+            margin: 30px 0;
+          }
+          
+          .payment-security {
+            text-align: center;
+            margin-top: 20px;
+          }
+          
+          .payment-security p {
+            margin: 5px 0;
+            color: #6B7280;
+            font-size: 14px;
+          }
+          
+          .payment-security i {
+            color: #10B981;
+            margin-right: 5px;
+          }
+        </style>
+      `;
+      
+      modal.innerHTML = styles + modal.innerHTML;
+      return modal;
+    }
+    
+    // ✅ VIEWING PAYMENT SUCCESS
+    function showViewingPaymentSuccess(paymentResult, apartmentTitle) {
+      const successModal = document.createElement('div');
+      successModal.className = 'payment-success-modal';
+      successModal.innerHTML = `
+        <div class="payment-overlay" onclick="this.parentElement.remove()"></div>
+        <div class="payment-success-content">
+          <div class="success-icon">
+            <i class="fa fa-check-circle"></i>
+          </div>
+          <h2>Payment Successful!</h2>
+          <p>You now have access to <strong>${apartmentTitle}</strong></p>
+          <div class="payment-details">
+            <p><strong>Payment ID:</strong> ${paymentResult.paymentId || 'N/A'}</p>
+            <p><strong>Amount:</strong> €25.00</p>
+            <p><strong>Access Valid:</strong> 24 hours</p>
+          </div>
+          <div class="success-actions">
+            <button onclick="window.location.reload()" class="btn-primary">
+              <i class="fa fa-eye"></i> View Full Details
+            </button>
+            <button onclick="this.parentElement.parentElement.remove()" class="btn-secondary">
+              <i class="fa fa-times"></i> Close
+            </button>
+          </div>
+        </div>
+        <style>
+          .payment-success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          
+          .payment-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+          }
+          
+          .payment-success-content {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: successSlideIn 0.5s ease-out;
+          }
+          
+          @keyframes successSlideIn {
+            from {
+              opacity: 0;
+              transform: scale(0.5) rotate(-10deg);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1) rotate(0deg);
+            }
+          }
+          
+          .success-icon {
+            font-size: 80px;
+            color: #10B981;
+            margin-bottom: 20px;
+            animation: successBounce 0.6s ease-out 0.2s both;
+          }
+          
+          @keyframes successBounce {
+            0%, 20%, 50%, 80%, 100% {
+              transform: translateY(0);
+            }
+            40% {
+              transform: translateY(-30px);
+            }
+            60% {
+              transform: translateY(-15px);
+            }
+          }
+          
+          .payment-success-content h2 {
+            color: #374151;
+            margin: 0 0 15px 0;
+            font-size: 28px;
+          }
+          
+          .payment-details {
+            background: #F9FAFB;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+          }
+          
+          .payment-details p {
+            margin: 8px 0;
+            color: #374151;
+          }
+          
+          .success-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+          }
+          
+          .success-actions button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          
+          .btn-primary {
+            background: #2563EB;
+            color: white;
+          }
+          
+          .btn-primary:hover {
+            background: #1D4ED8;
+            transform: translateY(-2px);
+          }
+          
+          .btn-secondary {
+            background: #F3F4F6;
+            color: #374151;
+          }
+          
+          .btn-secondary:hover {
+            background: #E5E7EB;
+          }
+        </style>
+      `;
+      
+      document.body.appendChild(successModal);
+      
+      // Track successful payment
+      trackViewingPayment(paymentResult.apartmentId, paymentResult.paymentId);
+    }
+    
+    // ❌ VIEWING PAYMENT ERROR
+    function showViewingPaymentError(error) {
+      alert(`Payment failed: ${error.message || 'Unknown error occurred'}. Please try again.`);
+    }
+    
+    // 📊 TRACK VIEWING PAYMENT
+    async function trackViewingPayment(apartmentId, paymentId) {
+      try {
+        console.log('📊 Tracking viewing payment:', { apartmentId, paymentId });
+        // Additional analytics tracking can be added here
+      } catch (error) {
+        console.error('Failed to track viewing payment:', error);
+      }
+    }
     
     // Update navigation based on login status
     function updateNavigation() {
@@ -2696,9 +3142,9 @@
               <div class="listing-description">${highlightedDescription}</div>
               
               <div class="listing-actions">
-                <a href="viewing-request.html?id=${apartment.id}" class="btn-primary">
-                  <i class="fa fa-calendar"></i> Schedule Viewing
-                </a>
+                <button onclick="initiateViewingPayment('${apartment.id}', '${apartment.title || apartment.address}')" class="btn-primary">
+                  <i class="fa fa-credit-card"></i> Pay €25 to View
+                </button>
                 <button onclick="contactLandlord('${apartment.id}')" class="btn-secondary">
                   <i class="fa fa-envelope"></i> Contact
                 </button>
