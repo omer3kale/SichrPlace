@@ -42,8 +42,8 @@ export const handler = async (event, context) => {
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Test the join query that may be causing issues
-    const { data: apartments, error } = await supabase
+    // Test the exact query structure from apartments function
+    let query = supabase
       .from('apartments')
       .select(`
         *,
@@ -54,8 +54,18 @@ export const handler = async (event, context) => {
           phone
         )
       `)
-      .order('created_at', { ascending: false })
-      .limit(5);
+      .order('created_at', { ascending: false });
+
+    // Apply default filters like the real function
+    query = query.eq('status', 'available');
+
+    // Pagination like the real function
+    const page = 1;
+    const limit = 12;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    query = query.range(offset, offset + parseInt(limit) - 1);
+
+    const { data: apartments, error, count } = await query;
 
     if (error) {
       return {
