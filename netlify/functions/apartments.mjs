@@ -51,7 +51,7 @@ export const handler = async (event, context) => {
         .from('apartments')
         .select(`
           *,
-          users:landlord_id (
+          users:owner_id (
             first_name,
             last_name,
             email,
@@ -66,11 +66,11 @@ export const handler = async (event, context) => {
       }
       
       if (minPrice) {
-        query = query.gte('rent_amount', parseInt(minPrice));
+        query = query.gte('price', parseInt(minPrice));
       }
       
       if (maxPrice) {
-        query = query.lte('rent_amount', parseInt(maxPrice));
+        query = query.lte('price', parseInt(maxPrice));
       }
       
       if (bedrooms) {
@@ -157,7 +157,7 @@ export const handler = async (event, context) => {
       const apartmentData = JSON.parse(body);
       
       // Validate required fields
-      const requiredFields = ['title', 'description', 'rent_amount', 'city', 'address'];
+      const requiredFields = ['title', 'description', 'price', 'city', 'location'];
       const missingFields = requiredFields.filter(field => !apartmentData[field]);
       
       if (missingFields.length > 0) {
@@ -180,8 +180,8 @@ export const handler = async (event, context) => {
         .insert([
           {
             ...apartmentData,
-            landlord_id: user.userId,
-            available: true,
+            owner_id: user.userId,
+            status: 'available',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }
