@@ -96,10 +96,22 @@ export const handler = async (event, context) => {
       const offset = (parseInt(page) - 1) * parseInt(limit);
       query = query.range(offset, offset + parseInt(limit) - 1);
 
-      const { data: apartments, error, count } = await query;
+      const { data: apartments, error } = await query;
 
       if (error) {
-        throw error;
+        console.error('Database error:', error);
+        return {
+          statusCode: 500,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            success: false,
+            message: 'Database query failed',
+            error: error.message
+          }),
+        };
       }
 
       return {
@@ -114,7 +126,7 @@ export const handler = async (event, context) => {
           pagination: {
             page: parseInt(page),
             limit: parseInt(limit),
-            total: count || apartments?.length || 0
+            total: apartments?.length || 0
           }
         }),
       };
