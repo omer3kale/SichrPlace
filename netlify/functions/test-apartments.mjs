@@ -42,10 +42,19 @@ export const handler = async (event, context) => {
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Test simple query first
+    // Test the join query that may be causing issues
     const { data: apartments, error } = await supabase
       .from('apartments')
-      .select('*')
+      .select(`
+        *,
+        users:owner_id (
+          first_name,
+          last_name,
+          email,
+          phone
+        )
+      `)
+      .order('created_at', { ascending: false })
       .limit(5);
 
     if (error) {
