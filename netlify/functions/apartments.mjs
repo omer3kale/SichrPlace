@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 // Initialize Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY1 || process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY1
 );
 
 // Helper function to verify JWT token
