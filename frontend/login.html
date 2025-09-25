@@ -498,6 +498,8 @@
                 this.checkExistingAuth();
                 this.setupDemoCredentials();
             }
+            
+            // Handles the login form submission
 
             async handleLogin(e) {
                 e.preventDefault();
@@ -515,10 +517,13 @@
                 this.hideAlert();
 
                 try {
+                    console.log('🔐 Attempting login with credentials:', { email, remember });
+                    
                     const response = await fetch('/auth/login', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                         },
                         body: JSON.stringify({
                             email: email,
@@ -527,7 +532,9 @@
                         })
                     });
 
+                    console.log('📡 Login response status:', response.status);
                     const result = await response.json();
+                    console.log('📝 Login response data:', result);
 
                     if (response.ok && result.success) {
                         this.showAlert('Login successful! Redirecting...', 'success');
@@ -553,7 +560,23 @@
                     }
                 } catch (error) {
                     console.error('Login error:', error);
-                    this.showAlert('Network error. Please check your connection and try again.', 'error');
+                    
+                    // Enhanced error handling with specific network error messages
+                    let errorMessage = 'An error occurred during login. Please try again.';
+                    
+                    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                        errorMessage = 'Network connection failed. Please check your internet connection and try again.';
+                    } else if (error.message.includes('timeout') || error.name === 'AbortError') {
+                        errorMessage = 'Request timed out. Please check your connection and try again.';
+                    } else if (error.message.includes('Network request failed')) {
+                        errorMessage = 'Unable to connect to server. Please ensure you have an internet connection and try again.';
+                    } else if (error.message.includes('404')) {
+                        errorMessage = 'Login service temporarily unavailable. Please try again in a few minutes.';
+                    } else if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
+                        errorMessage = 'Server is temporarily unavailable. Please try again in a few minutes.';
+                    }
+                    
+                    this.showAlert(errorMessage, 'error');
                 } finally {
                     this.setLoading(false);
                 }

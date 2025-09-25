@@ -50,6 +50,58 @@
   to = "/.netlify/functions/paypal-config"
   status = 200
 
+# Frontend page redirects for proper routing
+[[redirects]]
+  from = "/about"
+  to = "/about.html"
+  status = 200
+
+[[redirects]]
+  from = "/faq"
+  to = "/faq.html"
+  status = 200
+
+[[redirects]]
+  from = "/customer-service"
+  to = "/customer-service.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/create-account"
+  to = "/create-account.html"
+  status = 200
+
+[[redirects]]
+  from = "/apartments-listing"
+  to = "/apartments-listing.html"
+  status = 200
+
+[[redirects]]
+  from = "/marketplace"
+  to = "/marketplace.html"
+  status = 200
+
+[[redirects]]
+  from = "/instruction-guide"
+  to = "/instruction-guide.html"
+  status = 200
+
+[[redirects]]
+  from = "/user-guide"
+  to = "/instruction-guide.html"
+  status = 200
+
+# SPA fallback - serves index.html for any unmatched routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 [[redirects]]
   from = "/api/csrf-token"
   to = "/.netlify/functions/csrf-token"

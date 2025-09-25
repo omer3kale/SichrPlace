@@ -95,11 +95,12 @@ export const handler = async (event, context) => {
         washing_machine,
         dishwasher,
         microwave,
-        elevator
+        elevator,
+        rent_type
       } = JSON.parse(event.body);
 
       // Validate required fields
-      if (!title || !description || !address || !city || !rent_amount || !rooms) {
+      if (!title || !description || !address || !city || !rent_amount || !rooms || !rent_type) {
         return {
           statusCode: 400,
           headers: {
@@ -108,7 +109,7 @@ export const handler = async (event, context) => {
           },
           body: JSON.stringify({
             success: false,
-            error: 'Title, description, address, city, rent amount, and number of rooms are required'
+            error: 'Title, description, address, city, rent amount, rooms, and rent type are required'
           }),
         };
       }
@@ -164,6 +165,7 @@ export const handler = async (event, context) => {
             dishwasher: dishwasher === true,
             microwave: microwave === true,
             elevator: elevator === true,
+            rent_type: rent_type || 'kalt', // Default to kalt if not specified
             status: 'active',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()

@@ -414,22 +414,7 @@
         </div>
         <div class="form-group">
           <label for="message"><i class="fa fa-comment-dots"></i> Additional Information <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
-          <textarea id="message" name="message" rows="3" placeholder="Any additional info?"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="budget_range"><i class="fa fa-euro-sign"></i> Monthly Budget Range</label>
-          <select id="budget_range" name="budget_range" required>
-            <option value="">Select budget range</option>
-            <option value="€500-800">€500-800</option>
-            <option value="€800-1200">€800-1200</option>
-            <option value="€1200-1600">€1200-1600</option>
-            <option value="€1600-2000">€1600-2000</option>
-            <option value="€2000+">€2000+</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="additional_guests"><i class="fa fa-users"></i> Number of Additional Guests for Viewing <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
-          <input type="number" id="additional_guests" name="additional_guests" min="0" max="10" placeholder="0">
+          <textarea id="message" name="message" rows="3" placeholder="Any additional info or special requirements for the viewing?"></textarea>
         </div>
         <button type="submit" id="submit-btn">
           <i class="fa fa-paper-plane" id="submit-icon"></i>
@@ -481,8 +466,7 @@
       requested_date: 'entry.424746039',      // Preferred Viewing Date field (combined date)
       preferred_time_range: 'entry.2071880532', // Preferred Time Range field (combined time)
       additional_info: 'entry.1141855979',    // Additional Information field
-      budget_range: 'entry.1029652672',       // Monthly Budget Range field
-      additional_guests: 'entry.297118707'    // Number of Additional Guests field
+
     };
 
     document.getElementById('viewing-request-form').addEventListener('submit', async function(e) {
@@ -525,8 +509,7 @@
       formData.append('entry.2071880532_minute', parseInt(minutes));
       
       formData.append(FIELD_IDS.additional_info, form.message.value || '');
-      formData.append(FIELD_IDS.budget_range, form.budget_range.value);
-      formData.append(FIELD_IDS.additional_guests, form.additional_guests.value || '0');
+
 
       try {
         // Submit to Google Forms
@@ -545,9 +528,7 @@
           phoneNumber: form.phone.value,
           preferredDate: form.date.value,
           preferredTime: form.time.value,
-          budgetRange: form.budget_range.value,
-          additionalInfo: form.message.value || 'None provided',
-          additionalGuests: form.additional_guests.value || '0'
+          additionalInfo: form.message.value || 'None provided'
         });
 
         // Since no-cors doesn't return readable response, we assume success
@@ -560,9 +541,7 @@
           applicantName: form.name.value,
           applicantEmail: form.email.value,
           applicantPhone: form.phone.value,
-          budgetRange: form.budget_range.value,
-          additionalInfo: form.message.value || '',
-          additionalGuests: form.additional_guests.value || '0'
+          additionalInfo: form.message.value || ''
         };
         
         // Hide form and show payment section

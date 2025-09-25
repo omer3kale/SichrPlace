@@ -673,6 +673,13 @@
           " oninput="handleSearch()" onkeyup="if(event.key==='Enter') handleSearch()">
         </div>
         
+        <!-- Filters Button -->
+        <div class="filters-bar">
+          <button onclick="toggleFilters()" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+            <i class="fa fa-filter"></i> Filters
+          </button>
+        </div>
+
         <!-- Map View Toggle -->
         <div>
           <button id="map-toggle" onclick="showMapView()" 
@@ -684,15 +691,206 @@
           </button>
         </div>
         
-        <!-- Advanced Search Button -->
+        <!-- Inspection Icon -->
         <div>
-          <button onclick="showAdvancedSearch()" id="advanced-search-toggle" 
-                  onmouseover="this.style.background='#1d4ed8'" 
-                  onmouseout="this.style.background='var(--primary)'"
-                  style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; transition: all 0.2s; white-space: nowrap; cursor: pointer;">
-            <i class="fas fa-search-plus" id="advanced-search-icon"></i>
-            <span id="advanced-search-text">Advanced Search</span>
+          <button onclick="handleSearch()" 
+                  onmouseover="this.style.background='var(--accent)'; this.style.color='white'" 
+                  onmouseout="this.style.background='var(--secondary)'; this.style.color='var(--accent)'"
+                  style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: var(--secondary); color: var(--accent); border: 2px solid var(--accent); border-radius: 8px; cursor: pointer; transition: all 0.2s;" title="Search Apartments">
+            <i class="fas fa-search" style="font-size: 18px;"></i>
           </button>
+        </div>
+      </div>
+
+      <!-- Enhanced Filters Container -->
+      <div id="filters-container" style="display: none; background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 90%; margin-left: auto; margin-right: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e1e5e9; padding-bottom: 10px;">
+          <h3 style="margin: 0; color: var(--primary); font-family: var(--heading-font); font-size: 1.2rem;">
+            <i class="fas fa-filter" style="color: var(--primary); margin-right: 8px;"></i>
+            Advanced Filters
+          </h3>
+          <button onclick="toggleFilters()" style="
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: background 0.2s;
+          " onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'" title="Close Filters">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+        
+        <!-- Price Range Section with Kalt/Warm Miete -->
+        <div style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; border-left: 4px solid var(--accent);">
+          <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 10px; font-size: 14px;">
+            <i class="fas fa-euro-sign" style="color: var(--accent);"></i> Price Range & Type
+          </label>
+          
+          <!-- Kalt/Warm Miete Checkboxes -->
+          <div style="display: flex; gap: 20px; margin-bottom: 12px;">
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+              <input type="checkbox" id="price-type-kalt" onchange="applyPriceFilters()" style="margin: 0;">
+              <i class="fas fa-snowflake" style="color: #6c757d; width: 14px;"></i>
+              Kaltmiete (Cold Rent)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+              <input type="checkbox" id="price-type-warm" onchange="applyPriceFilters()" style="margin: 0;">
+              <i class="fas fa-fire" style="color: #dc3545; width: 14px;"></i>
+              Warmmiete (Warm Rent)
+            </label>
+          </div>
+          
+          <!-- Price Range Inputs -->
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+            <input type="number" id="min-price" placeholder="Min €" style="
+              width: 70px; padding: 6px 8px; border: 1px solid #e1e5e9; border-radius: 4px; font-size: 12px;
+            " oninput="handlePriceFilter()">
+            <span style="color: var(--muted); font-size: 12px;">-</span>
+            <input type="number" id="max-price" placeholder="Max €" style="
+              width: 70px; padding: 6px 8px; border: 1px solid #e1e5e9; border-radius: 4px; font-size: 12px;
+            " oninput="handlePriceFilter()">
+          </div>
+          
+          <!-- Price Range Slider -->
+          <div style="position: relative;">
+            <input type="range" id="price-range" min="200" max="2000" value="1000" style="
+              width: 100%; height: 4px; border-radius: 2px; background: #e1e5e9; outline: none;
+              -webkit-appearance: none; cursor: pointer;
+            " oninput="updatePriceSlider()">
+            <div id="price-display" style="font-size: 11px; color: var(--muted); text-align: center; margin-top: 2px;">
+              €200 - €2000
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters Grid (Smaller Text) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 15px;">
+          
+          <!-- Bedrooms -->
+          <div>
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 6px; font-size: 12px;">
+              <i class="fas fa-bed" style="color: var(--primary); font-size: 11px;"></i> Bedrooms
+            </label>
+            <select id="bedrooms-filter" style="
+              width: 100%; padding: 6px 8px; border: 1px solid #e1e5e9; border-radius: 4px; font-size: 11px;
+            " onchange="applyFilters()">
+              <option value="">Any</option>
+              <option value="1">1 Room</option>
+              <option value="2">2 Rooms</option>
+              <option value="3">3 Rooms</option>
+              <option value="4">4+ Rooms</option>
+            </select>
+          </div>
+
+          <!-- Property Type -->
+          <div>
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 6px; font-size: 12px;">
+              <i class="fas fa-home" style="color: var(--primary); font-size: 11px;"></i> Type
+            </label>
+            <select id="property-type-filter" style="
+              width: 100%; padding: 6px 8px; border: 1px solid #e1e5e9; border-radius: 4px; font-size: 11px;
+            " onchange="applyFilters()">
+              <option value="">All Types</option>
+              <option value="apartment">Apartment</option>
+              <option value="studio">Studio</option>
+              <option value="house">House</option>
+            </select>
+          </div>
+
+          <!-- Furnished Status -->
+          <div>
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 6px; font-size: 12px;">
+              <i class="fas fa-couch" style="color: var(--primary); font-size: 11px;"></i> Furnished
+            </label>
+            <select id="furnished-filter" style="
+              width: 100%; padding: 6px 8px; border: 1px solid #e1e5e9; border-radius: 4px; font-size: 11px;
+            " onchange="applyFilters()">
+              <option value="">Any</option>
+              <option value="furnished">Furnished</option>
+              <option value="unfurnished">Unfurnished</option>
+            </select>
+          </div>
+
+          <!-- Pet Policy -->
+          <div>
+            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 6px; font-size: 12px;">
+              <i class="fas fa-paw" style="color: var(--primary); font-size: 11px;"></i> Pets
+            </label>
+            <select id="pet-filter" style="
+              width: 100%; padding: 6px 8px; border: 1px solid #e1e5e9; border-radius: 4px; font-size: 11px;
+            " onchange="applyFilters()">
+              <option value="">Any</option>
+              <option value="pet-friendly">Pet-Friendly</option>
+              <option value="no-pets">No Pets</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Premium Amenities (Checkboxes) -->
+        <div style="border-top: 1px solid #e1e5e9; padding-top: 15px;">
+          <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 10px; font-size: 12px;">
+            <i class="fas fa-star" style="color: var(--accent); font-size: 11px;"></i> Premium Amenities
+          </label>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;">
+            
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px;">
+              <input type="checkbox" id="amenity-wifi" onchange="applyFilters()" style="margin: 0;">
+              <i class="fas fa-wifi" style="color: var(--primary); width: 12px; font-size: 10px;"></i>
+              WiFi
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px;">
+              <input type="checkbox" id="amenity-laundry" onchange="applyFilters()" style="margin: 0;">
+              <i class="fas fa-tshirt" style="color: var(--primary); width: 12px; font-size: 10px;"></i>
+              Laundry
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px;">
+              <input type="checkbox" id="amenity-ac" onchange="applyFilters()" style="margin: 0;">
+              <i class="fas fa-snowflake" style="color: var(--primary); width: 12px; font-size: 10px;"></i>
+              A/C
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px;">
+              <input type="checkbox" id="amenity-balcony" onchange="applyFilters()" style="margin: 0;">
+              <i class="fas fa-tree" style="color: var(--primary); width: 12px; font-size: 10px;"></i>
+              Balcony
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px;">
+              <input type="checkbox" id="amenity-transport" onchange="applyFilters()" style="margin: 0;">
+              <i class="fas fa-subway" style="color: var(--primary); width: 12px; font-size: 10px;"></i>
+              Transport
+            </label>
+            
+            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px;">
+              <input type="checkbox" id="amenity-elevator" onchange="applyFilters()" style="margin: 0;">
+              <i class="fas fa-arrows-alt-v" style="color: var(--primary); width: 12px; font-size: 10px;"></i>
+              Elevator
+            </label>
+          </div>
+        </div>
+
+        <!-- Filter Actions -->
+        <div style="border-top: 1px solid #e1e5e9; padding-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+          <div id="filter-summary" style="color: var(--muted); font-size: 12px;">
+            Showing all apartments
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button onclick="applyAllFilters()" style="background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='var(--primary)'">
+              <i class="fas fa-search" style="font-size: 10px;"></i> Apply
+            </button>
+            <button onclick="clearAllFilters()" style="background: var(--muted); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#374151'" onmouseout="this.style.background='var(--muted)'">
+              <i class="fa fa-times" style="font-size: 10px;"></i> Clear
+            </button>
+          </div>
         </div>
       </div>
 
@@ -738,7 +936,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e1e5e9; padding-bottom: 15px;">
             <h3 style="margin: 0; color: var(--primary); font-family: var(--heading-font); font-size: 1.4rem;">
               <i class="fas fa-search-plus" style="color: var(--accent); margin-right: 8px;"></i>
-              Advanced Search Filters
+              Essential Filters
             </h3>
             <!-- Close Button for Advanced Search -->
             <button onclick="hideDisplayContainer()" style="
@@ -762,32 +960,48 @@
             </button>
           </div>
           
-          <!-- Filters Grid -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+          <!-- Simplified Filters Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 800px; margin: 0 auto;">
+            <!-- Bedrooms -->
+            <div>
+              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+                <i class="fas fa-bed" style="color: var(--accent);"></i> Bedrooms
+              </label>
+              <select style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="">Any</option>
+                <option value="1">1 Bedroom</option>
+                <option value="2">2 Bedrooms</option>
+                <option value="3">3 Bedrooms</option>
+                <option value="4">4+ Bedrooms</option>
+              </select>
+            </div>
+            
+            <!-- Price Range -->
+            <div>
+              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
+                <i class="fas fa-euro-sign" style="color: var(--accent);"></i> Monthly Rent
+              </label>
+              <select style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+                <option value="">Any Price</option>
+                <option value="0-500">Up to €500</option>
+                <option value="500-800">€500 - €800</option>
+                <option value="800-1200">€800 - €1,200</option>
+                <option value="1200-1600">€1,200 - €1,600</option>
+                <option value="1600-2000">€1,600 - €2,000</option>
+                <option value="2000+">€2,000+</option>
+              </select>
+            </div>
+            
             <!-- Property Type -->
             <div>
               <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
                 <i class="fas fa-home" style="color: var(--accent);"></i> Property Type
               </label>
-              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+              <select style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
                 <option value="">All Types</option>
                 <option value="apartment">Apartment</option>
-                <option value="house">House</option>
                 <option value="studio">Studio</option>
-                <option value="loft">Loft</option>
-              </select>
-            </div>
-            
-            <!-- Bathrooms -->
-            <div>
-              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
-                <i class="fas fa-bath" style="color: var(--accent);"></i> Bathrooms
-              </label>
-              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
-                <option value="">Any</option>
-                <option value="1">1+</option>
-                <option value="2">2+</option>
-                <option value="3">3+</option>
+                <option value="house">House</option>
               </select>
             </div>
             
@@ -796,95 +1010,32 @@
               <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
                 <i class="fas fa-couch" style="color: var(--accent);"></i> Furnished
               </label>
-              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
+              <select style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
                 <option value="">Any</option>
                 <option value="furnished">Furnished</option>
                 <option value="unfurnished">Unfurnished</option>
-                <option value="semi-furnished">Semi-Furnished</option>
               </select>
-            </div>
-            
-            <!-- Pet Policy -->
-            <div>
-              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
-                <i class="fas fa-paw" style="color: var(--accent);"></i> Pet Policy
-              </label>
-              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
-                <option value="">Any</option>
-                <option value="pets-allowed">Pets Allowed</option>
-                <option value="no-pets">No Pets</option>
-                <option value="cats-only">Cats Only</option>
-                <option value="dogs-only">Dogs Only</option>
-              </select>
-            </div>
-            
-            <!-- Parking -->
-            <div>
-              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
-                <i class="fas fa-car" style="color: var(--accent);"></i> Parking
-              </label>
-              <select style="width: 100%; padding: 10px 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px; background: white;">
-                <option value="">Any</option>
-                <option value="included">Included</option>
-                <option value="available">Available (Extra Cost)</option>
-                <option value="street-parking">Street Parking</option>
-                <option value="no-parking">No Parking</option>
-              </select>
-            </div>
-            
-            <!-- Price Range -->
-            <div>
-              <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 8px;">
-                <i class="fas fa-euro-sign" style="color: var(--accent);"></i> Price Range
-              </label>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="number" placeholder="Min €" style="flex: 1; padding: 10px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px;">
-                <span style="color: var(--muted);">-</span>
-                <input type="number" placeholder="Max €" style="flex: 1; padding: 10px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 14px;">
-              </div>
-            </div>
-          </div>
-          
-          <!-- Amenities Section -->
-          <div style="margin-top: 25px; border-top: 1px solid #e1e5e9; padding-top: 20px;">
-            <label style="font-weight: 600; color: var(--text); display: block; margin-bottom: 15px;">
-              <i class="fas fa-star" style="color: var(--accent);"></i> Amenities
-            </label>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
-              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
-                <input type="checkbox" style="margin-right: 8px;"> 🌿 Balcony
-              </label>
-              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
-                <input type="checkbox" style="margin-right: 8px;"> 🍽️ Dishwasher
-              </label>
-              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
-                <input type="checkbox" style="margin-right: 8px;"> 🧺 Washing Machine
-              </label>
-              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
-                <input type="checkbox" style="margin-right: 8px;"> ❄️ Air Conditioning
-              </label>
-              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
-                <input type="checkbox" style="margin-right: 8px;"> 📶 WiFi
-              </label>
-              <label style="display: flex; align-items: center; font-size: 14px; cursor: pointer; padding: 8px; border-radius: 6px; transition: background 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
-                <input type="checkbox" style="margin-right: 8px;"> 🔥 Heating
-              </label>
             </div>
           </div>
           
           <!-- Action Buttons -->
           <div style="margin-top: 25px; display: flex; gap: 12px; justify-content: center; border-top: 1px solid #e1e5e9; padding-top: 20px;">
             <button onclick="applyAdvancedFilters()" style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='var(--primary)'">
-              <i class="fas fa-search"></i> Apply Filters
+              <i class="fas fa-search"></i> Find Apartments
             </button>
             <button onclick="clearAdvancedFilters()" style="background: var(--muted); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#374151'" onmouseout="this.style.background='var(--muted)'">
               <i class="fas fa-eraser"></i> Clear All
             </button>
           </div>
-        </div>
+          
+          <!-- Simplified Note -->
+          <div style="text-align: center; margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--accent);">
+            <small style="color: var(--muted); font-style: italic;">
+              <i class="fas fa-lightbulb" style="color: var(--accent);"></i> 
+              Simplified search for faster results. Use the main search box above for location-based searches.
+            </small>
+          </div>
       </div>
-
-      <!-- Main Listings Container -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <h3 style="margin: 0; color: var(--text); font-size: 18px; font-weight: 600;">
             <i class="fas fa-filter" style="color: var(--primary); margin-right: 8px;"></i>
@@ -1364,6 +1515,18 @@
             <option value="private-room">Private Room</option>
             <option value="studio">Studio</option>
             <option value="apartment">Apartment</option>
+            <option value="house">House</option>
+            <option value="flat-share">Flat Share</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="duration">Rental Duration</label>
+          <select id="duration">
+            <option value="">Any Duration</option>
+            <option value="short-term">Short Term (1-6 months)</option>
+            <option value="medium-term">Medium Term (6-12 months)</option>
+            <option value="long-term">Long Term (12+ months)</option>
+            <option value="temporary">Temporary (< 1 month)</option>
           </select>
         </div>
       </div>
@@ -1382,6 +1545,10 @@
             <option value="heating">Heating</option>
             <option value="private-bathroom">Private Bathroom</option>
             <option value="wheelchair-accessible">Wheelchair Accessible</option>
+            <option value="parking">Parking</option>
+            <option value="balcony">Balcony</option>
+            <option value="garden">Garden</option>
+            <option value="pets-allowed">Pets Allowed</option>
           </select>
         </div>
         <div class="filter-group" style="flex: 1;">
@@ -1389,14 +1556,62 @@
           <select id="bed-type" multiple>
             <option value="single-bed">Single Bed</option>
             <option value="double-bed">Double Bed</option>
-            <option value="hochbett">Hochbett</option>
+            <option value="queen-bed">Queen Bed</option>
+            <option value="king-bed">King Bed</option>
+            <option value="hochbett">Hochbett (Bunk Bed)</option>
+            <option value="sofa-bed">Sofa Bed</option>
+            <option value="no-bed">No Bed Provided</option>
           </select>
         </div>
       </div>
       <div class="filters-row">
         <div class="filter-group">
           <label for="rooms">Number of Rooms</label>
-          <input type="number" id="rooms" placeholder="Enter number of rooms">
+          <input type="number" id="rooms" placeholder="Enter number of rooms" min="1" max="10">
+        </div>
+        <div class="filter-group">
+          <label for="bathrooms">Number of Bathrooms</label>
+          <select id="bathrooms">
+            <option value="">Any</option>
+            <option value="1">1 Bathroom</option>
+            <option value="2">2 Bathrooms</option>
+            <option value="3">3+ Bathrooms</option>
+            <option value="shared">Shared Bathroom</option>
+            <option value="private">Private Bathroom</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="roommates">Max Roommates</label>
+          <select id="roommates">
+            <option value="">Any</option>
+            <option value="0">No Roommates</option>
+            <option value="1">1 Roommate</option>
+            <option value="2">2 Roommates</option>
+            <option value="3">3+ Roommates</option>
+          </select>
+        </div>
+      </div>
+      <div class="filters-row">
+        <div class="filter-group">
+          <label for="available-from">Available From</label>
+          <input type="date" id="available-from">
+        </div>
+        <div class="filter-group">
+          <label for="available-until">Available Until</label>
+          <input type="date" id="available-until">
+        </div>
+        <div class="filter-group">
+          <label for="min-stay">Minimum Stay</label>
+          <select id="min-stay">
+            <option value="">Any</option>
+            <option value="1-week">1 Week</option>
+            <option value="2-weeks">2 Weeks</option>
+            <option value="1-month">1 Month</option>
+            <option value="3-months">3 Months</option>
+            <option value="6-months">6 Months</option>
+            <option value="12-months">12 Months</option>
+          </select>
+        </div>
         </div>
       </div>
       <button class="apply-filters" onclick="applyModalFilters()">Apply Filters</button>
@@ -1625,12 +1840,170 @@
       var element = document.getElementById('filters-container');
       
       if (element) {
-        if (element.classList.contains('active')) {
-          element.classList.remove('active');
+        if (element.style.display === 'none' || element.style.display === '') {
+          element.style.display = 'block';
         } else {
-          element.classList.add('active');
+          element.style.display = 'none';
         }
       }
+    }
+
+    // Enhanced Price Filtering with Kalt/Warm Miete
+    function applyPriceFilters() {
+      const kaltChecked = document.getElementById('price-type-kalt').checked;
+      const warmChecked = document.getElementById('price-type-warm').checked;
+      const minPrice = document.getElementById('min-price').value;
+      const maxPrice = document.getElementById('max-price').value;
+      
+      console.log('Applying price filters:', {
+        kalt: kaltChecked,
+        warm: warmChecked,
+        min: minPrice,
+        max: maxPrice
+      });
+      
+      // Apply filters and update apartment listings
+      applyAllFilters();
+    }
+
+    // Handle price range input changes
+    function handlePriceFilter() {
+      const minPrice = document.getElementById('min-price').value;
+      const maxPrice = document.getElementById('max-price').value;
+      const priceRange = document.getElementById('price-range');
+      const priceDisplay = document.getElementById('price-display');
+      
+      if (minPrice && maxPrice) {
+        priceDisplay.textContent = `€${minPrice} - €${maxPrice}`;
+        // Update slider to middle value
+        priceRange.value = (parseInt(minPrice) + parseInt(maxPrice)) / 2;
+      }
+      
+      // Apply filters after a short delay
+      setTimeout(applyAllFilters, 300);
+    }
+
+    // Update price slider display
+    function updatePriceSlider() {
+      const priceRange = document.getElementById('price-range');
+      const priceDisplay = document.getElementById('price-display');
+      const value = priceRange.value;
+      
+      // Set min and max based on slider value
+      const minPrice = Math.max(200, value - 200);
+      const maxPrice = Math.min(2000, parseInt(value) + 200);
+      
+      document.getElementById('min-price').value = minPrice;
+      document.getElementById('max-price').value = maxPrice;
+      priceDisplay.textContent = `€${minPrice} - €${maxPrice}`;
+      
+      // Apply filters
+      applyAllFilters();
+    }
+
+    // Apply all filters together
+    function applyAllFilters() {
+      const filters = {
+        kalt: document.getElementById('price-type-kalt')?.checked || false,
+        warm: document.getElementById('price-type-warm')?.checked || false,
+        minPrice: document.getElementById('min-price')?.value || '',
+        maxPrice: document.getElementById('max-price')?.value || '',
+        bedrooms: document.getElementById('bedrooms-filter')?.value || '',
+        propertyType: document.getElementById('property-type-filter')?.value || '',
+        furnished: document.getElementById('furnished-filter')?.value || '',
+        pets: document.getElementById('pet-filter')?.value || '',
+        amenities: {
+          wifi: document.getElementById('amenity-wifi')?.checked || false,
+          laundry: document.getElementById('amenity-laundry')?.checked || false,
+          ac: document.getElementById('amenity-ac')?.checked || false,
+          balcony: document.getElementById('amenity-balcony')?.checked || false,
+          transport: document.getElementById('amenity-transport')?.checked || false,
+          elevator: document.getElementById('amenity-elevator')?.checked || false
+        }
+      };
+      
+      console.log('Applying filters:', filters);
+      
+      // Filter apartments based on criteria
+      let filteredApartments = apartmentsData;
+      
+      // Price filtering
+      if (filters.minPrice || filters.maxPrice) {
+        filteredApartments = filteredApartments.filter(apt => {
+          const price = parseInt(apt.price?.replace(/[€,]/g, '')) || 0;
+          const min = filters.minPrice ? parseInt(filters.minPrice) : 0;
+          const max = filters.maxPrice ? parseInt(filters.maxPrice) : Infinity;
+          return price >= min && price <= max;
+        });
+      }
+      
+      // Room filtering
+      if (filters.bedrooms) {
+        filteredApartments = filteredApartments.filter(apt => {
+          const rooms = parseInt(apt.rooms) || 0;
+          if (filters.bedrooms === '4') return rooms >= 4;
+          return rooms == parseInt(filters.bedrooms);
+        });
+      }
+      
+      // Property type filtering
+      if (filters.propertyType) {
+        filteredApartments = filteredApartments.filter(apt => 
+          apt.type?.toLowerCase().includes(filters.propertyType.toLowerCase())
+        );
+      }
+      
+      // Update filter summary
+      const summary = document.getElementById('filter-summary');
+      if (summary) {
+        const activeFilters = [];
+        if (filters.kalt) activeFilters.push('Kaltmiete');
+        if (filters.warm) activeFilters.push('Warmmiete');
+        if (filters.minPrice || filters.maxPrice) activeFilters.push('Price Range');
+        if (filters.bedrooms) activeFilters.push('Bedrooms');
+        if (filters.propertyType) activeFilters.push('Property Type');
+        
+        if (activeFilters.length > 0) {
+          summary.textContent = `Showing ${filteredApartments.length} apartments with filters: ${activeFilters.join(', ')}`;
+        } else {
+          summary.textContent = `Showing all ${filteredApartments.length} apartments`;
+        }
+      }
+      
+      // Re-render apartments
+      displayApartments(filteredApartments);
+    }
+
+    // Clear all filters
+    function clearAllFilters() {
+      // Reset checkboxes
+      document.getElementById('price-type-kalt').checked = false;
+      document.getElementById('price-type-warm').checked = false;
+      
+      // Reset inputs
+      document.getElementById('min-price').value = '';
+      document.getElementById('max-price').value = '';
+      document.getElementById('price-range').value = 1000;
+      document.getElementById('price-display').textContent = '€200 - €2000';
+      
+      // Reset selects
+      document.getElementById('bedrooms-filter').value = '';
+      document.getElementById('property-type-filter').value = '';
+      document.getElementById('furnished-filter').value = '';
+      document.getElementById('pet-filter').value = '';
+      
+      // Reset amenity checkboxes
+      const amenityCheckboxes = [
+        'amenity-wifi', 'amenity-laundry', 'amenity-ac', 
+        'amenity-balcony', 'amenity-transport', 'amenity-elevator'
+      ];
+      amenityCheckboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) checkbox.checked = false;
+      });
+      
+      // Apply filters (which will show all apartments)
+      applyAllFilters();
     }
   
     // Track apartment view for recently viewed

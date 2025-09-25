@@ -351,6 +351,84 @@
       font-size: 1rem;
     }
 
+    /* Rent Type Selection Styles */
+    .rent-type-selection {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    .rent-type-option {
+      font-weight: normal !important;
+      display: block;
+      background: #f9fafb;
+      border: 2px solid transparent;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+
+    .rent-type-option:hover {
+      background: rgba(64, 224, 208, 0.05);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(64, 224, 208, 0.15);
+    }
+
+    .rent-type-option input[type="radio"] {
+      display: none;
+    }
+
+    .rent-type-option input[type="radio"]:checked + .rent-type-content {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+    }
+
+    .rent-type-option input[type="radio"]:checked + .rent-type-content i {
+      color: white;
+      transform: scale(1.1);
+    }
+
+    .rent-type-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .rent-type-content i {
+      font-size: 1.8rem;
+      color: var(--primary);
+      transition: all 0.3s ease;
+      min-width: 24px;
+    }
+
+    .rent-type-info {
+      flex: 1;
+    }
+
+    .rent-type-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+      font-family: var(--heading-font);
+    }
+
+    .rent-type-description {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 768px) {
+      .rent-type-selection {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .premium-features-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -552,13 +630,40 @@
         <div class="form-row">
           <div class="form-group">
             <label for="rent">Monthly Rent (€) *</label>
-            <input type="number" id="rent" name="rent" required
+            <input type="number" id="rent" name="rent_amount" required
                    placeholder="1200" min="1">
           </div>
           <div class="form-group">
             <label for="deposit">Security Deposit (€)</label>
-            <input type="number" id="deposit" name="deposit"
+            <input type="number" id="deposit" name="deposit_amount"
                    placeholder="2400" min="0">
+          </div>
+        </div>
+
+        <!-- Rent Type (German Market Standard) -->
+        <div class="form-group">
+          <label>Rent Type *</label>
+          <div class="rent-type-selection">
+            <label class="rent-type-option">
+              <input type="radio" name="rent-type" value="kalt" required>
+              <div class="rent-type-content">
+                <i class="fas fa-snowflake"></i>
+                <div class="rent-type-info">
+                  <div class="rent-type-title">Kaltmiete (Cold Rent)</div>
+                  <div class="rent-type-description">Base rent without utilities (heating, water, electricity)</div>
+                </div>
+              </div>
+            </label>
+            <label class="rent-type-option">
+              <input type="radio" name="rent-type" value="warm" required>
+              <div class="rent-type-content">
+                <i class="fas fa-fire"></i>
+                <div class="rent-type-info">
+                  <div class="rent-type-title">Warmmiete (Warm Rent)</div>
+                  <div class="rent-type-description">Rent including utilities (heating, water, sometimes electricity)</div>
+                </div>
+              </div>
+            </label>
           </div>
         </div>
 
@@ -784,6 +889,9 @@
       const area = document.getElementById('area').value;
       const deposit = document.getElementById('deposit').value;
       
+      // Get rent type selection
+      const rentType = document.querySelector('input[name="rent-type"]:checked');
+      
       // Validate required fields with enhanced checks
       if (title.length < 5) {
         showError('Property title must be at least 5 characters long');
@@ -809,6 +917,12 @@
       
       if (rent <= 0 || rent > 50000) {
         showError('Monthly rent must be between €1 and €50,000');
+        return;
+      }
+      
+      // Validate rent type selection
+      if (!rentType) {
+        showError('Please select rent type (Kaltmiete or Warmmiete)');
         return;
       }
       

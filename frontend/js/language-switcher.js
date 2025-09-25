@@ -25,17 +25,37 @@ function setupLanguageDropdown() {
     const languageDropdown = document.getElementById('language-dropdown');
     
     if (languageBtn && languageDropdown) {
+        // Ensure dropdown is initially hidden
+        languageDropdown.classList.remove('active', 'show');
+        
         // Toggle dropdown
         languageBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            languageDropdown.classList.toggle('show');
+            
+            // Close any other open dropdowns first
+            document.querySelectorAll('.language-dropdown.active').forEach(dropdown => {
+                if (dropdown !== languageDropdown) {
+                    dropdown.classList.remove('active', 'show');
+                }
+            });
+            
+            // Toggle current dropdown
+            const isActive = languageDropdown.classList.contains('active');
+            if (isActive) {
+                languageDropdown.classList.remove('active', 'show');
+                languageBtn.classList.remove('active');
+            } else {
+                languageDropdown.classList.add('active', 'show');
+                languageBtn.classList.add('active');
+            }
         });
         
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             if (!languageBtn.contains(e.target) && !languageDropdown.contains(e.target)) {
-                languageDropdown.classList.remove('show');
+                languageDropdown.classList.remove('active', 'show');
+                languageBtn.classList.remove('active');
             }
         });
         
@@ -44,10 +64,31 @@ function setupLanguageDropdown() {
         langOptions.forEach(function(option) {
             option.addEventListener('click', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
+                
                 const lang = option.getAttribute('data-lang');
-                switchLanguage(lang);
-                languageDropdown.classList.remove('show');
+                if (lang) {
+                    switchLanguage(lang);
+                    
+                    // Update active state
+                    langOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+                    
+                    // Close dropdown
+                    setTimeout(() => {
+                        languageDropdown.classList.remove('active', 'show');
+                        languageBtn.classList.remove('active');
+                    }, 150);
+                }
             });
+        });
+        
+        // Close dropdown on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && languageDropdown.classList.contains('active')) {
+                languageDropdown.classList.remove('active', 'show');
+                languageBtn.classList.remove('active');
+            }
         });
     }
 }

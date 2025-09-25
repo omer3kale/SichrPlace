@@ -283,6 +283,114 @@
       color: #fff;
     }
 
+    /* Enhanced Price Display with Rent Type */
+    .price-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 20px 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: var(--radius);
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .price-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+    }
+
+    .price-display {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .main-price {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      font-family: var(--heading-font);
+      line-height: 1;
+    }
+
+    .price-period {
+      font-size: 1.1rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .rent-type-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 25px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .rent-type-badge.kalt {
+      background: linear-gradient(135deg, #3B82F6, #1E40AF);
+      color: white;
+    }
+
+    .rent-type-badge.warm {
+      background: linear-gradient(135deg, #EF4444, #DC2626);
+      color: white;
+    }
+
+    .rent-type-badge i {
+      font-size: 1.1rem;
+      transition: transform 0.3s ease;
+    }
+
+    .rent-type-badge:hover i {
+      transform: scale(1.1);
+    }
+
+    .rent-type-explanation {
+      margin: -10px 0 15px 0;
+      padding: 12px 20px;
+      background: rgba(59, 130, 246, 0.05);
+      border-left: 4px solid var(--primary);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .rent-type-explanation.warm {
+      background: rgba(239, 68, 68, 0.05);
+      border-left-color: #EF4444;
+    }
+
+    @media (max-width: 768px) {
+      .price-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+      
+      .main-price {
+        font-size: 2rem;
+      }
+      
+      .rent-type-badge {
+        align-self: stretch;
+        justify-content: center;
+      }
+    }
+
     /* Chat Page Styles */
     .chat-page-modal {
       display: none;
@@ -685,8 +793,20 @@
         <!-- Exact Address -->
         <h2 id="offer-title">Offer Title</h2>
         <h3 id="offer-address">Exact Address</h3>
-        <!-- Price and Details -->
-        <p id="offer-price" style="font-weight: bold; font-size: 18px;">Price: €</p>
+        <!-- Price and Details with Rent Type -->
+        <div class="price-section">
+          <div class="price-display">
+            <span id="offer-price" class="main-price">€1,200</span>
+            <span class="price-period">/month</span>
+          </div>
+          <div class="rent-type-badge" id="rent-type-badge">
+            <i class="fas fa-snowflake" id="rent-type-icon"></i>
+            <span id="rent-type-text">Kaltmiete</span>
+          </div>
+        </div>
+        <div class="rent-type-explanation" id="rent-type-explanation">
+          <span id="rent-type-description">Base rent without utilities (heating, water, electricity)</span>
+        </div>
         <p id="offer-deposit" style="color: #6B7280;">Deposit: €</p>
         <p id="offer-details" style="color: #6B7280;">Details: Size, Property Type, Furnished/Unfurnished, Rooms, Beds</p>
         <!-- Amenities and Extra Services -->
@@ -886,16 +1006,27 @@
   </footer>
 
   <script>
-     // Wishlist logic
+     // Enhanced Wishlist logic with rent type
     function addToWishlist() {
       const offerTitle = document.getElementById('offer-title').textContent;
       const offerAddress = document.getElementById('offer-address').textContent;
       const offerPrice = document.getElementById('offer-price').textContent;
-      const wishlistItem = { title: offerTitle, address: offerAddress, price: offerPrice };
+      const rentTypeText = document.getElementById('rent-type-text').textContent;
+      
+      const wishlistItem = { 
+        title: offerTitle, 
+        address: offerAddress, 
+        price: offerPrice,
+        rentType: rentTypeText,
+        dateAdded: new Date().toISOString()
+      };
+      
       const wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
       wishlist.push(wishlistItem);
       localStorage.setItem('wishlist', JSON.stringify(wishlist));
-      alert('Offer added to your wishlist!');
+      
+      // Enhanced success message with rent type
+      alert(`Offer added to your wishlist!\n${offerTitle}\n${offerPrice} (${rentTypeText})`);
     }
     // Messaging modal logic (legacy, not used anymore)
     function openMessagingModal() {
@@ -1039,6 +1170,94 @@ document.getElementById('booking-request-form').onsubmit = async function(e) {
           this.classList.toggle('active');
         });
       });
+    });
+
+    // Enhanced rent type display functionality
+    function updateRentTypeDisplay(rentType, rentAmount) {
+      const badge = document.getElementById('rent-type-badge');
+      const icon = document.getElementById('rent-type-icon');
+      const text = document.getElementById('rent-type-text');
+      const description = document.getElementById('rent-type-description');
+      const explanation = document.getElementById('rent-type-explanation');
+      const priceElement = document.getElementById('offer-price');
+      
+      // Update price display
+      if (priceElement && rentAmount) {
+        priceElement.textContent = `€${rentAmount.toLocaleString()}`;
+      }
+      
+      // Update rent type badge and description
+      if (rentType === 'warm') {
+        badge.className = 'rent-type-badge warm';
+        icon.className = 'fas fa-fire';
+        text.textContent = 'Warmmiete';
+        description.textContent = 'Rent including utilities (heating, water, sometimes electricity)';
+        explanation.className = 'rent-type-explanation warm';
+      } else {
+        badge.className = 'rent-type-badge kalt';
+        icon.className = 'fas fa-snowflake';
+        text.textContent = 'Kaltmiete';
+        description.textContent = 'Base rent without utilities (heating, water, electricity)';
+        explanation.className = 'rent-type-explanation';
+      }
+    }
+
+    // Function to load and display apartment data (enhanced for rent type)
+    function displayApartmentData(apartmentData) {
+      try {
+        // Update basic information
+        document.getElementById('offer-title').textContent = apartmentData.title || 'Modern Apartment';
+        document.getElementById('offer-address').textContent = apartmentData.address || 'Address not available';
+        document.getElementById('offer-deposit').textContent = `Deposit: €${apartmentData.deposit_amount || 'N/A'}`;
+        document.getElementById('offer-details').textContent = `${apartmentData.size_sqm || 'N/A'} sqm • ${apartmentData.rooms || 'N/A'} rooms • ${apartmentData.property_type || 'Apartment'}`;
+        document.getElementById('offer-description').textContent = apartmentData.description || 'Description not available';
+        document.getElementById('landlord-name').textContent = apartmentData.landlord_name || 'Property Owner';
+        
+        // Enhanced rent type display
+        const rentType = apartmentData.rent_type || 'kalt';
+        const rentAmount = apartmentData.rent_amount || 0;
+        updateRentTypeDisplay(rentType, rentAmount);
+        
+        // Update amenities if available
+        if (apartmentData.amenities && apartmentData.amenities.length > 0) {
+          document.getElementById('offer-amenities').textContent = apartmentData.amenities.join(', ');
+          const detailedAmenities = document.getElementById('detailed-amenities');
+          detailedAmenities.innerHTML = apartmentData.amenities.map(amenity => `<li>${amenity}</li>`).join('');
+        }
+        
+        // Update availability
+        if (apartmentData.available_from) {
+          document.getElementById('offer-availability').textContent = `Available from: ${new Date(apartmentData.available_from).toLocaleDateString()}`;
+        }
+        
+        console.log('Apartment data displayed with rent type:', rentType);
+      } catch (error) {
+        console.error('Error displaying apartment data:', error);
+        // Fallback to default display
+        updateRentTypeDisplay('kalt', 1200);
+      }
+    }
+
+    // Initialize apartment data display
+    document.addEventListener('DOMContentLoaded', function() {
+      // Sample apartment data - in real app, get from URL params or API
+      const sampleApartmentData = {
+        title: 'Beautiful 2-Bedroom Apartment in Munich Center',
+        address: 'Maximilianstraße 1, 80539 Munich, Germany',
+        rent_amount: 1200,
+        rent_type: 'kalt', // Change to 'warm' to test warm rent display
+        deposit_amount: 2400,
+        size_sqm: 75,
+        rooms: 2,
+        property_type: 'Apartment',
+        description: 'A stunning apartment in the heart of Munich with modern amenities and excellent transport connections.',
+        amenities: ['WiFi', 'Heating', 'Washing Machine', 'Dishwasher', 'Balcony'],
+        available_from: '2025-10-01',
+        landlord_name: 'Munich Properties GmbH'
+      };
+      
+      // Display the apartment data
+      displayApartmentData(sampleApartmentData);
     });
 
     // Initialize location services and distance calculation

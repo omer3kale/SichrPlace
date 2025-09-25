@@ -41,8 +41,8 @@
   <!-- PWA Styles -->
   <link rel="stylesheet" href="css/pwa-styles.css">
   
-  <!-- PayPal SDK - SichrPlace LIVE -->
-  <script src="https://www.paypal.com/sdk/js?client-id=AcPYlXozR8VS9kJSk7rv5MW36lMV66ZMyqZKjM0YVuvt0dJ1cIyHRvDmGeux0qu3gBOh6XswI5gin2WO&currency=EUR&locale=de_DE&components=buttons&enable-funding=venmo,paylater"></script>
+  <!-- PayPal SDK - Will be configured via environment variables -->
+  <!-- <script src="https://www.paypal.com/sdk/js?client-id=PAYPAL_CLIENT_ID&currency=EUR&locale=de_DE&components=buttons&enable-funding=venmo,paylater"></script> -->
   
   <style>
     :root {
@@ -1121,6 +1121,110 @@
       </div>
     </section>
 
+    <!-- How It Works Section -->
+    <section style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); padding: 80px 0;">
+      <div style="max-width: 1200px; margin: 0 auto; padding: 0 40px; text-align: center;">
+        <h2 style="font-size: 2.5rem; color: var(--primary); margin-bottom: 20px; font-family: var(--heading-font);">
+          <i class="fas fa-lightbulb" style="color: var(--accent); margin-right: 12px;"></i>
+          How SichrPlace Works
+        </h2>
+        <p style="font-size: 1.2rem; color: var(--text); margin-bottom: 60px; max-width: 600px; margin-left: auto; margin-right: auto;">
+          Finding your perfect apartment is simple with our streamlined process
+        </p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; margin-top: 50px;">
+          <!-- Step 1: Browse -->
+          <div style="background: white; padding: 40px 30px; border-radius: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); position: relative; border-top: 4px solid var(--primary);">
+            <div style="background: var(--primary); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; margin: 0 auto 20px;">1</div>
+            <div style="background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 4rem; margin-bottom: 15px;">
+              <i class="fas fa-search"></i>
+            </div>
+            <h3 style="color: var(--primary); font-size: 1.4rem; margin-bottom: 15px; font-family: var(--heading-font);">Browse Apartments</h3>
+            <p style="color: var(--text); line-height: 1.6; margin-bottom: 20px;">Search for apartments by location, use our simple filters (price, bedrooms, type), or browse all available listings. Every apartment is verified for safety.</p>
+            <a href="apartments-listing.html" style="display: inline-flex; align-items: center; gap: 8px; color: var(--primary); font-weight: 600; text-decoration: none; padding: 10px 20px; border: 2px solid var(--primary); border-radius: 8px; transition: all 0.3s;" onmouseover="this.style.background='var(--primary)'; this.style.color='white';" onmouseout="this.style.background='transparent'; this.style.color='var(--primary)';">
+              <i class="fas fa-arrow-right"></i> Start Browsing
+            </a>
+          </div>
+
+          <!-- Step 2: Schedule Viewing -->
+          <div style="background: white; padding: 40px 30px; border-radius: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); position: relative; border-top: 4px solid var(--accent);">
+            <div style="background: var(--accent); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; margin: 0 auto 20px;">2</div>
+            <div style="background: linear-gradient(135deg, var(--accent), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 4rem; margin-bottom: 15px;">
+              <i class="fas fa-calendar-check"></i>
+            </div>
+            <h3 style="color: var(--primary); font-size: 1.4rem; margin-bottom: 15px; font-family: var(--heading-font);">Schedule a Viewing</h3>
+            <p style="color: var(--text); line-height: 1.6; margin-bottom: 20px;">Found an apartment you like? Click "Schedule Viewing" and fill out the simple form with your contact details and preferred viewing time. We conduct all viewings professionally.</p>
+            <a href="viewing-request.html" style="display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font-weight: 600; text-decoration: none; padding: 10px 20px; border: 2px solid var(--accent); border-radius: 8px; transition: all 0.3s;" onmouseover="this.style.background='var(--accent)'; this.style.color='white';" onmouseout="this.style.background='transparent'; this.style.color='var(--accent)';">
+              <i class="fas fa-calendar"></i> Schedule Now
+            </a>
+          </div>
+
+          <!-- Step 3: Secure Payment -->
+          <div style="background: white; padding: 40px 30px; border-radius: 18px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); position: relative; border-top: 4px solid #28a745;">
+            <div style="background: #28a745; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; margin: 0 auto 20px;">3</div>
+            <div style="background: linear-gradient(135deg, #28a745, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 4rem; margin-bottom: 15px;">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+            <h3 style="color: var(--primary); font-size: 1.4rem; margin-bottom: 15px; font-family: var(--heading-font);">Secure Payment</h3>
+            <p style="color: var(--text); line-height: 1.6; margin-bottom: 20px;">Complete your viewing request with our secure PayPal payment system. A small viewing fee ensures serious inquiries and helps us maintain high-quality service.</p>
+            <div style="display: inline-flex; align-items: center; gap: 8px; color: #28a745; font-weight: 600; padding: 10px 20px; border: 2px solid #28a745; border-radius: 8px;">
+              <i class="fab fa-paypal"></i> PayPal Protected
+            </div>
+          </div>
+        </div>
+        
+        <!-- Quick Tips -->
+        <div style="background: white; border-radius: 18px; padding: 40px; margin-top: 60px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); border-left: 6px solid var(--accent);">
+          <h3 style="color: var(--primary); font-size: 1.8rem; margin-bottom: 25px; text-align: center; font-family: var(--heading-font);">
+            <i class="fas fa-star" style="color: var(--accent); margin-right: 10px;"></i>
+            Quick Tips for Success
+          </h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; text-align: left;">
+            <div style="display: flex; align-items: flex-start; gap: 15px;">
+              <div style="background: var(--primary); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                <i class="fas fa-search" style="font-size: 12px;"></i>
+              </div>
+              <div>
+                <h4 style="color: var(--primary); margin: 0 0 8px 0; font-size: 1.1rem;">Use Location Search</h4>
+                <p style="color: var(--text); margin: 0; line-height: 1.5;">Search by neighborhood names, postal codes, or nearby landmarks for the best results.</p>
+              </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 15px;">
+              <div style="background: var(--accent); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                <i class="fas fa-clock" style="font-size: 12px;"></i>
+              </div>
+              <div>
+                <h4 style="color: var(--primary); margin: 0 0 8px 0; font-size: 1.1rem;">Book Viewings Early</h4>
+                <p style="color: var(--text); margin: 0; line-height: 1.5;">Popular apartments fill up quickly. Schedule your viewing as soon as you find something you like.</p>
+              </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 15px;">
+              <div style="background: #28a745; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;">
+                <i class="fas fa-shield-alt" style="font-size: 12px;"></i>
+              </div>
+              <div>
+                <h4 style="color: var(--primary); margin: 0 0 8px 0; font-size: 1.1rem;">Stay Safe</h4>
+                <p style="color: var(--text); margin: 0; line-height: 1.5;">All our listings are verified. If something seems suspicious, contact our customer service immediately.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Call to Action -->
+        <div style="text-align: center; margin-top: 50px;">
+          <h3 style="color: var(--primary); font-size: 1.6rem; margin-bottom: 20px; font-family: var(--heading-font);">Ready to Find Your Perfect Apartment?</h3>
+          <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+            <a href="apartments-listing.html" style="display: inline-flex; align-items: center; gap: 10px; background: var(--primary); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 1.1rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(37, 99, 235, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(37, 99, 235, 0.3)';">
+              <i class="fas fa-home"></i> Browse Apartments
+            </a>
+            <a href="create-account.html" style="display: inline-flex; align-items: center; gap: 10px; background: transparent; color: var(--primary); padding: 15px 30px; border: 2px solid var(--primary); border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 1.1rem; transition: all 0.3s;" onmouseover="this.style.background='var(--primary)'; this.style.color='white';" onmouseout="this.style.background='transparent'; this.style.color='var(--primary)';">
+              <i class="fas fa-user-plus"></i> Create Account
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Features Section -->
     <section class="features">
       <div class="feature-card">
@@ -1467,6 +1571,7 @@
       <a href="faq.html">FAQ</a>
       <a href="customer-service.html">Customer Service</a>
       <a href="marketplace.html">Marketplace</a>
+      <a href="instruction-guide.html">User Guide</a>
       <a href="privacy-policy.html" data-translate="footer.privacy">Privacy Policy</a>
       <a href="terms-of-service.html" data-translate="footer.terms">Terms of Service</a>
     </div>
