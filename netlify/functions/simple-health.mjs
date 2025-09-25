@@ -24,8 +24,8 @@ export const handler = async (event, context) => {
         message: 'Health check successful',
         timestamp: new Date().toISOString(),
         environment: {
-          supabaseUrl: process.env.SUPABASE_URL ? 'configured' : 'missing',
-          supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'configured' : 'missing',
+          supabaseUrl: (process.env.SUPABASE_URL) ? 'configured' : 'missing',
+          supabaseKey: (process.env.SUPABASE_SERVICE_ROLE_KEY1 || process.env.SUPABASE_SERVICE_ROLE_KEY) ? 'configured' : 'missing',
           jwtSecret: process.env.JWT_SECRET ? 'configured' : 'missing'
         }
       }),

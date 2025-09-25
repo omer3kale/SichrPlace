@@ -3,15 +3,38 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { hashToken } from '../../utils/tokenHash.js';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const jwtSecret = process.env.JWT_SECRET;
+// Environment variable validation with fallbacks
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY1 || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY1 || process.env.SUPABASE_ANON_KEY;
+const jwtSecret = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
 
-if (!supabaseUrl || !supabaseServiceKey || !jwtSecret) {
-  console.error('Missing required environment variables');
+// More robust environment validation
+function validateEnvironment() {
+  const missing = [];
+  if (!supabaseUrl) missing.push('SUPABASE_URL');
+  if (!supabaseServiceKey) missing.push('SUPABASE_SERVICE_ROLE_KEY1 or SUPABASE_SERVICE_ROLE_KEY');
+  if (!jwtSecret) missing.push('JWT_SECRET');
+  
+  return {
+    isValid: missing.length === 0,
+    missing,
+    config: {
+      supabaseUrl: supabaseUrl ? 'configured' : 'missing',
+      supabaseKey: supabaseServiceKey ? 'configured' : 'missing', 
+      jwtSecret: jwtSecret ? 'configured' : 'missing'
+    }
+  };
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const envValidation = validateEnvironment();
+
+// Initialize Supabase client only if environment is valid
+let supabase = null;
+if (envValidation.isValid) {
+  supabase = createClient(supabaseUrl, supabaseServiceKey);
+} else {
+  console.error('❌ Missing environment variables:', envValidation.missing);
+}
 
 export const handler = async (event, context) => {
   // Handle CORS
@@ -26,11 +49,40 @@ export const handler = async (event, context) => {
     return { statusCode: 200, headers, body: '' };
   }
 
+  // Return environment status for GET requests (debugging)
+  if (event.httpMethod === 'GET') {
+    return {
+      statusCode: envValidation.isValid ? 200 : 503,
+      headers,
+      body: JSON.stringify({
+        status: envValidation.isValid ? 'ready' : 'configuration_error',
+        environment: envValidation.config,
+        missing: envValidation.missing,
+        message: envValidation.isValid ? 
+          'Registration endpoint is ready' : 
+          `Missing required environment variables: ${envValidation.missing.join(', ')}`
+      })
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       headers,
       body: JSON.stringify({ error: 'Method not allowed' })
+    };
+  }
+
+  // Check environment before processing registration
+  if (!envValidation.isValid) {
+    return {
+      statusCode: 503,
+      headers,
+      body: JSON.stringify({ 
+        error: 'Service temporarily unavailable',
+        message: 'Server configuration incomplete. Please try again later.',
+        missing_config: envValidation.missing
+      })
     };
   }
 
