@@ -9,6 +9,7 @@
     <link href="css/logo-system.css" rel="stylesheet">
     <script src="js/language-switcher.js" defer></script>
     <script src="js/logo-cookie-manager.js" defer></script>
+    <script src="js/bulletproof-registration.js" defer></script>
     <style>
         :root {
             --primary: #2563EB;
@@ -481,175 +482,11 @@
     </div>
 
     <script>
-        class SignupManager {
-            constructor() {
-                this.form = document.getElementById('signupForm');
-                this.accountTypes = document.querySelectorAll('.account-type');
-                this.btnText = document.getElementById('btnText');
-                this.spinner = document.getElementById('spinner');
-                this.errorMessage = document.getElementById('errorMessage');
-                this.successMessage = document.getElementById('successMessage');
-                this.selectedAccountType = null;
-
-                this.init();
-            }
-
-            init() {
-                this.form.addEventListener('submit', this.handleSubmit.bind(this));
-                this.accountTypes.forEach(type => {
-                    type.addEventListener('click', this.selectAccountType.bind(this));
-                });
-                
-                // Password strength checking
-                const passwordInput = document.getElementById('password');
-                if (passwordInput) {
-                    passwordInput.addEventListener('input', this.checkPasswordStrength.bind(this));
-                }
-            }
-
-            checkPasswordStrength(e) {
-                const password = e.target.value;
-                const strengthBar = document.querySelector('.strength-bar');
-                const strengthContainer = document.getElementById('passwordStrength');
-
-                if (password.length === 0) {
-                    strengthContainer.style.display = 'none';
-                    return;
-                }
-
-                strengthContainer.style.display = 'block';
-
-                let strength = 0;
-                if (password.length >= 8) strength++;
-                if (/[A-Z]/.test(password)) strength++;
-                if (/[a-z]/.test(password)) strength++;
-                if (/[0-9]/.test(password)) strength++;
-                if (/[^A-Za-z0-9]/.test(password)) strength++;
-
-                // Remove all strength classes
-                strengthBar.classList.remove('strength-weak', 'strength-fair', 'strength-good', 'strength-strong');
-
-                if (strength <= 2) {
-                    strengthBar.classList.add('strength-weak');
-                } else if (strength <= 3) {
-                    strengthBar.classList.add('strength-fair');
-                } else if (strength <= 4) {
-                    strengthBar.classList.add('strength-good');
-                } else {
-                    strengthBar.classList.add('strength-strong');
-                }
-            }
-
-            selectAccountType(e) {
-                const type = e.currentTarget;
-                const accountType = type.dataset.type;
-
-                // If clicking the same selected type, deselect it
-                if (this.selectedAccountType === accountType) {
-                    this.deselectAccountType();
-                    return;
-                }
-
-                // Remove selected class from all types
-                this.accountTypes.forEach(t => t.classList.remove('selected'));
-                
-                // Add selected class to clicked type
-                type.classList.add('selected');
-                this.selectedAccountType = accountType;
-            }
-
-            deselectAccountType() {
-                // Remove selected class from all types
-                this.accountTypes.forEach(t => t.classList.remove('selected'));
-                this.selectedAccountType = null;
-            }
-
-            async handleSubmit(e) {
-                e.preventDefault();
-                
-                if (!this.selectedAccountType) {
-                    this.showError('Please select an account type');
-                    return;
-                }
-
-                const formData = new FormData(this.form);
-                const data = {
-                    username: document.getElementById('email').value, // Use email as username
-                    fullName: document.getElementById('fullName').value,
-                    email: document.getElementById('email').value,
-                    password: document.getElementById('password').value,
-                    confirmPassword: document.getElementById('confirmPassword').value,
-                    userType: this.selectedAccountType === 'tenant' ? 'applicant' : this.selectedAccountType // Map tenant to applicant
-                };
-
-                if (data.password !== data.confirmPassword) {
-                    this.showError('Passwords do not match');
-                    return;
-                }
-
-                this.setLoading(true);
-                this.hideMessages();
-
-                try {
-                    const response = await fetch('/.netlify/functions/auth-register', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(data)
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        this.showSuccess('Account created successfully! Redirecting...');
-                        setTimeout(() => {
-                            window.location.href = result.redirectUrl || 'login.html';
-                        }, 2000);
-                    } else {
-                        this.showError(result.message || 'Failed to create account');
-                    }
-                } catch (error) {
-                    console.error('Registration error:', error);
-                    this.showError('Network error. Please check your internet connection and try again.');
-                } finally {
-                    this.setLoading(false);
-                }
-            }
-
-            setLoading(loading) {
-                if (loading) {
-                    this.btnText.style.display = 'none';
-                    this.spinner.style.display = 'block';
-                } else {
-                    this.btnText.style.display = 'block';
-                    this.spinner.style.display = 'none';
-                }
-                this.form.querySelector('.btn').disabled = loading;
-            }
-
-            showError(message) {
-                this.errorMessage.textContent = message;
-                this.errorMessage.style.display = 'block';
-                this.successMessage.style.display = 'none';
-            }
-
-            showSuccess(message) {
-                this.successMessage.textContent = message;
-                this.successMessage.style.display = 'block';
-                this.errorMessage.style.display = 'none';
-            }
-
-            hideMessages() {
-                this.errorMessage.style.display = 'none';
-                this.successMessage.style.display = 'none';
-            }
-        }
-
-        // Initialize when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            new SignupManager();
-        });
+    <script>
+        // 🛡️ Bulletproof Registration System Active
+        // The bulletproof registration system is now handling all registration logic
+        console.log('🚀 SichrPlace bulletproof registration system loaded');
+        console.log('🔧 Network error prevention: Auto-retry, multiple endpoints, offline detection');
     </script>
 
     <!-- SichrPlace Footer -->

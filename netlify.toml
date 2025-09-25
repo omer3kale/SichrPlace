@@ -45,6 +45,37 @@
   to = "/.netlify/functions/test"
   status = 200
 
+# 🚨 CRITICAL: Authentication API Routes (FIXES NETWORK ERROR)
+[[redirects]]
+  from = "/api/auth-register"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
+  from = "/.netlify/functions/auth-register"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
+  from = "/api/register"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
+  from = "/api/signup"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth-login"
+  to = "/.netlify/functions/auth-login"
+  status = 200
+
+[[redirects]]
+  from = "/api/login"
+  to = "/.netlify/functions/auth-login"
+  status = 200
+
 [[redirects]]
   from = "/api/paypal-config"
   to = "/.netlify/functions/paypal-config"
