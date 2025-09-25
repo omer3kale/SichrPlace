@@ -145,19 +145,33 @@
       display: flex !important;
       align-items: center;
       justify-content: center;
-      padding: 8px;
-      border-radius: 50%;
-      background: var(--primary-lighter);
-      transition: all 0.3s ease;
-      position: relative;
-    }
-    .cart-icon:hover {
+      padding: 8px 12px;
+      border-radius: 8px;
       background: var(--primary) !important;
       color: white !important;
+      transition: all 0.3s ease;
+      position: relative;
+      min-width: 40px;
+      height: 40px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+      text-decoration: none;
+    }
+    .cart-icon:hover {
+      background: var(--primary-dark) !important;
+      color: white !important;
       transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
     }
     .cart-icon i {
-      font-size: 1.1rem;
+      font-size: 1.2rem;
+      color: white !important;
+    }
+    
+    /* Shopping cart emoji fallback styling */
+    .cart-fallback {
+      font-size: 1.2rem;
+      line-height: 1;
     }
     
     /* Language Switcher Styles */
@@ -922,6 +936,26 @@
         flex-direction: column;
         gap: 12px;
       }
+      
+      /* Ensure cart icon is prominent on mobile */
+      .cart-icon {
+        min-width: 44px !important;
+        height: 44px !important;
+        padding: 10px !important;
+        margin: 0 8px !important;
+        background: var(--primary) !important;
+        border-radius: 12px !important;
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        box-shadow: 0 3px 10px rgba(37, 99, 235, 0.4) !important;
+      }
+      
+      .cart-icon i,
+      .cart-fallback {
+        font-size: 1.4rem !important;
+        color: white !important;
+      }
     }
  </style>
  <!-- Facebook Pixel for Landlords -->
@@ -961,9 +995,10 @@
       <!-- View link for viewing requests -->
       <a href="viewing-request.html" data-translate="nav.view">View</a>
       
-      <!-- Marketplace -->
-      <a href="marketplace.html" class="cart-icon" title="Marketplace" aria-label="Marketplace" data-translate-title="nav.marketplace.title" data-translate-aria="nav.marketplace.aria">
-        <i class="fas fa-shopping-cart"></i>
+      <!-- Marketplace Cart Icon - Enhanced Visibility -->
+      <a href="marketplace.html" class="cart-icon" title="Marketplace - Buy & Sell" aria-label="Marketplace" data-translate-title="nav.marketplace.title" data-translate-aria="nav.marketplace.aria">
+        <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+        <span class="cart-fallback" style="display: none;">🛒</span>
       </a>
       
       <!-- Language Switcher moved to the rightmost position -->
@@ -2076,6 +2111,27 @@
           console.log('- Marketing enabled:', window.ConsentManagerBridge.isMarketingEnabled());
         }
       }, 3000); // Wait longer for Consent Manager to fully initialize
+
+      // Shopping Cart Icon Fallback - Ensure visibility
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          const cartIcon = document.querySelector('.cart-icon i.fa-shopping-cart');
+          const fallback = document.querySelector('.cart-fallback');
+          
+          if (cartIcon && fallback) {
+            // Check if FontAwesome icon is rendered properly
+            const computedStyle = window.getComputedStyle(cartIcon, '::before');
+            const content = computedStyle.getPropertyValue('content');
+            
+            // If FontAwesome isn't loading, show emoji fallback
+            if (!content || content === 'none' || content === '""') {
+              console.log('🛒 FontAwesome shopping cart icon not detected, using emoji fallback');
+              cartIcon.style.display = 'none';
+              fallback.style.display = 'inline-block';
+            }
+          }
+        }, 1000);
+      });
       
       console.log('GDPR-compliant tracking systems with Consent Manager initialized');
       console.log('Clarity implementation:', window.clarityGDPRManagerHybrid?.getImplementationType());
