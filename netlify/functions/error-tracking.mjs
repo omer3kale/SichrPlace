@@ -1,5 +1,6 @@
-export const handler = async (event, context) => {import { createClient } from '@supabase/supabase-js';import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
+export const handler = async (event, context) => {
   // Handle CORS preflight requests
 
   if (event.httpMethod === 'OPTIONS') {
