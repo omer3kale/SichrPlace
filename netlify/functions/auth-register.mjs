@@ -1,7 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { hashToken } from '../../utils/tokenHash.js';
+import crypto from 'crypto';
+
+// Simple inline hash function
+function hashToken(token) {
+  if (!token || typeof token !== 'string') return '';
+  return crypto.createHash('sha256').update(token, 'utf8').digest('hex');
+}
 
 // Environment variable validation with fallbacks
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL;
