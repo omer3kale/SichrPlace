@@ -1,0 +1,327 @@
+name: 🔒 Automated Security & Dependency Management
+
+on:
+  # Run on every push to main
+  push:
+    branches: [ main ]
+  
+  # Run on pull requests
+  pull_request:
+    branches: [ main ]
+  
+  # Run daily at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      auto_fix:
+        description: 'Automatically apply security fixes'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  security-audit:
+    name: 🔍 Security Audit & Dependency Check
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: write
+      security-events: write
+      
+    outputs:
+      has-vulnerabilities: ${{ steps.audit.outputs.has-vulnerabilities }}
+      fixes-applied: ${{ steps.fixes.outputs.fixes-applied }}
+      
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: 🔧 Install dependencies
+      run: npm ci
+    
+    - name: 🔍 Run comprehensive security audit
+      id: audit
+      run: |
+        echo "Running security audit..."
+        node scripts/dependency-security-manager.mjs > audit-results.txt 2>&1 || true
+        
+        if grep -q "open alerts remaining" audit-results.txt; then
+          echo "has-vulnerabilities=true" >> $GITHUB_OUTPUT
+          echo "🚨 Security vulnerabilities found!"
+          cat audit-results.txt
+        else
+          echo "has-vulnerabilities=false" >> $GITHUB_OUTPUT
+          echo "✅ No security vulnerabilities found"
+        fi
+    
+    - name: 🔧 Run version tracking
+      id: version-check
+      run: |
+        echo "Running version tracking..."
+        node scripts/version-tracker.mjs > version-results.txt 2>&1 || true
+        cat version-results.txt
+    
+    - name: 🛠️ Apply automatic fixes
+      id: fixes
+      if: |
+        (steps.audit.outputs.has-vulnerabilities == 'true' || 
+         contains(github.event.inputs.auto_fix, 'true') || 
+         github.event_name == 'schedule') && 
+        github.ref == 'refs/heads/main'
+      run: |
+        echo "Applying automatic security fixes..."
+        
+        # Apply security fixes
+        node scripts/dependency-security-manager.mjs --fix || true
+        
+        # Apply version tracking fixes
+        node scripts/version-tracker.mjs --fix || true
+        
+        # Check if changes were made
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "fixes-applied=true" >> $GITHUB_OUTPUT
+          echo "📝 Changes detected - preparing commit"
+        else
+          echo "fixes-applied=false" >> $GITHUB_OUTPUT
+          echo "ℹ️ No changes needed"
+        fi
+    
+    - name: 📊 Generate security report
+      if: always()
+      run: |
+        echo "# 🔒 Security Audit Report" > security-report.md
+        echo "" >> security-report.md
+        echo "**Generated:** $(date -u)" >> security-report.md
+        echo "**Workflow:** ${{ github.workflow }}" >> security-report.md
+        echo "**Commit:** ${{ github.sha }}" >> security-report.md
+        echo "" >> security-report.md
+        
+        echo "## 📋 Audit Results" >> security-report.md
+        echo "\`\`\`" >> security-report.md
+        cat audit-results.txt >> security-report.md
+        echo "\`\`\`" >> security-report.md
+        echo "" >> security-report.md
+        
+        echo "## 🔄 Version Tracking Results" >> security-report.md
+        echo "\`\`\`" >> security-report.md
+        cat version-results.txt >> security-report.md
+        echo "\`\`\`" >> security-report.md
+        echo "" >> security-report.md
+        
+        echo "## 🎯 Summary" >> security-report.md
+        if [ "${{ steps.audit.outputs.has-vulnerabilities }}" == "true" ]; then
+          echo "- ⚠️ **Vulnerabilities Found:** YES" >> security-report.md
+        else
+          echo "- ✅ **Vulnerabilities Found:** NO" >> security-report.md
+        fi
+        
+        if [ "${{ steps.fixes.outputs.fixes-applied }}" == "true" ]; then
+          echo "- 🛠️ **Fixes Applied:** YES" >> security-report.md
+        else
+          echo "- ℹ️ **Fixes Applied:** NO" >> security-report.md
+        fi
+        
+        echo "" >> security-report.md
+        echo "---" >> security-report.md
+        echo "*This report was generated automatically by the SichrPlace Security System*" >> security-report.md
+    
+    - name: 📤 Upload security report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report-${{ github.run_number }}
+        path: |
+          security-report.md
+          audit-results.txt
+          version-results.txt
+          security-report-*.json
+          version-tracking-report-*.json
+    
+    - name: 💾 Commit security fixes
+      if: steps.fixes.outputs.fixes-applied == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action Security Bot"
+        
+        git add .
+        git commit -m "🔒 Automated security fixes
+        
+        - Applied dependency security updates
+        - Updated vulnerable package versions
+        - Resolved GitHub Dependabot alerts
+        
+        Generated by: ${{ github.workflow }}
+        Run ID: ${{ github.run_id }}
+        Commit: ${{ github.sha }}"
+        
+        git push origin main
+    
+    - name: 📋 Comment on PR
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const hasVulns = '${{ steps.audit.outputs.has-vulnerabilities }}' === 'true';
+          const fixesApplied = '${{ steps.fixes.outputs.fixes-applied }}' === 'true';
+          
+          let body = '## 🔒 Security Audit Results\\n\\n';
+          
+          if (hasVulns) {
+            body += '⚠️ **Security vulnerabilities detected!**\\n';
+            body += '- Please review the security report in the workflow artifacts\\n';
+            body += '- Consider running automatic fixes with manual approval\\n';
+          } else {
+            body += '✅ **No security vulnerabilities found**\\n';
+          }
+          
+          if (fixesApplied) {
+            body += '🛠️ **Automatic fixes were applied**\\n';
+          }
+          
+          body += '\\n📊 **Full Report:** Check the workflow artifacts for detailed security analysis\\n';
+          body += `\\n🔗 **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+
+  verify-fixes:
+    name: 🔍 Verify Security Fixes
+    needs: security-audit
+    if: needs.security-audit.outputs.fixes-applied == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout updated code
+      uses: actions/checkout@v4
+      with:
+        ref: main
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: 🔧 Install dependencies
+      run: npm ci
+    
+    - name: 🔍 Verify fixes were applied
+      run: |
+        echo "Verifying security fixes..."
+        node scripts/dependency-security-manager.mjs > verification-results.txt 2>&1
+        
+        if grep -q "0 open alerts remaining" verification-results.txt; then
+          echo "✅ All security fixes verified successfully!"
+          exit 0
+        else
+          echo "⚠️ Some alerts may still be pending - check results"
+          cat verification-results.txt
+          exit 0  # Don't fail the workflow, just report
+        fi
+    
+    - name: 📤 Upload verification report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: verification-report-${{ github.run_number }}
+        path: verification-results.txt
+
+  notify-slack:
+    name: 📢 Notify Team
+    needs: [security-audit, verify-fixes]
+    if: always() && (needs.security-audit.outputs.has-vulnerabilities == 'true' || needs.security-audit.outputs.fixes-applied == 'true')
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📢 Send Slack notification
+      if: env.SLACK_WEBHOOK_URL != ''
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        
+        if [ "${{ needs.security-audit.outputs.has-vulnerabilities }}" == "true" ]; then
+          STATUS_ICON="🚨"
+          STATUS_TEXT="Security vulnerabilities detected"
+          COLOR="danger"
+        else
+          STATUS_ICON="✅"
+          STATUS_TEXT="Security audit completed successfully"
+          COLOR="good"
+        fi
+        
+        PAYLOAD=$(cat <<EOF
+        {
+          "attachments": [
+            {
+              "color": "$COLOR",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "$STATUS_ICON SichrPlace Security Report"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Status:* $STATUS_TEXT"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:* ${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:* ${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Fixes Applied:* ${{ needs.security-audit.outputs.fixes-applied }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Workflow"
+                      },
+                      "url": "$WORKFLOW_URL"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        EOF
+        )
+        
+        curl -X POST -H 'Content-type: application/json' \
+             --data "$PAYLOAD" \
+             "$SLACK_WEBHOOK_URL"

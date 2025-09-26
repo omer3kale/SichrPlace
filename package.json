@@ -21,7 +21,13 @@
     "security:audit": "npm audit --audit-level=info",
     "security:fix": "npm audit fix --force",
     "security:check": "npx audit-ci --critical --high --moderate",
-    "security:update": "npm update && npm audit fix"
+    "security:update": "npm update && npm audit fix",
+    "security:comprehensive": "node scripts/dependency-security-manager.mjs",
+    "security:comprehensive:fix": "node scripts/dependency-security-manager.mjs --fix",
+    "security:track": "node scripts/version-tracker.mjs",
+    "security:track:fix": "node scripts/version-tracker.mjs --fix",
+    "security:full": "npm run security:comprehensive && npm run security:track",
+    "security:full:fix": "npm run security:comprehensive:fix && npm run security:track:fix"
   },
   "keywords": [
     "apartment",
