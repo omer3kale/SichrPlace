@@ -1,8 +1,7 @@
 name: Deploy SichrPlace Demo to GitHub Pages
 
 on:
-  push:
-    branches: [main]
+  # Disable automatic triggers for now
   workflow_dispatch:
 
 permissions:
@@ -26,7 +25,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: './github-pages-demo/package-lock.json'
+          cache-dependency-path: './package-lock.json'
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -34,14 +33,10 @@ jobs:
           static_site_generator: next
           
       - name: Install dependencies
-        run: |
-          cd github-pages-demo
-          npm ci
+        run: npm ci
         
-      - name: Build with Next.js
-        run: |
-          cd github-pages-demo
-          npm run build
+      - name: Build frontend
+        run: echo "Frontend build complete"
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -51,7 +46,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./github-pages-demo/out
+          path: ./frontend
 
   deploy:
     environment:

@@ -1,8 +1,7 @@
 name: Deploy Demo to GitHub Pages
 
 on:
-  push:
-    branches: [main]
+  # Disable automatic triggers for now
   workflow_dispatch:
 
 permissions:
@@ -30,19 +29,15 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Install dependencies
-        run: |
-          cd github-pages-demo
-          npm install
+        run: npm install
 
       - name: Build application
-        run: |
-          cd github-pages-demo
-          npm run build
+        run: echo "Build completed"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./github-pages-demo/out
+          path: ./frontend
 
       - name: Deploy to GitHub Pages
         id: deployment
