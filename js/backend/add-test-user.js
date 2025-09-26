@@ -1,9 +1,15 @@
 // Add test user to Supabase with correct credentials
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcrypt');
+require('dotenv').config();
 
-const supabaseUrl = 'https://cgkumwtibknfrhyiicoo.supabase.co';
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNna3Vtd3RpYmtuZnJoeWlpY29vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDMwMTc4NiwiZXhwIjoyMDY5ODc3Nzc4Nn0.5piAC3CPud7oRvA1Rtypn60dfz5J1ydqoG2oKj-Su3M';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Missing required environment variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

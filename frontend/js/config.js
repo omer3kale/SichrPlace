@@ -40,7 +40,7 @@ const CONFIG = {
     
     // Google Maps Configuration
     GOOGLE_MAPS: {
-        API_KEY: 'AIzaSyA1234567890ABCDEFGHIJKLMNOPQRSTUVWX' // Replace with your actual key
+        API_KEY: window.GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY_HERE' // Set in environment
     },
     
     // Application Metadata

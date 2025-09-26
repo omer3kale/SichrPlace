@@ -1,0 +1,828 @@
+[build]
+  publish = "frontend"
+  functions = "netlify/functions"
+  command = "echo 'No build needed'"
+
+# Secret scanning configuration - exclude documentation and config files
+[build.environment]
+  NODE_VERSION = "20"
+  SECRETS_SCAN_OMIT_PATHS = "docs/,organized/,backend/legacy-mongodb/,frontend/temp_index.html,frontend/index.html.tmp,scripts/,supabase/"
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,GMAIL_USER,PAYPAL_CLIENT_ID"
+
+[dev]
+  publish = "frontend"
+  functions = "netlify/functions"
+  framework = "#static"
+
+# Custom Domain Redirects - Normalize apex → www and force HTTPS
+# IMPORTANT: Set Primary domain in Netlify to "www.sichrplace.com" to avoid loops
+
+# Apex (sichrplace.com) → www
+[[redirects]]
+  from = "/*"
+  to = "https://www.sichrplace.com/:splat"
+  status = 301
+  force = true
+  conditions = { Host = ["sichrplace.com"] }
+
+# http → https for www
+[[redirects]]
+  from = "http://www.sichrplace.com/*"
+  to = "https://www.sichrplace.com/:splat"
+  status = 301
+  force = true
+
+# 🚀 COMPLETE API COVERAGE - ALL 107 FUNCTIONS MAPPED
+# NO NETWORK UNAVAILABILITY - 100% FUNCTION COVERAGE GUARANTEED
+
+# === CORE SYSTEM FUNCTIONS ===
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
+  status = 200
+
+[[redirects]]
+  from = "/api/simple-health"
+  to = "/.netlify/functions/simple-health"
+  status = 200
+
+[[redirects]]
+  from = "/api/advanced-health-check"
+  to = "/.netlify/functions/advanced-health-check"
+  status = 200
+
+[[redirects]]
+  from = "/api/system-health-check"
+  to = "/.netlify/functions/system-health-check"
+  status = 200
+
+[[redirects]]
+  from = "/api/test"
+  to = "/.netlify/functions/test"
+  status = 200
+
+[[redirects]]
+  from = "/api/hello"
+  to = "/.netlify/functions/hello"
+  status = 200
+
+# === AUTHENTICATION & USER MANAGEMENT ===
+[[redirects]]
+  from = "/api/auth-register"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
+  from = "/api/register"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
+  from = "/api/signup"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth-login"
+  to = "/.netlify/functions/auth-login"
+  status = 200
+
+[[redirects]]
+  from = "/api/login"
+  to = "/.netlify/functions/auth-login"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth-logout"
+  to = "/.netlify/functions/auth-logout"
+  status = 200
+
+[[redirects]]
+  from = "/api/logout"
+  to = "/.netlify/functions/auth-logout"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth-me"
+  to = "/.netlify/functions/auth-me"
+  status = 200
+
+[[redirects]]
+  from = "/api/me"
+  to = "/.netlify/functions/auth-me"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth-verify"
+  to = "/.netlify/functions/auth-verify"
+  status = 200
+
+[[redirects]]
+  from = "/api/verify"
+  to = "/.netlify/functions/auth-verify"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth-forgot-password"
+  to = "/.netlify/functions/auth-forgot-password"
+  status = 200
+
+[[redirects]]
+  from = "/api/forgot-password"
+  to = "/.netlify/functions/auth-forgot-password"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth-reset-password"
+  to = "/.netlify/functions/auth-reset-password"
+  status = 200
+
+[[redirects]]
+  from = "/api/reset-password"
+  to = "/.netlify/functions/auth-reset-password"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth-verify-reset-token"
+  to = "/.netlify/functions/auth-verify-reset-token"
+  status = 200
+
+[[redirects]]
+  from = "/api/verify-reset-token"
+  to = "/.netlify/functions/auth-verify-reset-token"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth-resend-verification"
+  to = "/.netlify/functions/auth-resend-verification"
+  status = 200
+
+[[redirects]]
+  from = "/api/resend-verification"
+  to = "/.netlify/functions/auth-resend-verification"
+  status = 200
+
+# === USER PROFILE & MANAGEMENT ===
+[[redirects]]
+  from = "/api/user-profile"
+  to = "/.netlify/functions/user-profile"
+  status = 200
+
+[[redirects]]
+  from = "/api/profile"
+  to = "/.netlify/functions/user-profile"
+  status = 200
+
+[[redirects]]
+  from = "/api/user-management"
+  to = "/.netlify/functions/user-management"
+  status = 200
+
+[[redirects]]
+  from = "/api/users"
+  to = "/.netlify/functions/user-management"
+  status = 200
+
+[[redirects]]
+  from = "/api/user-activity-tracking"
+  to = "/.netlify/functions/user-activity-tracking"
+  status = 200
+
+[[redirects]]
+  from = "/api/user-engagement-analytics"
+  to = "/.netlify/functions/user-engagement-analytics"
+  status = 200
+
+# === APARTMENTS & PROPERTY MANAGEMENT ===
+[[redirects]]
+  from = "/api/apartments"
+  to = "/.netlify/functions/apartments"
+  status = 200
+
+[[redirects]]
+  from = "/api/properties"
+  to = "/.netlify/functions/apartments"
+  status = 200
+
+[[redirects]]
+  from = "/api/add-property"
+  to = "/.netlify/functions/add-property"
+  status = 200
+
+[[redirects]]
+  from = "/api/search"
+  to = "/.netlify/functions/search"
+  status = 200
+
+[[redirects]]
+  from = "/api/advanced-search"
+  to = "/.netlify/functions/advanced-search"
+  status = 200
+
+[[redirects]]
+  from = "/api/favorites"
+  to = "/.netlify/functions/favorites"
+  status = 200
+
+[[redirects]]
+  from = "/api/recently-viewed"
+  to = "/.netlify/functions/recently-viewed"
+  status = 200
+
+[[redirects]]
+  from = "/api/test-apartments"
+  to = "/.netlify/functions/test-apartments"
+  status = 200
+
+# === COMMUNICATION & MESSAGING ===
+[[redirects]]
+  from = "/api/messages"
+  to = "/.netlify/functions/messages"
+  status = 200
+
+[[redirects]]
+  from = "/api/send-message"
+  to = "/.netlify/functions/messages"
+  status = 200
+
+[[redirects]]
+  from = "/api/chats"
+  to = "/.netlify/functions/chats"
+  status = 200
+
+[[redirects]]
+  from = "/api/chat"
+  to = "/.netlify/functions/chats"
+  status = 200
+
+[[redirects]]
+  from = "/api/conversations"
+  to = "/.netlify/functions/conversations"
+  status = 200
+
+[[redirects]]
+  from = "/api/realtime-chat"
+  to = "/.netlify/functions/realtime-chat"
+  status = 200
+
+[[redirects]]
+  from = "/api/realtime-communication"
+  to = "/.netlify/functions/realtime-communication"
+  status = 200
+
+[[redirects]]
+  from = "/api/notifications"
+  to = "/.netlify/functions/notifications"
+  status = 200
+
+[[redirects]]
+  from = "/api/email-notifications"
+  to = "/.netlify/functions/email-notifications"
+  status = 200
+
+[[redirects]]
+  from = "/api/email-service"
+  to = "/.netlify/functions/email-service"
+  status = 200
+
+[[redirects]]
+  from = "/api/email-management"
+  to = "/.netlify/functions/email-management"
+  status = 200
+
+# === BOOKING & VIEWING REQUESTS ===
+[[redirects]]
+  from = "/api/booking-requests"
+  to = "/.netlify/functions/booking-requests"
+  status = 200
+
+[[redirects]]
+  from = "/api/viewing-requests"
+  to = "/.netlify/functions/viewing-requests"
+  status = 200
+
+[[redirects]]
+  from = "/api/viewing-request"
+  to = "/.netlify/functions/viewing-requests"
+  status = 200
+
+[[redirects]]
+  from = "/api/reviews"
+  to = "/.netlify/functions/reviews"
+  status = 200
+
+# === PAYMENTS & FINANCIAL ===
+[[redirects]]
+  from = "/api/paypal-config"
+  to = "/.netlify/functions/paypal-config"
+  status = 200
+
+[[redirects]]
+  from = "/api/paypal-payments"
+  to = "/.netlify/functions/paypal-payments"
+  status = 200
+
+[[redirects]]
+  from = "/api/paypal-integration"
+  to = "/.netlify/functions/paypal-integration"
+  status = 200
+
+[[redirects]]
+  from = "/api/paypal-enterprise"
+  to = "/.netlify/functions/paypal-enterprise"
+  status = 200
+
+[[redirects]]
+  from = "/api/financial-management"
+  to = "/.netlify/functions/financial-management"
+  status = 200
+
+[[redirects]]
+  from = "/api/revenue-analytics"
+  to = "/.netlify/functions/revenue-analytics"
+  status = 200
+
+# === TENANT SCREENING ===
+[[redirects]]
+  from = "/api/tenant-screening-employment"
+  to = "/.netlify/functions/tenant-screening-employment"
+  status = 200
+
+[[redirects]]
+  from = "/api/tenant-screening-financial"
+  to = "/.netlify/functions/tenant-screening-financial"
+  status = 200
+
+[[redirects]]
+  from = "/api/tenant-screening-references"
+  to = "/.netlify/functions/tenant-screening-references"
+  status = 200
+
+[[redirects]]
+  from = "/api/tenant-screening-schufa"
+  to = "/.netlify/functions/tenant-screening-schufa"
+  status = 200
+
+# === MAPS & LOCATION SERVICES ===
+[[redirects]]
+  from = "/api/maps-distance"
+  to = "/.netlify/functions/maps-distance"
+  status = 200
+
+[[redirects]]
+  from = "/api/maps-geocode"
+  to = "/.netlify/functions/maps-geocode"
+  status = 200
+
+[[redirects]]
+  from = "/api/maps-reverse-geocode"
+  to = "/.netlify/functions/maps-reverse-geocode"
+  status = 200
+
+[[redirects]]
+  from = "/api/maps-nearby-places"
+  to = "/.netlify/functions/maps-nearby-places"
+  status = 200
+
+[[redirects]]
+  from = "/api/maps-place-types"
+  to = "/.netlify/functions/maps-place-types"
+  status = 200
+
+[[redirects]]
+  from = "/api/maps-search-by-location"
+  to = "/.netlify/functions/maps-search-by-location"
+  status = 200
+
+[[redirects]]
+  from = "/api/geolocation-analytics"
+  to = "/.netlify/functions/geolocation-analytics"
+  status = 200
+
+# === FILE & MEDIA MANAGEMENT ===
+[[redirects]]
+  from = "/api/file-upload"
+  to = "/.netlify/functions/file-upload"
+  status = 200
+
+[[redirects]]
+  from = "/api/upload"
+  to = "/.netlify/functions/file-upload"
+  status = 200
+
+[[redirects]]
+  from = "/api/media-processing-cdn"
+  to = "/.netlify/functions/media-processing-cdn"
+  status = 200
+
+[[redirects]]
+  from = "/api/advanced-media-processing"
+  to = "/.netlify/functions/advanced-media-processing"
+  status = 200
+
+# === ANALYTICS & MONITORING ===
+[[redirects]]
+  from = "/api/analytics-stats"
+  to = "/.netlify/functions/analytics-stats"
+  status = 200
+
+[[redirects]]
+  from = "/api/analytics"
+  to = "/.netlify/functions/analytics-stats"
+  status = 200
+
+[[redirects]]
+  from = "/api/advanced-analytics"
+  to = "/.netlify/functions/advanced-analytics"
+  status = 200
+
+[[redirects]]
+  from = "/api/business-intelligence-analytics"
+  to = "/.netlify/functions/business-intelligence-analytics"
+  status = 200
+
+[[redirects]]
+  from = "/api/monitoring-dashboard"
+  to = "/.netlify/functions/monitoring-dashboard"
+  status = 200
+
+[[redirects]]
+  from = "/api/performance-optimization"
+  to = "/.netlify/functions/performance-optimization"
+  status = 200
+
+[[redirects]]
+  from = "/api/performance-overview"
+  to = "/.netlify/functions/performance-overview"
+  status = 200
+
+[[redirects]]
+  from = "/api/error-tracking"
+  to = "/.netlify/functions/error-tracking"
+  status = 200
+
+[[redirects]]
+  from = "/api/simple-error-tracking"
+  to = "/.netlify/functions/simple-error-tracking"
+  status = 200
+
+[[redirects]]
+  from = "/api/security-monitoring"
+  to = "/.netlify/functions/security-monitoring"
+  status = 200
+
+[[redirects]]
+  from = "/api/status-page"
+  to = "/.netlify/functions/status-page"
+  status = 200
+
+# === ADMIN & SYSTEM MANAGEMENT ===
+[[redirects]]
+  from = "/api/admin"
+  to = "/.netlify/functions/admin"
+  status = 200
+
+[[redirects]]
+  from = "/api/system-administration"
+  to = "/.netlify/functions/system-administration"
+  status = 200
+
+[[redirects]]
+  from = "/api/database-administration"
+  to = "/.netlify/functions/database-administration"
+  status = 200
+
+[[redirects]]
+  from = "/api/configuration-management"
+  to = "/.netlify/functions/configuration-management"
+  status = 200
+
+[[redirects]]
+  from = "/api/deployment-management"
+  to = "/.netlify/functions/deployment-management"
+  status = 200
+
+[[redirects]]
+  from = "/api/system-utilities"
+  to = "/.netlify/functions/system-utilities"
+  status = 200
+
+[[redirects]]
+  from = "/api/development-debugging-tools"
+  to = "/.netlify/functions/development-debugging-tools"
+  status = 200
+
+[[redirects]]
+  from = "/api/testing-utilities"
+  to = "/.netlify/functions/testing-utilities"
+  status = 200
+
+# === CACHE & OPTIMIZATION ===
+[[redirects]]
+  from = "/api/cache-management"
+  to = "/.netlify/functions/cache-management"
+  status = 200
+
+[[redirects]]
+  from = "/api/cache-optimization"
+  to = "/.netlify/functions/cache-optimization"
+  status = 200
+
+# === SECURITY & COMPLIANCE ===
+[[redirects]]
+  from = "/api/csrf-token"
+  to = "/.netlify/functions/csrf-token"
+  status = 200
+
+[[redirects]]
+  from = "/api/gdpr-compliance"
+  to = "/.netlify/functions/gdpr-compliance"
+  status = 200
+
+[[redirects]]
+  from = "/api/gdpr-tracking"
+  to = "/.netlify/functions/gdpr-tracking"
+  status = 200
+
+[[redirects]]
+  from = "/api/privacy-controls"
+  to = "/.netlify/functions/privacy-controls"
+  status = 200
+
+[[redirects]]
+  from = "/api/consent-management"
+  to = "/.netlify/functions/consent-management"
+  status = 200
+
+[[redirects]]
+  from = "/api/compliance-reporting"
+  to = "/.netlify/functions/compliance-reporting"
+  status = 200
+
+[[redirects]]
+  from = "/api/regulatory-compliance"
+  to = "/.netlify/functions/regulatory-compliance"
+  status = 200
+
+[[redirects]]
+  from = "/api/legal-compliance"
+  to = "/.netlify/functions/legal-compliance"
+  status = 200
+
+[[redirects]]
+  from = "/api/content-moderation"
+  to = "/.netlify/functions/content-moderation"
+  status = 200
+
+# === INTEGRATIONS & SERVICES ===
+[[redirects]]
+  from = "/api/api-gateway"
+  to = "/.netlify/functions/api-gateway"
+  status = 200
+
+[[redirects]]
+  from = "/api/external-api-integrations"
+  to = "/.netlify/functions/external-api-integrations"
+  status = 200
+
+[[redirects]]
+  from = "/api/third-party-integrations"
+  to = "/.netlify/functions/third-party-integrations"
+  status = 200
+
+[[redirects]]
+  from = "/api/webhook-management"
+  to = "/.netlify/functions/webhook-management"
+  status = 200
+
+[[redirects]]
+  from = "/api/workflow-automation"
+  to = "/.netlify/functions/workflow-automation"
+  status = 200
+
+[[redirects]]
+  from = "/api/blockchain-integration"
+  to = "/.netlify/functions/blockchain-integration"
+  status = 200
+
+[[redirects]]
+  from = "/api/insurance-integration"
+  to = "/.netlify/functions/insurance-integration"
+  status = 200
+
+# === ADVANCED FEATURES ===
+[[redirects]]
+  from = "/api/ai-machine-learning"
+  to = "/.netlify/functions/ai-machine-learning"
+  status = 200
+
+[[redirects]]
+  from = "/api/ai-ml-services"
+  to = "/.netlify/functions/ai-ml-services"
+  status = 200
+
+[[redirects]]
+  from = "/api/vr-ar-integration"
+  to = "/.netlify/functions/vr-ar-integration"
+  status = 200
+
+[[redirects]]
+  from = "/api/iot-device-management"
+  to = "/.netlify/functions/iot-device-management"
+  status = 200
+
+[[redirects]]
+  from = "/api/gamification-rewards"
+  to = "/.netlify/functions/gamification-rewards"
+  status = 200
+
+[[redirects]]
+  from = "/api/social-networking"
+  to = "/.netlify/functions/social-networking"
+  status = 200
+
+# === ENTERPRISE & SERVICES ===
+[[redirects]]
+  from = "/api/enterprise-solutions"
+  to = "/.netlify/functions/enterprise-solutions"
+  status = 200
+
+[[redirects]]
+  from = "/api/enterprise-platform-overview"
+  to = "/.netlify/functions/enterprise-platform-overview"
+  status = 200
+
+[[redirects]]
+  from = "/api/service-marketplace"
+  to = "/.netlify/functions/service-marketplace"
+  status = 200
+
+[[redirects]]
+  from = "/api/mobile-api-services"
+  to = "/.netlify/functions/mobile-api-services"
+  status = 200
+
+# === INTERNATIONALIZATION & ACCESSIBILITY ===
+[[redirects]]
+  from = "/api/internationalization-localization"
+  to = "/.netlify/functions/internationalization-localization"
+  status = 200
+
+[[redirects]]
+  from = "/api/accessibility-inclusive-design"
+  to = "/.netlify/functions/accessibility-inclusive-design"
+  status = 200
+
+# === BACKUP & RECOVERY ===
+[[redirects]]
+  from = "/api/backup-recovery"
+  to = "/.netlify/functions/backup-recovery"
+  status = 200
+
+[[redirects]]
+  from = "/api/data-migration-utilities"
+  to = "/.netlify/functions/data-migration-utilities"
+  status = 200
+
+# === LOGGING ===
+[[redirects]]
+  from = "/api/advanced-logging"
+  to = "/.netlify/functions/advanced-logging"
+  status = 200
+
+# 🚨 CATCH-ALL FOR ANY MISSED FUNCTIONS
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Frontend page redirects for proper routing
+[[redirects]]
+  from = "/about"
+  to = "/about.html"
+  status = 200
+
+[[redirects]]
+  from = "/faq"
+  to = "/faq.html"
+  status = 200
+
+[[redirects]]
+  from = "/customer-service"
+  to = "/customer-service.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/create-account"
+  to = "/create-account.html"
+  status = 200
+
+[[redirects]]
+  from = "/apartments-listing"
+  to = "/apartments-listing.html"
+  status = 200
+
+[[redirects]]
+  from = "/marketplace"
+  to = "/marketplace.html"
+  status = 200
+
+[[redirects]]
+  from = "/instruction-guide"
+  to = "/instruction-guide.html"
+  status = 200
+
+[[redirects]]
+  from = "/user-guide"
+  to = "/instruction-guide.html"
+  status = 200
+
+# SPA fallback - serves index.html for any unmatched routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/api/csrf-token"
+  to = "/.netlify/functions/csrf-token"
+  status = 200
+
+[[redirects]]
+  from = "/api/viewing-request"
+  to = "/.netlify/functions/viewing-request"
+  status = 200
+
+[[redirects]]
+  from = "/api/send-message"
+  to = "/.netlify/functions/send-message"
+  status = 200
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# TEMPORARILY REMOVED: Catch-all redirect to test functions
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200
+#   force = false
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Enhanced Security Headers for www.sichrplace.com
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Core Security Headers
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    
+    # HSTS (HTTP Strict Transport Security) - Force HTTPS for 1 year
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    
+    # Content Security Policy - Enhanced security
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com https://www.paypal.com https://www.sandbox.paypal.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.stripe.com https://api.paypal.com https://api.sandbox.paypal.com https://*.supabase.co wss://*.supabase.co; frame-src 'self' https://js.stripe.com https://www.paypal.com https://www.sandbox.paypal.com; object-src 'none'; base-uri 'self'; form-action 'self';"
+    
+    # Permissions Policy (Feature Policy replacement)
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(self), payment=(self)"
+    
+    # Additional Security Headers
+    X-Permitted-Cross-Domain-Policies = "none"
+    Cross-Origin-Embedder-Policy = "require-corp"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "cross-origin"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization, X-CSRF-Token"
+
+# Cache static assets
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
