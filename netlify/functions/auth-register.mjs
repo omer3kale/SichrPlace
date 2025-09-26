@@ -120,12 +120,21 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Check if user already exists
-    const { data: existingUser } = await supabase
+    // Check if user already exists - use maybeSingle() to handle no results gracefully
+    const { data: existingUser, error: checkError } = await supabase
       .from('users')
       .select('id')
       .or(`username.eq.${username},email.eq.${email}`)
-      .single();
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Database check error:', checkError);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'Database error during user check' })
+      };
+    }
 
     if (existingUser) {
       return {
@@ -167,11 +176,14 @@ export const handler = async (event, context) => {
       .single();
 
     if (insertError) {
-      console.error('Database error:', insertError);
+      console.error('Database insert error:', insertError);
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: 'Failed to create user' })
+        body: JSON.stringify({ 
+          error: 'Failed to create user',
+          details: insertError.message 
+        })
       };
     }
 
