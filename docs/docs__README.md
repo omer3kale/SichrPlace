@@ -1,6 +1,6 @@
 # 🏠 SichrPlace - Student Apartment Platform
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue)](https://omer3kale.github.io/SichrPlace77/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue)](https://omer3kale.github.io/sichrplace/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Ready-blue)](#)
 [![GDPR Compliant](https://img.shields.io/badge/GDPR-Compliant-success)](#)
 
@@ -8,7 +8,7 @@ Modern apartment platform for students and young professionals in Germany with s
 
 ## 🚀 Live Demo
 
-**[View Live Demo →](https://omer3kale.github.io/SichrPlace77/)**
+**[View Live Demo →](https://omer3kale.github.io/sichrplace/)**
 
 ✨ **Interactive GitHub Pages Demo** - Experience the platform with sample apartment listings, city filtering, and responsive design. Built with Next.js and deployed automatically via GitHub Actions.
 
@@ -92,8 +92,8 @@ Modern apartment platform for students and young professionals in Germany with s
 
 ```bash
 # Clone repository
-git clone https://github.com/omer3kale/SichrPlace77.git
-cd SichrPlace77
+git clone https://github.com/omer3kale/sichrplace.git
+cd sichrplace
 
 # Install dependencies
 cd backend && npm install
@@ -135,4 +135,4 @@ The platform includes real-time monitoring for:
 
 **Built with ❤️ for the student community in Germany**
 
-[🌐 Live Demo](https://sichrplace.vercel.app) • [📚 Documentation](https://github.com/omer3kale/Setup-Guides-for-Mentally-Challanged) • [🐛 Issues](https://github.com/omer3kale/SichrPlace77/issues)
+[🌐 Live Demo](https://sichrplace.vercel.app) • [📚 Documentation](https://github.com/omer3kale/Setup-Guides-for-Mentally-Challanged) • [🐛 Issues](https://github.com/omer3kale/sichrplace/issues)

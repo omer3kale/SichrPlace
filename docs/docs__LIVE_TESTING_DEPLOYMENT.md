@@ -8,7 +8,7 @@
 npm install -g vercel
 
 # Navigate to your project
-cd /Users/omer3kale/SichrPlace77/SichrPlace77
+cd /Users/omer3kale/sichrplace
 
 # Deploy instantly
 npx vercel --prod
@@ -267,7 +267,7 @@ Test on multiple devices:
 **Ready to deploy? Run this:**
 ```bash
 npm install -g vercel
-cd /Users/omer3kale/SichrPlace77/SichrPlace77
+cd /Users/omer3kale/sichrplace
 vercel --prod
 ```
 

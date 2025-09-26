@@ -175,7 +175,7 @@ async function testFrontendIntegration() {
     const path = require('path');
     
     // Check if apartments-listing.html exists and has API calls
-    const frontendPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/apartments-listing.html';
+    const frontendPath = '/Users/omer3kale/sichrplace/frontend/apartments-listing.html';
     if (fs.existsSync(frontendPath)) {
       const content = fs.readFileSync(frontendPath, 'utf8');
       
@@ -195,7 +195,7 @@ async function testFrontendIntegration() {
     }
     
     // Check add-property.html
-    const addPropertyPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/add-property.html';
+    const addPropertyPath = '/Users/omer3kale/sichrplace/frontend/add-property.html';
     if (fs.existsSync(addPropertyPath)) {
       const content = fs.readFileSync(addPropertyPath, 'utf8');
       
@@ -219,7 +219,7 @@ async function testServiceLayer() {
   
   try {
     const fs = require('fs');
-    const servicePath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/services/ApartmentService.js';
+    const servicePath = '/Users/omer3kale/sichrplace/backend/services/ApartmentService.js';
     
     if (fs.existsSync(servicePath)) {
       const content = fs.readFileSync(servicePath, 'utf8');

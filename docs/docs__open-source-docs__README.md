@@ -1,8 +1,8 @@
 # 🏠 SichrPlace - Trusted Apartment Viewing Service
 
-[![CI/CD Pipeline](https://github.com/omer3kale/SichrPlace77/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/omer3kale/SichrPlace77/actions/workflows/ci-cd.yml)
-[![Security Audit](https://github.com/omer3kale/SichrPlace77/actions/workflows/security.yml/badge.svg)](https://github.com/omer3kale/SichrPlace77/actions/workflows/security.yml)
-[![CodeQL](https://github.com/omer3kale/SichrPlace77/actions/workflows/codeql.yml/badge.svg)](https://github.com/omer3kale/SichrPlace77/actions/workflows/codeql.yml)
+[![CI/CD Pipeline](https://github.com/omer3kale/sichrplace/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/omer3kale/sichrplace/actions/workflows/ci-cd.yml)
+[![Security Audit](https://github.com/omer3kale/sichrplace/actions/workflows/security.yml/badge.svg)](https://github.com/omer3kale/sichrplace/actions/workflows/security.yml)
+[![CodeQL](https://github.com/omer3kale/sichrplace/actions/workflows/codeql.yml/badge.svg)](https://github.com/omer3kale/sichrplace/actions/workflows/codeql.yml)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Railway-blue)](https://sichrplace-production.up.railway.app)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -84,8 +84,8 @@ SichrPlace is a comprehensive apartment viewing platform that connects apartment
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/omer3kale/SichrPlace77.git
-   cd SichrPlace77
+   git clone https://github.com/omer3kale/sichrplace.git
+   cd sichrplace
    ```
 
 2. **Install dependencies**
@@ -277,8 +277,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Getting Help
 - 📧 **Email**: sichrplace@gmail.com
-- 🐛 **Issues**: [GitHub Issues](https://github.com/omer3kale/SichrPlace77/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/omer3kale/SichrPlace77/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/omer3kale/sichrplace/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/omer3kale/sichrplace/discussions)
 
 ### Project Status
 - ✅ **Backend API**: Fully functional
@@ -296,6 +296,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Made with ❤️ by the SichrPlace Team**
 
-[🌐 Live Demo](https://sichrplace-production.up.railway.app) • [📚 Documentation](https://github.com/omer3kale/SichrPlace77/wiki) • [🐛 Report Bug](https://github.com/omer3kale/SichrPlace77/issues/new?template=bug_report.md) • [✨ Request Feature](https://github.com/omer3kale/SichrPlace77/issues/new?template=feature_request.md)
+[🌐 Live Demo](https://sichrplace-production.up.railway.app) • [📚 Documentation](https://github.com/omer3kale/sichrplace/wiki) • [🐛 Report Bug](https://github.com/omer3kale/sichrplace/issues/new?template=bug_report.md) • [✨ Request Feature](https://github.com/omer3kale/sichrplace/issues/new?template=feature_request.md)
 
 </div>

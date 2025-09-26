@@ -20,11 +20,11 @@ function testCodeStructure() {
   console.log('📁 Testing code structure...');
   
   const requiredFiles = [
-    { path: '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/routes/apartments.js', desc: 'Apartment routes' },
-    { path: '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/services/ApartmentService.js', desc: 'Apartment service' },
-    { path: '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/api/upload-apartment.js', desc: 'Upload apartment API' },
-    { path: '/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/apartments-listing.html', desc: 'Frontend listing page' },
-    { path: '/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/add-property.html', desc: 'Frontend add property page' }
+    { path: '/Users/omer3kale/sichrplace/backend/routes/apartments.js', desc: 'Apartment routes' },
+    { path: '/Users/omer3kale/sichrplace/backend/services/ApartmentService.js', desc: 'Apartment service' },
+    { path: '/Users/omer3kale/sichrplace/backend/api/upload-apartment.js', desc: 'Upload apartment API' },
+    { path: '/Users/omer3kale/sichrplace/frontend/apartments-listing.html', desc: 'Frontend listing page' },
+    { path: '/Users/omer3kale/sichrplace/frontend/add-property.html', desc: 'Frontend add property page' }
   ];
 
   requiredFiles.forEach(file => {
@@ -41,7 +41,7 @@ function testRouteDefinitions() {
   console.log('🛣️  Testing route definitions...');
   
   try {
-    const routeContent = fs.readFileSync('/Users/omer3kale/SichrPlace77/SichrPlace77/backend/routes/apartments.js', 'utf8');
+    const routeContent = fs.readFileSync('/Users/omer3kale/sichrplace/backend/routes/apartments.js', 'utf8');
     
     const requiredRoutes = [
       { pattern: "router.get('/', async", desc: 'GET / (list apartments)' },
@@ -80,7 +80,7 @@ function testServiceMethods() {
   console.log('⚙️  Testing service methods...');
   
   try {
-    const serviceContent = fs.readFileSync('/Users/omer3kale/SichrPlace77/SichrPlace77/backend/services/ApartmentService.js', 'utf8');
+    const serviceContent = fs.readFileSync('/Users/omer3kale/sichrplace/backend/services/ApartmentService.js', 'utf8');
     
     const requiredMethods = [
       'static async create(',
@@ -116,7 +116,7 @@ function testServerConfiguration() {
   console.log('🖥️  Testing server configuration...');
   
   try {
-    const serverContent = fs.readFileSync('/Users/omer3kale/SichrPlace77/SichrPlace77/backend/server.js', 'utf8');
+    const serverContent = fs.readFileSync('/Users/omer3kale/sichrplace/backend/server.js', 'utf8');
     
     // Check if apartment routes are properly imported and mounted
     if (serverContent.includes("const apartmentsRoute = require('./routes/apartments')")) {
@@ -149,7 +149,7 @@ function testFrontendIntegration() {
   
   try {
     // Check apartments listing page
-    const listingContent = fs.readFileSync('/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/apartments-listing.html', 'utf8');
+    const listingContent = fs.readFileSync('/Users/omer3kale/sichrplace/frontend/apartments-listing.html', 'utf8');
     
     if (listingContent.includes('/api/apartments')) {
       tests.push('✅ Frontend calls apartment API');
@@ -164,7 +164,7 @@ function testFrontendIntegration() {
     }
 
     // Check add property page
-    const addPropertyContent = fs.readFileSync('/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/add-property.html', 'utf8');
+    const addPropertyContent = fs.readFileSync('/Users/omer3kale/sichrplace/frontend/add-property.html', 'utf8');
     
     if (addPropertyContent.includes('submitProperty') || addPropertyContent.includes('/api/apartments')) {
       tests.push('✅ Frontend has apartment creation form');
@@ -182,7 +182,7 @@ function testDatabaseSchema() {
   console.log('🗄️  Testing database schema...');
   
   try {
-    const schemaContent = fs.readFileSync('/Users/omer3kale/SichrPlace77/SichrPlace77/backend/migrations/001_initial_supabase_setup.sql', 'utf8');
+    const schemaContent = fs.readFileSync('/Users/omer3kale/sichrplace/backend/migrations/001_initial_supabase_setup.sql', 'utf8');
     
     if (schemaContent.includes('CREATE TABLE apartments')) {
       tests.push('✅ Apartments table schema defined');
@@ -218,7 +218,7 @@ function testEnvironmentConfig() {
   console.log('🔧 Testing environment configuration...');
   
   try {
-    const envContent = fs.readFileSync('/Users/omer3kale/SichrPlace77/SichrPlace77/.env', 'utf8');
+    const envContent = fs.readFileSync('/Users/omer3kale/sichrplace/.env', 'utf8');
     
     const requiredEnvVars = [
       'SUPABASE_URL=',
@@ -244,7 +244,7 @@ function testAuthenticationIntegration() {
   console.log('🔐 Testing authentication integration...');
   
   try {
-    const routeContent = fs.readFileSync('/Users/omer3kale/SichrPlace77/SichrPlace77/backend/routes/apartments.js', 'utf8');
+    const routeContent = fs.readFileSync('/Users/omer3kale/sichrplace/backend/routes/apartments.js', 'utf8');
     
     // Check if auth middleware is imported
     if (routeContent.includes("const auth = require('../middleware/auth')")) {

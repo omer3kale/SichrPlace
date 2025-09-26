@@ -75,7 +75,7 @@ This migration adds comprehensive German tenant screening capabilities to your S
 
 ```bash
 # Navigate to project directory
-cd /path/to/sichrplace77
+cd /path/to/sichrplace
 
 # Login to Supabase
 supabase login

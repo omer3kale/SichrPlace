@@ -3,7 +3,7 @@
 echo "✅ Running ALL GDPR Tests (100% SUCCESS GUARANTEED)..."
 echo "====================================================="
 
-cd /Users/omer3kale/SichrPlace77/SichrPlace77
+cd /Users/omer3kale/sichrplace
 
 # Set test environment variables
 export NODE_ENV=test

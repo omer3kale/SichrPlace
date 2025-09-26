@@ -4,7 +4,7 @@ This roadmap describes the exact steps to connect your GitHub repository to Netl
 
 ## Prerequisites
 - You own the domain `sichrplace.com` and can manage its DNS at your registrar (or plan to transfer DNS to Netlify).
-- Repository is pushed to GitHub at `omer3kale/SichrPlace77` (already done).
+- Repository is pushed to GitHub at `omer3kale/sichrplace` (already done).
 - `netlify.toml` present in the repo (publish directory = `frontend`, functions dir = `netlify/functions`).
 - Netlify account and access to the Netlify app (https://app.netlify.com) with permission to connect GitHub repos.
 
@@ -22,7 +22,7 @@ This roadmap describes the exact steps to connect your GitHub repository to Netl
 ---
 
 ## Step A — Connect GitHub and deploy
-1. In Netlify app: New site → Import from Git → GitHub → select `omer3kale/SichrPlace77` → branch `main`.
+1. In Netlify app: New site → Import from Git → GitHub → select `omer3kale/sichrplace` → branch `main`.
 2. Build settings:
    - You can leave Build command empty so Netlify uses `netlify.toml`.
    - Publish directory: `frontend` (already in `netlify.toml`).
@@ -118,7 +118,7 @@ curl -I https://www.sichrplace.com
 ## Optional: CLI automation hints
 - After `netlify login`, you can create and link site to GitHub via:
 ```powershell
-netlify sites:create --repo=omer3kale/SichrPlace77 --repo-branch=main --publish-dir=frontend --functions=netlify/functions
+netlify sites:create --repo=omer3kale/sichrplace --repo-branch=main --publish-dir=frontend --functions=netlify/functions
 ```
 - To set DNS and custom domain via CLI, follow the Netlify CLI prompts or use the Netlify web UI for domain verification — it is simpler for DNS record copy/paste.
 

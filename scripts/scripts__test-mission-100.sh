@@ -5,7 +5,7 @@ echo "====================================="
 
 # Start server
 echo "📡 Starting server..."
-cd /Users/omer3kale/SichrPlace77/SichrPlace77/backend
+cd /Users/omer3kale/sichrplace/backend
 node server.js &
 SERVER_PID=$!
 echo "Server started with PID: $SERVER_PID"

@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
 ## 🚀 Deployment Status
 
 **✅ Committed to GitHub**: fd8edf0  
-**✅ Pushed to Repository**: https://github.com/omer3kale/SichrPlace77  
+**✅ Pushed to Repository**: https://github.com/omer3kale/sichrplace  
 **🔄 Netlify Auto-Deploy**: Triggered automatically
 
 ## 🔍 Verification

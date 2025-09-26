@@ -57,7 +57,7 @@
 
 ### **Step 1: Visit Apartments Listing**
 ```
-🌐 Open: file:///Users/omer3kale/SichrPlace77/frontend/apartments-listing.html
+🌐 Open: file:///Users/omer3kale/sichrplace/frontend/apartments-listing.html
 
 👀 See: Loading spinner → Real apartments from database
 🏠 Browse: 14 authentic German apartments with photos
@@ -74,7 +74,7 @@
 
 ### **Step 3: Login with Admin Account**  
 ```
-🌐 Open: file:///Users/omer3kale/SichrPlace77/frontend/login.html?demo=admin
+🌐 Open: file:///Users/omer3kale/sichrplace/frontend/login.html?demo=admin
 📧 Email: sichrplace@gmail.com (pre-filled)
 🔒 Password: Gokhangulec29* (pre-filled)
 ✅ Result: Successfully logged in → redirected to apartments
@@ -139,11 +139,11 @@
 **🎮 READY TO DEMO:**
 ```bash
 # Start backend
-cd /Users/omer3kale/SichrPlace77/SichrPlace77/backend
+cd /Users/omer3kale/sichrplace/backend
 npm start
 
 # Open frontend
-open file:///Users/omer3kale/SichrPlace77/SichrPlace77/frontend/apartments-listing.html
+open file:///Users/omer3kale/sichrplace/frontend/apartments-listing.html
 ```
 
 **🎯 SUCCESS METRICS:**

@@ -3,7 +3,7 @@
  * SUPABASE MIGRATION SETUP GUIDE
  * 
  * This script guides you through the final setup steps to get your
- * migrated SichrPlace77 platform running with Supabase.
+ * migrated sichrplace platform running with Supabase.
  */
 
 const fs = require('fs');
@@ -121,5 +121,5 @@ log(colors.green + colors.bold, '✅ Code migration: 100% Complete');
 log(colors.yellow + colors.bold, '🔧 Setup needed: Environment & Database');
 log(colors.blue + colors.bold, '🚀 Ready for: Testing & Deployment');
 
-console.log('\n' + colors.cyan + colors.bold + 'Your SichrPlace77 platform is ready for Supabase!');
+console.log('\n' + colors.cyan + colors.bold + 'Your sichrplace platform is ready for Supabase!');
 console.log('Follow the steps above to complete the setup.' + colors.reset);

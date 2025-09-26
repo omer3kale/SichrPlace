@@ -28,8 +28,8 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 1. **Fork and clone the repository**
    ```bash
-   git clone https://github.com/YOUR-USERNAME/SichrPlace77.git
-   cd SichrPlace77
+   git clone https://github.com/YOUR-USERNAME/sichrplace.git
+   cd sichrplace
    ```
 
 2. **Install backend dependencies**

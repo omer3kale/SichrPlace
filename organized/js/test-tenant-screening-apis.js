@@ -220,7 +220,7 @@ async function main() {
     
     if (!isHealthy) {
         console.log(`\n${colors.red}Please start Netlify dev server first:${colors.reset}`);
-        console.log(`${colors.cyan}cd "C:\\Users\\ÖmerÜckale\\OneDrive - NEA X GmbH\\Desktop\\vs code files\\devsichrplace\\SichrPlace77"${colors.reset}`);
+        console.log(`${colors.cyan}cd "C:\\Users\\ÖmerÜckale\\OneDrive - NEA X GmbH\\Desktop\\vs code files\\devsichrplace\\sichrplace"${colors.reset}`);
         console.log(`${colors.cyan}netlify dev --port 8888${colors.reset}`);
         process.exit(1);
     }

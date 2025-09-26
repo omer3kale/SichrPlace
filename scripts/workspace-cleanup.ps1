@@ -170,12 +170,12 @@ $unifiedPackageJson = @{
     }
     repository = @{
         type = "git"
-        url = "https://github.com/omer3kale/SichrPlace77.git"
+        url = "https://github.com/omer3kale/sichrplace.git"
     }
     bugs = @{
-        url = "https://github.com/omer3kale/SichrPlace77/issues"
+        url = "https://github.com/omer3kale/sichrplace/issues"
     }
-    homepage = "https://github.com/omer3kale/SichrPlace77#readme"
+    homepage = "https://github.com/omer3kale/sichrplace#readme"
     workspaces = @(
         "backend",
         "functions/*"

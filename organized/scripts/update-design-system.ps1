@@ -1,5 +1,5 @@
 # PowerShell script to update design system across all HTML files
-$workspaceRoot = "c:\Users\ÖmerÜckale\OneDrive - NEA X GmbH\Desktop\devsichrplace\SichrPlace77-main\SichrPlace77-main\frontend"
+$workspaceRoot = "c:\Users\ÖmerÜckale\OneDrive - NEA X GmbH\Desktop\devsichrplace\sichrplace\frontend"
 
 # List of critical files to update (excluding already updated ones)
 $criticalFiles = @(

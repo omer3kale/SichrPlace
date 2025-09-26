@@ -2,7 +2,7 @@
 
 ## ✅ **GitHub Repository Updated**
 
-**Repository**: [https://github.com/omer3kale/SichrPlace77](https://github.com/omer3kale/SichrPlace77)
+**Repository**: [https://github.com/omer3kale/sichrplace](https://github.com/omer3kale/sichrplace)
 
 ### 📋 **What Was Pushed:**
 
@@ -130,7 +130,7 @@ Your SichrPlace platform is now:
 
 **🌟 Your vision of a secure, user-friendly apartment platform for German students is now a reality!**
 
-**GitHub Repository**: https://github.com/omer3kale/SichrPlace77
+**GitHub Repository**: https://github.com/omer3kale/sichrplace
 **Live Demo**: https://sichrplace.vercel.app
 **Documentation**: https://github.com/omer3kale/Setup-Guides-for-Mentally-Challanged
 

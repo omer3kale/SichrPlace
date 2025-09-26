@@ -34,7 +34,7 @@ declare -a HTML_FILES=(
     "pwa-test.html"
 )
 
-cd "/Users/omer3kale/SichrPlace77/SichrPlace77/frontend"
+cd "/Users/omer3kale/sichrplace/frontend"
 
 echo "🔧 Adding favicon links to key HTML files..."
 

@@ -72,7 +72,7 @@ class DependencySecurityManager {
      */
     async getGitHubAlerts() {
         try {
-            const alertsJson = execSync('gh api repos/omer3kale/SichrPlace77/dependabot/alerts', 
+            const alertsJson = execSync('gh api repos/omer3kale/sichrplace/dependabot/alerts', 
                 { encoding: 'utf8' });
             return JSON.parse(alertsJson);
         } catch (error) {

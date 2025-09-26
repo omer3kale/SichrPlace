@@ -12,7 +12,7 @@ FAVICON_BLOCK='  <!-- Favicon and Icons -->
   <link rel="icon" href="img/web-app-manifest-512x512.png" sizes="512x512" type="image/png">'
 
 # Directory containing HTML files
-HTML_DIR="/Users/omer3kale/SichrPlace77/SichrPlace77/frontend"
+HTML_DIR="/Users/omer3kale/sichrplace/frontend"
 
 echo "🔧 Adding favicon links to all HTML files..."
 

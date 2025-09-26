@@ -10,7 +10,7 @@ netlify login
 
 ### **Step 2: Initialize Project**
 ```bash
-cd /Users/omer3kale/SichrPlace77/SichrPlace77
+cd /Users/omer3kale/sichrplace
 netlify init
 ```
 

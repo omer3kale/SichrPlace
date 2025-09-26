@@ -5,7 +5,7 @@
 ### Step 1: Deploy to Netlify via GitHub
 1. **Go to [netlify.com](https://netlify.com) and sign up/login**
 2. **Click "Add new site" → "Import an existing project"**
-3. **Connect to GitHub and select your `SichrPlace77` repository**
+3. **Connect to GitHub and select your `sichrplace` repository**
 4. **Build settings:**
    - Build command: `echo 'Frontend ready'`
    - Publish directory: `frontend`
@@ -37,14 +37,14 @@ VAPID_EMAIL=your_email@gmail.com
 ### Step 1: Deploy to Railway
 1. **Go to [railway.app](https://railway.app) and sign up with GitHub**
 2. **Click "Deploy from GitHub repo"**
-3. **Select your `SichrPlace77` repository**
+3. **Select your `sichrplace` repository**
 4. **Railway auto-detects Node.js and deploys backend**
 
 ### Step 2: Environment Variables
 Add the same environment variables as above in Railway dashboard.
 
 ### Step 3: Configure Domain
-- Railway provides URL like: `https://sichrplace77-production.up.railway.app`
+- Railway provides URL like: `https://sichrplace-production.up.railway.app`
 - Backend health: `https://your-url.up.railway.app/api/health`
 
 ---
@@ -94,6 +94,6 @@ Once deployed, test these URLs:
 
 ## 🔗 Alternative: Use Your GitHub Pages
 Your current demo is already live at:
-**https://omer3kale.github.io/SichrPlace77/**
+**https://omer3kale.github.io/sichrplace/**
 
 For full backend functionality, use Netlify/Railway above.

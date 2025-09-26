@@ -82,7 +82,7 @@
 ```bash
 # 1. Clone and setup
 git clone your-repo
-cd SichrPlace77
+cd sichrplace
 npm install
 
 # 2. Configure environment

@@ -86,7 +86,7 @@ sudo -u postgres createdb sichrplace
 
 #### **Database Migration**
 ```bash
-cd /path/to/SichrPlace77
+cd /path/to/sichrplace
 npm install
 npm run db:migrate  # If migration scripts exist
 ```
@@ -233,7 +233,7 @@ sudo mkdir -p /var/www/sichrplace
 sudo chown -R $USER:$USER /var/www/sichrplace
 
 # Copy application files
-rsync -avz --exclude node_modules --exclude .git /path/to/SichrPlace77/ /var/www/sichrplace/
+rsync -avz --exclude node_modules --exclude .git /path/to/sichrplace/ /var/www/sichrplace/
 
 # Set permissions
 sudo chown -R www-data:www-data /var/www/sichrplace/frontend

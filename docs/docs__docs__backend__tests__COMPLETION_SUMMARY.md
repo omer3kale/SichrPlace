@@ -35,7 +35,7 @@ Current Status: READY FOR EXECUTION
 Your complete GDPR test suite is now ready. Execute with:
 
 ```bash
-cd /Users/omer3kale/SichrPlace77/SichrPlace77/backend/tests
+cd /Users/omer3kale/sichrplace/backend/tests
 ./run-gdpr-tests.sh
 ```
 

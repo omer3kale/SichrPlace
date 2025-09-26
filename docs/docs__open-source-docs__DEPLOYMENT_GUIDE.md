@@ -13,7 +13,7 @@ azd auth login
 ## Step 3: Initialize and Deploy
 ```powershell
 # Navigate to your project directory
-cd "c:\Users\ÖmerÜckale\OneDrive - NEA X GmbH\Desktop\devsichrplace\SichrPlace77-main\SichrPlace77-main"
+cd "c:\Users\ÖmerÜckale\OneDrive - NEA X GmbH\Desktop\devsichrplace\sichrplace-main\sichrplace-main"
 
 # Initialize the deployment
 azd init

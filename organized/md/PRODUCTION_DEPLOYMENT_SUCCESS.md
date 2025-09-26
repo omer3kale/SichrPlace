@@ -4,7 +4,7 @@
 
 ## ✅ GITHUB DEPLOYMENT COMPLETE
 
-**Repository**: omer3kale/SichrPlace77  
+**Repository**: omer3kale/sichrplace  
 **Branch**: main  
 **Commits Pushed**: 2 major security commits  
 **Files Updated**: 23 security files + documentation  

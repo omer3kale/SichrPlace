@@ -5,8 +5,8 @@ const nextConfig = {
   images: {
     unoptimized: true  // Required for GitHub Pages
   },
-  basePath: process.env.NODE_ENV === 'production' ? '/SichrPlace77' : '',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/SichrPlace77/' : '',
+  basePath: process.env.NODE_ENV === 'production' ? '/sichrplace' : '',
+  assetPrefix: process.env.NODE_ENV === 'production' ? '/sichrplace/' : '',
   distDir: 'out'
 }
 

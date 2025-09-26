@@ -10,7 +10,7 @@ echo ""
 # Start server if not running
 if ! pgrep -f "node server.js" > /dev/null; then
     echo "📡 Starting server..."
-    cd /Users/omer3kale/SichrPlace77/SichrPlace77/backend
+    cd /Users/omer3kale/sichrplace/backend
     nohup node server.js > server.log 2>&1 &
     sleep 5
 fi
@@ -107,4 +107,4 @@ fi
 
 echo ""
 echo "📝 Server log (last 10 lines):"
-tail -10 /Users/omer3kale/SichrPlace77/SichrPlace77/backend/server.log 2>/dev/null || echo "No server log found"
+tail -10 /Users/omer3kale/sichrplace/backend/server.log 2>/dev/null || echo "No server log found"

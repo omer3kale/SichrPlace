@@ -32,7 +32,7 @@
 ## 🎮 **DEMO & TESTING**
 
 ### **🖥️ Integration Demo Dashboard**
-**URL**: `file:///Users/omer3kale/SichrPlace77/SichrPlace77/frontend/integration-demo.html`
+**URL**: `file:///Users/omer3kale/sichrplace/frontend/integration-demo.html`
 
 **Features:**
 - ✅ Live API status monitoring
@@ -42,7 +42,7 @@
 - ✅ Interactive API testing buttons
 
 ### **🏠 Production Apartment Listings**
-**URL**: `file:///Users/omer3kale/SichrPlace77/SichrPlace77/frontend/apartments-listing.html`
+**URL**: `file:///Users/omer3kale/sichrplace/frontend/apartments-listing.html`
 
 **Working Features:**
 - ✅ 14 real apartments from Supabase
@@ -52,7 +52,7 @@
 - ✅ Favorite button integration (login required)
 
 ### **🔐 Working Login System**
-**URL**: `file:///Users/omer3kale/SichrPlace77/SichrPlace77/frontend/login.html?demo=admin`
+**URL**: `file:///Users/omer3kale/sichrplace/frontend/login.html?demo=admin`
 
 **Features:**
 - ✅ Pre-filled admin credentials
@@ -198,11 +198,11 @@
 ### **🚀 Start Your SichrPlace Platform:**
 ```bash
 # Backend (Terminal 1)
-cd /Users/omer3kale/SichrPlace77/SichrPlace77/backend
+cd /Users/omer3kale/sichrplace/backend
 npm start
 
 # Frontend Demo (Browser)
-open file:///Users/omer3kale/SichrPlace77/SichrPlace77/frontend/integration-demo.html
+open file:///Users/omer3kale/sichrplace/frontend/integration-demo.html
 ```
 
 ### **🎮 Quick Demo Links:**

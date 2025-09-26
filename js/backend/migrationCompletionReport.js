@@ -4,7 +4,7 @@
  * Generated: ${new Date().toISOString()}
  * 
  * This report provides a comprehensive overview of the MongoDB to Supabase migration
- * for the SichrPlace77 apartment rental platform.
+ * for the sichrplace apartment rental platform.
  */
 
 console.log('🎉 SUPABASE MIGRATION COMPLETION REPORT');

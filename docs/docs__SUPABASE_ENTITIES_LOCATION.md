@@ -1,4 +1,4 @@
-# 📍 Supabase Entities Location Guide - SichrPlace77
+# 📍 Supabase Entities Location Guide - sichrplace
 
 ## 🎯 **Updated Chat.html to Match Index.html Design!**
 

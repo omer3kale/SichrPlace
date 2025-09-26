@@ -1,6 +1,6 @@
 # Legacy MongoDB Files
 
-This directory contains files from the previous MongoDB/Mongoose-based implementation of SichrPlace77.
+This directory contains files from the previous MongoDB/Mongoose-based implementation of sichrplace.
 
 **⚠️ These files are NO LONGER USED in the current application.**
 

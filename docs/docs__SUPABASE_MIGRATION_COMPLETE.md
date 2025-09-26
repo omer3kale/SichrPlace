@@ -196,7 +196,7 @@ Your SichrPlace application now runs on **Supabase** with:
 - **Supabase Dashboard**: `https://app.supabase.com`
 - **Production App**: `https://[your-prod-ref].supabase.co`
 - **Staging App**: `https://[your-staging-ref].supabase.co`
-- **GitHub Actions**: `https://github.com/omer3kale/SichrPlace77/actions`
+- **GitHub Actions**: `https://github.com/omer3kale/sichrplace/actions`
 
 ---
 

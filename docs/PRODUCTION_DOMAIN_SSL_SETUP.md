@@ -83,7 +83,7 @@ sudo certbot --nginx -d sichrplace.com -d www.sichrplace.com
 npm i -g vercel
 
 # Deploy from project root
-cd SichrPlace77
+cd sichrplace
 vercel
 
 # Add custom domain

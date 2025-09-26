@@ -17,7 +17,7 @@ const successes = [];
 // 1. Check if server.js properly mounts auth routes
 function checkServerRoutes() {
   try {
-    const serverPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/server.js';
+    const serverPath = '/Users/omer3kale/sichrplace/backend/server.js';
     const serverContent = fs.readFileSync(serverPath, 'utf8');
     
     if (serverContent.includes("app.use('/auth', authRoutes)")) {
@@ -39,7 +39,7 @@ function checkServerRoutes() {
 // 2. Check if auth routes file exists and has required endpoints
 function checkAuthRoutes() {
   try {
-    const authPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/routes/auth.js';
+    const authPath = '/Users/omer3kale/sichrplace/backend/routes/auth.js';
     const authContent = fs.readFileSync(authPath, 'utf8');
     
     const requiredEndpoints = [
@@ -78,7 +78,7 @@ function checkAuthRoutes() {
 // 3. Check UserService integration
 function checkUserService() {
   try {
-    const userServicePath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/services/UserService.js';
+    const userServicePath = '/Users/omer3kale/sichrplace/backend/services/UserService.js';
     const userServiceContent = fs.readFileSync(userServicePath, 'utf8');
     
     const requiredMethods = [
@@ -105,7 +105,7 @@ function checkUserService() {
 function checkFrontendForms() {
   try {
     // Check login.html
-    const loginPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/login.html';
+    const loginPath = '/Users/omer3kale/sichrplace/frontend/login.html';
     const loginContent = fs.readFileSync(loginPath, 'utf8');
     
     if (loginContent.includes("fetch('/auth/login'")) {
@@ -122,7 +122,7 @@ function checkFrontendForms() {
     }
     
     // Check register.html
-    const registerPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/register.html';
+    const registerPath = '/Users/omer3kale/sichrplace/frontend/register.html';
     const registerContent = fs.readFileSync(registerPath, 'utf8');
     
     if (registerContent.includes("fetch('/auth/register'")) {
@@ -139,7 +139,7 @@ function checkFrontendForms() {
 // 5. Check environment configuration
 function checkEnvironment() {
   try {
-    const envPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/.env';
+    const envPath = '/Users/omer3kale/sichrplace/backend/.env';
     const envContent = fs.readFileSync(envPath, 'utf8');
     
     const requiredVars = [

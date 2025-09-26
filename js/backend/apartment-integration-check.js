@@ -17,7 +17,7 @@ const successes = [];
 // 1. Check if server.js properly mounts apartment routes
 function checkServerRoutes() {
   try {
-    const serverPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/server.js';
+    const serverPath = '/Users/omer3kale/sichrplace/backend/server.js';
     const serverContent = fs.readFileSync(serverPath, 'utf8');
     
     if (serverContent.includes("app.use('/api/apartments', apartmentsRoute)")) {
@@ -39,7 +39,7 @@ function checkServerRoutes() {
 // 2. Check if apartment routes file exists and has required endpoints
 function checkApartmentRoutes() {
   try {
-    const apartmentRoutesPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/routes/apartments.js';
+    const apartmentRoutesPath = '/Users/omer3kale/sichrplace/backend/routes/apartments.js';
     const apartmentContent = fs.readFileSync(apartmentRoutesPath, 'utf8');
     
     const requiredEndpoints = [
@@ -73,7 +73,7 @@ function checkApartmentRoutes() {
 // 3. Check if ApartmentService exists and has required methods
 function checkApartmentService() {
   try {
-    const servicePath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/services/ApartmentService.js';
+    const servicePath = '/Users/omer3kale/sichrplace/backend/services/ApartmentService.js';
     const serviceContent = fs.readFileSync(servicePath, 'utf8');
     
     const requiredMethods = [
@@ -108,7 +108,7 @@ function checkApartmentService() {
 // 4. Check upload apartment API endpoint
 function checkUploadApartmentEndpoint() {
   try {
-    const uploadPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/api/upload-apartment.js';
+    const uploadPath = '/Users/omer3kale/sichrplace/backend/api/upload-apartment.js';
     const uploadContent = fs.readFileSync(uploadPath, 'utf8');
     
     if (uploadContent.includes('router.post(')) {
@@ -137,7 +137,7 @@ function checkUploadApartmentEndpoint() {
 // 5. Check frontend apartment listing page
 function checkFrontendListingPage() {
   try {
-    const frontendPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/apartments-listing.html';
+    const frontendPath = '/Users/omer3kale/sichrplace/frontend/apartments-listing.html';
     const frontendContent = fs.readFileSync(frontendPath, 'utf8');
     
     if (frontendContent.includes('fetch(`${API_BASE_URL}/api/apartments`)')) {
@@ -166,7 +166,7 @@ function checkFrontendListingPage() {
 // 6. Check frontend add property page
 function checkFrontendAddPropertyPage() {
   try {
-    const addPropertyPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/frontend/add-property.html';
+    const addPropertyPath = '/Users/omer3kale/sichrplace/frontend/add-property.html';
     const addPropertyContent = fs.readFileSync(addPropertyPath, 'utf8');
     
     if (addPropertyContent.includes('fetch(\'/api/apartments\'') || addPropertyContent.includes('submitProperty')) {
@@ -195,7 +195,7 @@ function checkFrontendAddPropertyPage() {
 // 7. Check database schema
 function checkDatabaseSchema() {
   try {
-    const schemaPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/migrations/001_initial_supabase_setup.sql';
+    const schemaPath = '/Users/omer3kale/sichrplace/backend/migrations/001_initial_supabase_setup.sql';
     const schemaContent = fs.readFileSync(schemaPath, 'utf8');
     
     if (schemaContent.includes('CREATE TABLE apartments')) {
@@ -229,7 +229,7 @@ function checkDatabaseSchema() {
 // 8. Check environment configuration
 function checkEnvironmentConfig() {
   try {
-    const envPath = '/Users/omer3kale/SichrPlace77/SichrPlace77/.env';
+    const envPath = '/Users/omer3kale/sichrplace/.env';
     const envContent = fs.readFileSync(envPath, 'utf8');
     
     const requiredEnvVars = [

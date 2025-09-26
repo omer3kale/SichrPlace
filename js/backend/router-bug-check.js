@@ -16,8 +16,8 @@ const fixes = [];
 // 1. Check for method name mismatches
 function checkMethodNameMismatches() {
   try {
-    const servicePath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/services/ApartmentService.js';
-    const routePath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/routes/apartments.js';
+    const servicePath = '/Users/omer3kale/sichrplace/backend/services/ApartmentService.js';
+    const routePath = '/Users/omer3kale/sichrplace/backend/routes/apartments.js';
     
     const serviceContent = fs.readFileSync(servicePath, 'utf8');
     const routeContent = fs.readFileSync(routePath, 'utf8');
@@ -57,7 +57,7 @@ function checkMethodNameMismatches() {
 // 2. Check for route parameter conflicts
 function checkRouteConflicts() {
   try {
-    const routePath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/routes/apartments.js';
+    const routePath = '/Users/omer3kale/sichrplace/backend/routes/apartments.js';
     const routeContent = fs.readFileSync(routePath, 'utf8');
     
     // Extract route definitions
@@ -98,7 +98,7 @@ function checkRouteConflicts() {
 // 3. Check for missing error handling
 function checkErrorHandling() {
   try {
-    const routePath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/routes/apartments.js';
+    const routePath = '/Users/omer3kale/sichrplace/backend/routes/apartments.js';
     const routeContent = fs.readFileSync(routePath, 'utf8');
     
     const routeBlocks = routeContent.split('router.');
@@ -130,7 +130,7 @@ function checkErrorHandling() {
 // 4. Check for authentication middleware consistency
 function checkAuthMiddleware() {
   try {
-    const routePath = '/Users/omer3kale/SichrPlace77/SichrPlace77/backend/routes/apartments.js';
+    const routePath = '/Users/omer3kale/sichrplace/backend/routes/apartments.js';
     const routeContent = fs.readFileSync(routePath, 'utf8');
     
     // Routes that should require auth

@@ -1,9 +1,9 @@
 # 🏠 SichrPlace Demo - GitHub Pages Deployment
 
-[![Deploy to GitHub Pages](https://github.com/omer3kale/SichrPlace77/actions/workflows/deploy.yml/badge.svg)](https://github.com/omer3kale/SichrPlace77/actions/workflows/deploy.yml)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue)](https://omer3kale.github.io/SichrPlace77/)
+[![Deploy to GitHub Pages](https://github.com/omer3kale/sichrplace/actions/workflows/deploy.yml/badge.svg)](https://github.com/omer3kale/sichrplace/actions/workflows/deploy.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue)](https://omer3kale.github.io/sichrplace/)
 
-**Live Demo**: [https://omer3kale.github.io/SichrPlace77/](https://omer3kale.github.io/SichrPlace77/)
+**Live Demo**: [https://omer3kale.github.io/sichrplace/](https://omer3kale.github.io/sichrplace/)
 
 This is a lightweight Next.js demo version of the SichrPlace apartment platform, optimized for GitHub Pages deployment. It showcases the core features and UI/UX of the full application.
 
@@ -123,9 +123,9 @@ SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 ## 🔗 Links
 
-- **Full Application**: [SichrPlace Repository](https://github.com/omer3kale/SichrPlace77)
+- **Full Application**: [SichrPlace Repository](https://github.com/omer3kale/sichrplace)
 - **Documentation**: [Setup Guides](https://github.com/omer3kale/Setup-Guides-for-Mentally-Challanged)
-- **Live Demo**: [GitHub Pages](https://omer3kale.github.io/SichrPlace77/)
+- **Live Demo**: [GitHub Pages](https://omer3kale.github.io/sichrplace/)
 
 ## 📊 Performance Metrics
 
@@ -144,8 +144,8 @@ SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
 This demo is part of the larger SichrPlace project. To contribute:
 
-1. Check the main [SichrPlace repository](https://github.com/omer3kale/SichrPlace77)
-2. Read the [Contributing Guidelines](https://github.com/omer3kale/SichrPlace77/blob/main/CONTRIBUTING.md)
+1. Check the main [SichrPlace repository](https://github.com/omer3kale/sichrplace)
+2. Read the [Contributing Guidelines](https://github.com/omer3kale/sichrplace/blob/main/CONTRIBUTING.md)
 3. Submit issues or pull requests
 
 ## 📄 License
@@ -156,4 +156,4 @@ This project is part of SichrPlace and follows the same MIT License.
 
 **Built with ❤️ for the student community in Germany**
 
-[🌐 Live Demo](https://omer3kale.github.io/SichrPlace77/) • [📚 Documentation](https://github.com/omer3kale/Setup-Guides-for-Mentally-Challanged) • [🏠 Full App](https://github.com/omer3kale/SichrPlace77)
+[🌐 Live Demo](https://omer3kale.github.io/sichrplace/) • [📚 Documentation](https://github.com/omer3kale/Setup-Guides-for-Mentally-Challanged) • [🏠 Full App](https://github.com/omer3kale/sichrplace)

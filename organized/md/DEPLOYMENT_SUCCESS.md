@@ -1,7 +1,7 @@
 # 🚀 SichrPlace Deployment Summary
 
 ## ✅ Successfully Deployed to GitHub
-**Repository**: https://github.com/omer3kale/SichrPlace77  
+**Repository**: https://github.com/omer3kale/sichrplace  
 **Branch**: main  
 **Commit**: c9c8680 - "🚀 MAJOR UI/UX Bug Fixes & Platform Improvements"
 

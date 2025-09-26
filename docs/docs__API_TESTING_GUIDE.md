@@ -114,7 +114,7 @@ If any endpoints return 404, the routes might need implementation:
 
 ```bash
 # Check which routes exist
-cd /Users/omer3kale/SichrPlace77/SichrPlace77/backend
+cd /Users/omer3kale/sichrplace/backend
 grep -r "app.get\|app.post" routes/ api/
 ```
 
