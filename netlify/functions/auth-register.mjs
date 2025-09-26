@@ -155,22 +155,22 @@ export const handler = async (event, context) => {
     );
     const verificationTokenHash = hashToken(verificationToken);
 
-    // Insert user
+    // Insert user with ONLY fields that exist in the actual schema
     const { data: newUser, error: insertError } = await supabase
       .from('users')
       .insert({
         username,
         email,
         password: hashedPassword,
-        role: userType === 'applicant' ? 'user' : 'user', // Map to valid role values
+        role: 'user', // Always 'user' role for now
         first_name: fullName ? fullName.split(' ')[0] : username,
         last_name: fullName ? fullName.split(' ').slice(1).join(' ') : '',
         phone: phone || null,
         email_verified: false,
-        email_verification_token: verificationTokenHash,
-        created_at: new Date().toISOString(),
         gdpr_consent: true,
         data_processing_consent: true
+        // Removed email_verification_token - column doesn't exist
+        // Removed created_at - auto-generated
       })
       .select()
       .single();
