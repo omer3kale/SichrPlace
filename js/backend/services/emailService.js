@@ -297,83 +297,6 @@ class EmailService {
 
     return this.sendEmail(userEmail, subject, html, 'viewing_results');
   }
-
-  /**
-   * Email #3: Viewing Complete - Video & Feedback Ready
-   * Sent when viewing is completed and results are available
-   */
-  async sendViewingResults(userEmail, userData, resultsData) {
-    const subject = "Your Apartment Viewing Video & Feedback Are Here";
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
-          .header { background: #6f42c1; color: white; padding: 20px; text-align: center; }
-          .content { padding: 30px 20px; }
-          .footer { background: #f4f4f4; padding: 20px; text-align: center; font-size: 14px; color: #666; }
-          .button { background: #6f42c1; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; font-weight: bold; }
-          .results-section { background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .video-features { background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 15px 0; }
-          .cta-section { background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
-          .icon { font-size: 18px; margin-right: 8px; }
-          ul { padding-left: 20px; }
-          li { margin: 8px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>🎥 SichrPlace</h1>
-          <p>Your Viewing Results Are Ready!</p>
-        </div>
-        
-        <div class="content">
-          <h2>Hi ${userData.firstName || 'there'},</h2>
-          
-          <p><strong>Your requested apartment viewing is now complete — and everything has been documented for you!</strong></p>
-          
-          <div class="results-section">
-            <h3><span class="icon">🎬</span>What's included in the video report:</h3>
-            <div class="video-features">
-              <ul>
-                <li>A full walkthrough of the apartment</li>
-                <li>Impressions of the building and surroundings</li>
-                <li>A quick tour of the neighborhood</li>
-                <li>Answers to your specific questions and concerns</li>
-              </ul>
-            </div>
-            
-            <a href="${resultsData.videoLink || '#'}" class="button">
-              📥 Watch the Viewing Video
-            </a>
-            
-            <p><strong>Our local viewer also added personal notes to help you evaluate whether this home fits your needs.</strong></p>
-          </div>
-          
-          <div class="cta-section">
-            <h3>What do you think?</h3>
-            <p><strong>Is this apartment suitable for you?</strong></p>
-            <p>If so, we're happy to assist you with the next steps — including communicating with the landlord and supporting the contract process.</p>
-            <p><strong>Just reply to this email to let us know how you'd like to proceed.</strong></p>
-          </div>
-          
-          <p><strong>Looking forward to your decision!</strong></p>
-          <p><strong>The SichrPlace Team</strong></p>
-        </div>
-        
-        <div class="footer">
-          <p>© 2025 SichrPlace Team | sichrplace@gmail.com</p>
-          <p>Helping you find the perfect home 🏠❤️</p>
-        </div>
-      </body>
-      </html>
-    `;
-
-    return this.sendEmail(userEmail, subject, html, 'viewing_results');
-  }
-
   /**
    * Generic email sending function with error handling and logging
    */
@@ -1053,4 +976,4 @@ class EmailService {
   }
 }
 
-module.exports = EmailService;
+export default EmailService;
