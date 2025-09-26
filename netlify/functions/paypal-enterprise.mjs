@@ -6,10 +6,15 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
 // Import all bulletproof security utilities
-import { secureLogger } from '../../utils/secureLogger.js';
+import { SecureLogger } from '../../utils/secureLogger.js';
 import { rateLimiter } from '../../utils/rateLimiter.js';
-import { inputValidator } from '../../utils/inputValidator.js';
-import { securityMiddleware } from '../../utils/securityMiddleware.js';
+import { InputValidator } from '../../utils/inputValidator.js';
+import { SecurityMiddleware } from '../../utils/securityMiddleware.js';
+
+// Initialize utility instances
+const secureLogger = new SecureLogger();
+const inputValidator = new InputValidator();
+const securityMiddleware = new SecurityMiddleware();
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
