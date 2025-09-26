@@ -5,14 +5,14 @@ import { hashToken } from '../../utils/tokenHash.js';
 
 // Environment variable validation with fallbacks
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY1 || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY1 || process.env.SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
 const jwtSecret = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
 
 // More robust environment validation
 function validateEnvironment() {
   const missing = [];
   if (!supabaseUrl) missing.push('SUPABASE_URL');
-  if (!supabaseServiceKey) missing.push('SUPABASE_SERVICE_ROLE_KEY1 or SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseServiceKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
   if (!jwtSecret) missing.push('JWT_SECRET');
   
   return {
@@ -190,11 +190,37 @@ export const handler = async (event, context) => {
 
     // Send verification email
     try {
-      const { default: EmailServiceClass } = await import('../../js/backend/services/emailService.js');
-      const emailService = new EmailServiceClass();
-      await emailService.sendVerificationEmail(newUser.email, newUser.full_name || newUser.username || 'there', verificationToken);
+      // Try different import approaches for email service
+      let EmailServiceClass;
+      try {
+        EmailServiceClass = (await import('../../js/backend/services/emailService.js')).default;
+      } catch (importError) {
+        console.warn('Email service import failed, using fallback:', importError.message);
+        // Continue without email verification for now
+        return {
+          statusCode: 201,
+          headers,
+          body: JSON.stringify({
+            success: true,
+            message: 'Registration successful. Email verification is temporarily unavailable.',
+            user: {
+              id: newUser.id,
+              username: newUser.username,
+              email: newUser.email,
+              userType: newUser.user_type,
+              verified: newUser.verified
+            }
+          })
+        };
+      }
+      
+      if (EmailServiceClass) {
+        const emailService = new EmailServiceClass();
+        await emailService.sendVerificationEmail(newUser.email, newUser.full_name || newUser.username || 'there', verificationToken);
+      }
     } catch (mailErr) {
-      console.warn('Verification email dispatch skipped or failed:', mailErr?.message || mailErr);
+      console.warn('Verification email dispatch failed:', mailErr?.message || mailErr);
+      // Continue registration success even if email fails
     }
 
     return {
@@ -215,10 +241,34 @@ export const handler = async (event, context) => {
 
   } catch (error) {
     console.error('Registration error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
+    // Return more specific error information for debugging
+    let errorMessage = 'Internal server error';
+    let statusCode = 500;
+    
+    if (error.message?.includes('duplicate') || error.message?.includes('unique')) {
+      errorMessage = 'Username or email already exists';
+      statusCode = 409;
+    } else if (error.message?.includes('validation') || error.message?.includes('required')) {
+      errorMessage = 'Invalid input data';
+      statusCode = 400;
+    } else if (error.message?.includes('network') || error.message?.includes('connection')) {
+      errorMessage = 'Database connection error. Please try again.';
+      statusCode = 503;
+    }
+    
     return {
-      statusCode: 500,
+      statusCode,
       headers,
-      body: JSON.stringify({ error: 'Internal server error' })
+      body: JSON.stringify({ 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      })
     };
   }
 };
