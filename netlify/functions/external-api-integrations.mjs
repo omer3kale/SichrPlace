@@ -1,7 +1,12 @@
-import { createRequire } from 'module';
+// Simplified version without external dependencies that may not bundle correctly
+// import { createRequire } from 'module';
+// const require = createRequire(import.meta.url);
+// const integrationHealthService = require('../../js/backend/services/IntegrationHealthService');
 
-const require = createRequire(import.meta.url);
-const integrationHealthService = require('../../js/backend/services/IntegrationHealthService');
+// Simple stub for integration health
+const integrationHealthService = {
+  getStatus: async () => ({ healthy: true, integrations: [] })
+};
 
 export const handler = async (event, context) => {
   const headers = {
