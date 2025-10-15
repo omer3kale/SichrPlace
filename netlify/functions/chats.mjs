@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { mapArrayToFrontend } from '../utils/field-mapper.mjs';
+import { mapArrayToFrontend } from './utils/field-mapper.mjs';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

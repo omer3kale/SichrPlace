@@ -99,7 +99,6 @@ const formatApartmentResponse = (apartment) => {
     ...apartment,
     ...mapApartmentToFrontend(apartment), // Use field mapper for consistent mapping
     // Calculated fields
-    total_rent,
     total_rent: total_rent, // Frontend-friendly field name
     formatted_address: `${apartment.address} ${apartment.house_number}, ${apartment.postal_code} ${apartment.city}, ${apartment.state}`,
     
