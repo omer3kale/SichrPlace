@@ -1,12 +1,137 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const UserService = require('../services/UserService');
 const EmailService = require('../services/emailService');
+const { supabase } = require('../config/supabase');
 const router = express.Router();
 
 const emailService = new EmailService();
+
+// ===== HEALTH CHECK ENDPOINT =====
+// This endpoint verifies that all critical authentication components are working
+router.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    checks: {},
+    environment: process.env.NODE_ENV || 'development'
+  };
+
+  // Check 1: Supabase Database Connection
+  try {
+    const startDb = Date.now();
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1);
+    
+    const dbTime = Date.now() - startDb;
+    
+    if (error) {
+      health.checks.database = { 
+        status: 'error', 
+        message: error.message,
+        responseTime: `${dbTime}ms`
+      };
+      health.status = 'degraded';
+    } else {
+      health.checks.database = { 
+        status: 'ok',
+        responseTime: `${dbTime}ms`
+      };
+    }
+  } catch (err) {
+    health.checks.database = { 
+      status: 'error', 
+      message: err.message 
+    };
+    health.status = 'degraded';
+  }
+
+  // Check 2: JWT Configuration
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    health.checks.jwt = { 
+      status: 'error', 
+      message: 'JWT_SECRET not configured' 
+    };
+    health.status = 'degraded';
+  } else if (jwtSecret === 'default-secret') {
+    health.checks.jwt = { 
+      status: 'error', 
+      message: 'JWT_SECRET using insecure default value' 
+    };
+    health.status = 'degraded';
+  } else if (jwtSecret.length < 32) {
+    health.checks.jwt = { 
+      status: 'warning', 
+      message: 'JWT_SECRET is too short (recommend 64+ characters)' 
+    };
+    health.status = 'degraded';
+  } else {
+    health.checks.jwt = { 
+      status: 'ok',
+      length: jwtSecret.length
+    };
+  }
+
+  // Check 3: Supabase URL Configuration
+  const supabaseUrl = process.env.SUPABASE_URL;
+  if (!supabaseUrl) {
+    health.checks.supabaseUrl = { 
+      status: 'error', 
+      message: 'SUPABASE_URL not configured' 
+    };
+    health.status = 'degraded';
+  } else {
+    health.checks.supabaseUrl = { 
+      status: 'ok',
+      configured: true
+    };
+  }
+
+  // Check 4: Supabase Service Role Key
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseKey) {
+    health.checks.supabaseKey = { 
+      status: 'error', 
+      message: 'SUPABASE_SERVICE_ROLE_KEY not configured' 
+    };
+    health.status = 'degraded';
+  } else {
+    health.checks.supabaseKey = { 
+      status: 'ok',
+      configured: true
+    };
+  }
+
+  // Check 5: Email Service (optional)
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (!gmailUser || !gmailPass) {
+    health.checks.email = { 
+      status: 'warning', 
+      message: 'Email service not configured (optional)' 
+    };
+  } else {
+    health.checks.email = { 
+      status: 'ok',
+      configured: true
+    };
+  }
+
+  // Overall health summary
+  health.summary = {
+    critical: Object.values(health.checks).filter(c => c.status === 'error').length,
+    warnings: Object.values(health.checks).filter(c => c.status === 'warning').length,
+    healthy: Object.values(health.checks).filter(c => c.status === 'ok').length
+  };
+
+  const statusCode = health.status === 'ok' ? 200 : 503;
+  res.status(statusCode).json(health);
+});
 
 // Validation middleware
 const validateRegistration = [
@@ -112,11 +237,21 @@ router.post('/register', validateRegistration, async (req, res) => {
   }
 });
 
-// User Login
+// User Login - BULLETPROOF VERSION
 router.post('/login', validateLogin, async (req, res) => {
+  const startTime = Date.now();
+  const requestId = Math.random().toString(36).substring(7);
+  
   try {
+    console.log(`🔐 [${requestId}] Login attempt started`, {
+      email: req.body.email,
+      ip: req.ip,
+      userAgent: req.headers['user-agent']?.substring(0, 100)
+    });
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.warn(`⚠️ [${requestId}] Validation failed`, errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -124,52 +259,164 @@ router.post('/login', validateLogin, async (req, res) => {
       });
     }
 
-    const { email, password } = req.body;
+    const { email, password, remember } = req.body;
 
-    // Find user by email
-    const user = await UserService.findByEmail(email.toLowerCase());
+    // Find user by email with timeout protection
+    let user;
+    try {
+      const userPromise = UserService.findByEmail(email.toLowerCase());
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database query timeout')), 10000)
+      );
+      user = await Promise.race([userPromise, timeoutPromise]);
+    } catch (dbError) {
+      console.error(`❌ [${requestId}] Database error finding user`, {
+        error: dbError.message,
+        email: email.toLowerCase()
+      });
+      return res.status(500).json({
+        success: false,
+        message: 'Database connection error. Please try again.',
+        requestId
+      });
+    }
+
     if (!user) {
-      await UserService.trackFailedLogin(email);
+      console.warn(`⚠️ [${requestId}] User not found: ${email}`);
+      await UserService.trackFailedLogin(email).catch(err => 
+        console.error(`[${requestId}] Failed to track login attempt:`, err)
+      );
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
 
+    console.log(`👤 [${requestId}] User found`, {
+      userId: user.id,
+      email: user.email,
+      dbRole: user.role,
+      bioRole: user.bio,
+      accountStatus: user.account_status,
+      blocked: user.blocked,
+      failedAttempts: user.failed_login_attempts
+    });
+
     // Check if user can login
     if (!UserService.canUserLogin(user)) {
+      console.warn(`⛔ [${requestId}] Account cannot login`, { 
+        userId: user.id,
+        reason: user.account_status !== 'active' ? 'suspended' : 'blocked'
+      });
       return res.status(403).json({
         success: false,
         message: 'Account is suspended or blocked. Please contact support.'
       });
     }
 
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // BULLETPROOF: Verify password exists and is valid
+    if (!user.password || typeof user.password !== 'string' || user.password.length < 10) {
+      console.error(`❌ [${requestId}] Invalid password hash in database`, { 
+        userId: user.id,
+        hasPassword: !!user.password,
+        passwordType: typeof user.password,
+        passwordLength: user.password?.length
+      });
+      return res.status(500).json({
+        success: false,
+        message: 'Account configuration error. Please reset your password or contact support.',
+        requestId
+      });
+    }
+
+    // BULLETPROOF: Password comparison with timeout and error handling
+    let isPasswordValid;
+    try {
+      const comparePromise = bcrypt.compare(password, user.password);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Password comparison timeout')), 5000)
+      );
+      isPasswordValid = await Promise.race([comparePromise, timeoutPromise]);
+      
+      // Validate bcrypt returned boolean
+      if (typeof isPasswordValid !== 'boolean') {
+        throw new Error(`bcrypt.compare returned invalid type: ${typeof isPasswordValid}`);
+      }
+    } catch (compareError) {
+      console.error(`❌ [${requestId}] Password comparison failed`, {
+        error: compareError.message,
+        userId: user.id
+      });
+      return res.status(500).json({
+        success: false,
+        message: 'Authentication service error. Please try again.',
+        requestId
+      });
+    }
+
     if (!isPasswordValid) {
-      await UserService.trackFailedLogin(email);
+      console.warn(`⚠️ [${requestId}] Invalid password for user ${user.id}`);
+      await UserService.trackFailedLogin(email).catch(err =>
+        console.error(`[${requestId}] Failed to track failed login:`, err)
+      );
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
       });
     }
 
-    // Track successful login
-    await UserService.trackSuccessfulLogin(user.id);
+    // Track successful login (non-blocking)
+    UserService.trackSuccessfulLogin(user.id).catch(err =>
+      console.error(`[${requestId}] Failed to track successful login:`, err)
+    );
 
-    // Get effective role
+    // Get effective role and validate consistency
     const userRole = UserService.getUserRole(user);
+    const roleIsValid = UserService.validateRoleConsistency(user);
+    
+    if (!roleIsValid) {
+      console.error(`❌ [${requestId}] Role consistency validation failed`, {
+        userId: user.id,
+        dbRole: user.role,
+        bioRole: user.bio,
+        effectiveRole: userRole
+      });
+    }
+
+    // BULLETPROOF: Verify JWT_SECRET exists and is secure
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret || jwtSecret === 'default-secret' || jwtSecret.length < 32) {
+      console.error(`🚨 [${requestId}] JWT_SECRET not configured properly!`, {
+        exists: !!jwtSecret,
+        isDefault: jwtSecret === 'default-secret',
+        length: jwtSecret?.length
+      });
+      return res.status(500).json({
+        success: false,
+        message: 'Authentication configuration error. Please contact administrator.',
+        requestId
+      });
+    }
 
     // Generate JWT token
     const token = jwt.sign(
       { 
         userId: user.id, 
         email: user.email, 
-        role: userRole
+        role: userRole,
+        remember: remember || false
       },
-      process.env.JWT_SECRET || 'default-secret',
-      { expiresIn: '7d' }
+      jwtSecret,
+      { expiresIn: remember ? '30d' : '7d' }
     );
+
+    const responseTime = Date.now() - startTime;
+    console.log(`✅ [${requestId}] Login successful`, {
+      userId: user.id,
+      role: userRole,
+      responseTime: `${responseTime}ms`,
+      tokenExpiry: remember ? '30d' : '7d'
+    });
 
     res.json({
       success: true,
@@ -179,16 +426,25 @@ router.post('/login', validateLogin, async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
         role: userRole,
         emailVerified: user.email_verified
       }
     });
 
   } catch (error) {
-    console.error('Login error:', error);
+    const responseTime = Date.now() - startTime;
+    console.error(`❌ [${requestId}] Unexpected login error (${responseTime}ms)`, {
+      error: error.message,
+      stack: error.stack,
+      email: req.body?.email
+    });
+    
     res.status(500).json({
       success: false,
-      message: 'Login failed. Please try again.'
+      message: 'An unexpected error occurred during login. Please try again.',
+      requestId
     });
   }
 });
@@ -465,6 +721,31 @@ router.put('/profile', [
     res.status(500).json({
       success: false,
       message: 'Failed to update profile'
+    });
+  }
+});
+
+/**
+ * POST /auth/logout
+ * User logout endpoint
+ */
+router.post('/logout', async (req, res) => {
+  try {
+    // In a stateless JWT setup, logout is typically handled client-side
+    // by removing the token. However, we can log the logout event.
+    
+    // If using refresh tokens, you would invalidate them here
+    // If using a token blacklist, you would add the token to it here
+    
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Logout failed'
     });
   }
 });

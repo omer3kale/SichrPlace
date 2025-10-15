@@ -4,7 +4,7 @@ const nodemailer = require('nodemailer');
 const ViewingRequest = require('../models/ViewingRequest');
 
 // Email configuration for SichrPlace
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'sichrplace@gmail.com',
@@ -13,21 +13,15 @@ const transporter = nodemailer.createTransporter({
 });
 
 // PayPal configuration
-const { 
-  PayPalApi,
-  OrdersController,
-  paymentsOrdersGetRequest,
-  Environment 
-} = require('@paypal/paypal-server-sdk');
+const paypal = require('@paypal/checkout-server-sdk');
+
+// Configure PayPal environment
+const environment = process.env.NODE_ENV === 'production' 
+  ? new paypal.core.LiveEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET)
+  : new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET);
 
 // Initialize PayPal client
-const paypalClient = new PayPalApi({
-  clientCredentialsAuthCredentials: {
-    oAuthClientId: process.env.PAYPAL_CLIENT_ID,
-    oAuthClientSecret: process.env.PAYPAL_CLIENT_SECRET,
-  },
-  environment: process.env.NODE_ENV === 'production' ? Environment.Live : Environment.Sandbox,
-});
+const paypalClient = new paypal.core.PayPalHttpClient(environment);
 
 // Submit viewing request with PayPal payment
 router.post('/viewing-request', async (req, res) => {

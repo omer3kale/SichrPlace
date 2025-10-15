@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+import { mapApartmentToFrontend, mapReviewToFrontend, mapArrayToFrontend } from './utils/field-mapper.mjs';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -248,7 +249,7 @@ async function reviewReports(queryParams, headers) {
         status,
         priority,
         created_at,
-        reported_user:users!reported_user_id(username, email, full_name),
+        reported_user:users!reported_user_id(username, email, first_name, last_name),
         reporter:users!reported_by(username, email)
       `)
       .eq('status', status)
@@ -293,7 +294,7 @@ async function reviewReports(queryParams, headers) {
       body: JSON.stringify({
         success: true,
         data: {
-          reports: reports || [],
+          reports: mapArrayToFrontend(reports || []),
           statistics: reportStats,
           pagination: {
             current_offset: parseInt(offset),
@@ -538,7 +539,7 @@ async function moderateReviews(requestBody, queryParams, headers) {
     }
 
     const { data: review, error } = await supabase
-      .from('apartment_reviews')
+      .from('reviews')
       .update(updateData)
       .eq('id', review_id)
       .select()
@@ -925,7 +926,7 @@ async function applyModerationAction(contentType, contentId, action, reason) {
 function getTableForContentType(contentType) {
   const tableMap = {
     'apartment': 'apartments',
-    'review': 'apartment_reviews',
+    'review': 'reviews',
     'message': 'messages',
     'user_profile': 'users'
   };
@@ -997,7 +998,7 @@ async function listUsersForModeration(queryParams, headers) {
 
   let query = supabase
     .from('users')
-    .select('id, username, email, full_name, user_type, verified, is_banned, is_suspended, created_at')
+    .select('id, username, email, first_name, last_name, user_type, verified, is_banned, is_suspended, created_at')
     .order('created_at', { ascending: false })
     .limit(parseInt(limit))
     .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
@@ -1011,7 +1012,7 @@ async function listUsersForModeration(queryParams, headers) {
   }
 
   if (search) {
-    query = query.or(`username.ilike.%${search}%,email.ilike.%${search}%,full_name.ilike.%${search}%`);
+    query = query.or(`username.ilike.%${search}%,email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
   }
 
   const { data: users, error } = await query;
@@ -1024,7 +1025,7 @@ async function listUsersForModeration(queryParams, headers) {
     body: JSON.stringify({
       success: true,
       data: {
-        users: users || [],
+        users: mapArrayToFrontend(users || []),
         total_fetched: users?.length || 0
       }
     })
@@ -1064,9 +1065,9 @@ async function getFlaggedReviews(queryParams, headers) {
   const { limit = '20', offset = '0' } = queryParams || {};
 
   const { data: reviews, error } = await supabase
-    .from('apartment_reviews')
+    .from('reviews')
     .select(`
-      id, comment, rating, user_id, apartment_id, moderation_status, flag_reason, created_at,
+      id, kommentar, rating, user_id, apartment_id, moderation_status, flag_reason, created_at,
       user:users!user_id(username, email),
       apartment:apartments!apartment_id(title)
     `)

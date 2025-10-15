@@ -310,7 +310,7 @@ class EnterprisePaymentProcessor {
       // Validate apartment exists and is available
       const { data: apartment, error: apartmentError } = await supabase
         .from('apartments')
-        .select('id, title, monthly_rent, landlord_id, status')
+        .select('id, title, price, landlord_id, status')
         .eq('id', apartmentId)
         .eq('status', 'approved')
         .single();
@@ -433,7 +433,7 @@ class EnterprisePaymentProcessor {
       // Validate apartment and get pricing
       const { data: apartment, error: apartmentError } = await supabase
         .from('apartments')
-        .select('id, title, monthly_rent, landlord_id, status')
+        .select('id, title, price, landlord_id, status')
         .eq('id', apartmentId)
         .eq('status', 'approved')
         .single();
@@ -443,7 +443,7 @@ class EnterprisePaymentProcessor {
       }
 
       // Calculate booking fee
-      const { fee, description } = calculateBusinessFees('booking', apartment.monthly_rent);
+      const { fee, description } = calculateBusinessFees('booking', apartment.price);
 
       // Validate payment limits
       if (fee > BUSINESS_RULES.MAX_SINGLE_PAYMENT) {
@@ -478,7 +478,7 @@ class EnterprisePaymentProcessor {
             type: 'booking',
             userId,
             apartmentId,
-            monthlyRent: apartment.monthly_rent,
+            monthlyRent: apartment.price,
             correlationId
           })
         }],

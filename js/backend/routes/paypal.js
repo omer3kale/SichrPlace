@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+
+// Ensure fetch is available in all supported Node environments
+const fetch = global.fetch
+  ? (...args) => global.fetch(...args)
+  : (...args) => import('node-fetch').then(({ default: fetchImpl }) => fetchImpl(...args));
 
 // PayPal configuration
 const paypalBaseURL = process.env.PAYPAL_ENVIRONMENT === 'production' 
@@ -10,21 +14,41 @@ const paypalBaseURL = process.env.PAYPAL_ENVIRONMENT === 'production'
 const paypalClientId = process.env.PAYPAL_CLIENT_ID;
 const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET;
 
+function isPayPalConfigured() {
+  return Boolean(paypalClientId && paypalClientSecret);
+}
+
 // Helper function to get PayPal access token
 async function getPayPalAccessToken() {
-  const auth = Buffer.from(`${paypalClientId}:${paypalClientSecret}`).toString('base64');
+  if (!isPayPalConfigured()) {
+    throw new Error('PayPal credentials are not configured. Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET.');
+  }
+
+  const authHeader = Buffer.from(`${paypalClientId}:${paypalClientSecret}`).toString('base64');
   
   try {
     const response = await fetch(`${paypalBaseURL}/v1/oauth2/token`, {
       method: 'POST',
       body: 'grant_type=client_credentials',
       headers: {
-        'Authorization': `Basic ${auth}`,
+        'Authorization': `Basic ${authHeader}`,
         'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
     
     const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('PayPal Token Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        data,
+        clientIdPrefix: paypalClientId?.substring(0, 20),
+        environment: paypalBaseURL
+      });
+      throw new Error(`PayPal token request failed: ${data.error || response.statusText}`);
+    }
+    
     return data.access_token;
   } catch (error) {
     console.error('PayPal Access Token Error:', error);
@@ -38,9 +62,18 @@ async function getPayPalAccessToken() {
  * @access  Public
  */
 router.get('/config', (req, res) => {
+  if (!isPayPalConfigured()) {
+    return res.status(503).json({
+      error: 'PayPal credentials not configured',
+      hint: 'Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to enable payments.'
+    });
+  }
+
   res.json({
     clientId: process.env.PAYPAL_CLIENT_ID,
-    environment: process.env.PAYPAL_ENVIRONMENT || 'sandbox'
+    environment: process.env.PAYPAL_ENVIRONMENT || 'sandbox',
+    currency: 'EUR',
+    supportedPaymentMethods: ['paypal']
   });
 });
 
@@ -49,8 +82,15 @@ router.get('/config', (req, res) => {
  * @desc    Create PayPal payment order
  * @access  Private
  */
-router.post('/create', auth, async (req, res) => {
+router.post('/create', async (req, res) => {
   try {
+    if (!isPayPalConfigured()) {
+      return res.status(503).json({
+        error: 'PayPal is not configured',
+        hint: 'Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in the environment before creating payments.'
+      });
+    }
+
     const { amount, currency = 'EUR', description = 'SichrPlace Booking Fee', apartmentId, viewingRequestId, returnUrl, cancelUrl } = req.body;
     
     // Validate required fields
@@ -94,7 +134,7 @@ router.post('/create', auth, async (req, res) => {
       // Store payment details in memory for now (in production, use database)
       if (!global.paymentStore) global.paymentStore = {};
       global.paymentStore[data.id] = {
-        userId: req.userId,
+        userId: req.user?.id || null,
         apartmentId,
         viewingRequestId,
         amount,
@@ -123,8 +163,15 @@ router.post('/create', auth, async (req, res) => {
  * @desc    Execute/capture PayPal payment
  * @access  Private
  */
-router.post('/execute', auth, async (req, res) => {
+router.post('/execute', async (req, res) => {
   try {
+    if (!isPayPalConfigured()) {
+      return res.status(503).json({
+        error: 'PayPal is not configured',
+        hint: 'Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in the environment before executing payments.'
+      });
+    }
+
     const { orderId } = req.body;
     
     if (!orderId) {
@@ -146,6 +193,7 @@ router.post('/execute', auth, async (req, res) => {
     if (response.ok && data.status === 'COMPLETED') {
       // Get stored payment details
       const paymentDetails = global.paymentStore?.[orderId];
+      const captureId = data.purchase_units?.[0]?.payments?.captures?.[0]?.id || null;
       
       // Here you would typically save to database
       console.log('Payment completed:', {
@@ -154,11 +202,17 @@ router.post('/execute', auth, async (req, res) => {
         paypalData: data
       });
 
+      // Clear cached order details once captured
+      if (global.paymentStore && global.paymentStore[orderId]) {
+        delete global.paymentStore[orderId];
+      }
+
       res.json({
         success: true,
         orderId: data.id,
         status: data.status,
-        paymentDetails: paymentDetails,
+        transactionId: captureId,
+        paymentDetails,
         message: 'Payment completed successfully'
       });
     } else {
@@ -178,6 +232,13 @@ router.post('/execute', auth, async (req, res) => {
  */
 router.post('/marketplace/capture', async (req, res) => {
   try {
+    if (!isPayPalConfigured()) {
+      return res.status(503).json({
+        error: 'PayPal is not configured',
+        hint: 'Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in the environment before capturing payments.'
+      });
+    }
+
     const { 
       orderID, 
       paymentID, 

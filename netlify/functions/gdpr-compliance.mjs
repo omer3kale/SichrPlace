@@ -141,7 +141,7 @@ async function exportUserData(userId, headers) {
 
       // User reviews
       supabase
-        .from('apartment_reviews')
+        .from('reviews')
         .select(`
           *, 
           apartment:apartments(title, location)
@@ -384,7 +384,7 @@ async function deleteUserData(userId, headers, requestBody) {
       
       // Remove personal data from reviews but keep review content for landlords
       supabase
-        .from('apartment_reviews')
+        .from('reviews')
         .update({ 
           reviewer_name: '[DELETED USER]',
           updated_at: new Date().toISOString()
@@ -401,7 +401,7 @@ async function deleteUserData(userId, headers, requestBody) {
         request_metadata: {
           confirmation_provided: true,
           deletion_method: 'anonymization',
-          records_affected: ['users', 'user_activity', 'user_sessions', 'messages', 'apartment_reviews']
+          records_affected: ['users', 'user_activity', 'user_sessions', 'messages', 'reviews']
         }
       })
       .eq('id', deletionRequest.id);

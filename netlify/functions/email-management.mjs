@@ -36,7 +36,7 @@ const createEmailTransporter = () => {
   });
 };
 
-export const handler = async (event, context) => {
+export const handler = async (event, _context) => {
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -436,6 +436,10 @@ async function getEmailTemplates(userId, queryParams, headers) {
       .select('category')
       .not('category', 'is', null);
 
+    if (categoriesError) {
+      throw categoriesError;
+    }
+
     const uniqueCategories = [...new Set(categories?.map(c => c.category) || [])];
 
     return {
@@ -636,7 +640,12 @@ async function deleteEmailTemplate(userId, requestBody, headers) {
       body: JSON.stringify({
         success: true,
         message: 'Email template deleted successfully',
-        data: { template_id, deleted_at: new Date().toISOString() }
+        data: {
+          template_id,
+          deleted_at: template?.deleted_at || new Date().toISOString(),
+          previous_status: template?.is_active,
+          template_name: template?.name || null
+        }
       })
     };
 
@@ -702,6 +711,10 @@ async function getEmailHistory(userId, queryParams, headers) {
       .from('emails')
       .select('status')
       .eq('sender_id', userId);
+
+    if (statsError) {
+      throw statsError;
+    }
 
     const emailStats = {
       total: stats?.length || 0,
@@ -1070,7 +1083,7 @@ async function manageEmailQueue(queryParams, headers) {
     } = queryParams || {};
 
     switch (action) {
-      case 'status':
+      case 'status': {
         // Get queue status
         const { data: queueEmails, error: queueError } = await supabase
           .from('emails')
@@ -1095,8 +1108,9 @@ async function manageEmailQueue(queryParams, headers) {
             }
           })
         };
+      }
 
-      case 'retry':
+      case 'retry': {
         if (!email_id) {
           return {
             statusCode: 400,
@@ -1131,6 +1145,7 @@ async function manageEmailQueue(queryParams, headers) {
             message: 'Email queued for retry'
           })
         };
+      }
 
       default:
         return {
@@ -1194,6 +1209,10 @@ async function configureEmailSettings(requestBody, headers) {
               smtp_port: smtp_port || 587,
               from_name,
               from_email,
+              reply_to_email,
+              bounce_handling_enabled: Boolean(bounce_handling_enabled),
+              tracking_enabled: Boolean(tracking_enabled),
+              unsubscribe_link_enabled: Boolean(unsubscribe_link_enabled),
               configuration_tested: true
             }
           })
@@ -1213,11 +1232,19 @@ async function configureEmailSettings(requestBody, headers) {
     }
 
     return {
-      statusCode: 400,
+      statusCode: 200,
       headers,
       body: JSON.stringify({
-        success: false,
-        message: 'SMTP host, user, and password are required'
+        success: true,
+        message: 'Email settings validated successfully',
+        data: {
+          smtp_ok: Boolean(smtp_host && smtp_user && smtp_pass),
+          from_email,
+          tracking_enabled: tracking_enabled !== false,
+          reply_to_email,
+          bounce_handling_enabled: Boolean(bounce_handling_enabled),
+          unsubscribe_link_enabled: Boolean(unsubscribe_link_enabled)
+        }
       })
     };
 
@@ -1374,7 +1401,7 @@ async function manageSuppressions(requestBody, headers) {
     }
 
     switch (action) {
-      case 'add':
+      case 'add': {
         const { data: suppression, error: suppressionError } = await supabase
           .from('email_suppressions')
           .insert({
@@ -1399,8 +1426,9 @@ async function manageSuppressions(requestBody, headers) {
             data: suppression
           })
         };
+      }
 
-      case 'remove':
+      case 'remove': {
         const { error: removeError } = await supabase
           .from('email_suppressions')
           .delete()
@@ -1419,13 +1447,18 @@ async function manageSuppressions(requestBody, headers) {
             message: 'Email suppression removed successfully'
           })
         };
+      }
 
-      case 'check':
+      case 'check': {
         const { data: existing, error: checkError } = await supabase
           .from('email_suppressions')
           .select('*')
           .eq('email_address', email_address)
           .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          throw checkError;
+        }
 
         return {
           statusCode: 200,
@@ -1438,6 +1471,7 @@ async function manageSuppressions(requestBody, headers) {
             }
           })
         };
+      }
 
       default:
         return {

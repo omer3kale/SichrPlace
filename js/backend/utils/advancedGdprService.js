@@ -476,6 +476,55 @@ class AdvancedGdprService {
     console.log('Compliance check results:', results);
   }
 
+    static async getComplianceDashboard() {
+      try {
+        const [consentStats, breachStats, dpiaStats, recentLogs] = await Promise.all([
+          ConsentPurpose.aggregate([
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                active: { $sum: { $cond: ['$isActive', 1, 0] } },
+                expired: { $sum: { $cond: [{ $lt: ['$expiryDate', new Date()] }, 1, 0] } }
+              }
+            }
+          ]),
+          DataBreach.aggregate([
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                unresolved: { $sum: { $cond: [{ $ne: ['$status', 'resolved'] }, 1, 0] } },
+                unreported: { $sum: { $cond: [{ $eq: ['$reportedToAuthority', false] }, 1, 0] } }
+              }
+            }
+          ]),
+          DPIA.aggregate([
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                approved: { $sum: { $cond: [{ $eq: ['$status', 'approved'] }, 1, 0] } },
+                needsReview: { $sum: { $cond: [{ $lt: ['$reviewSchedule.nextReview', new Date()] }, 1, 0] } }
+              }
+            }
+          ]),
+          DataProcessingLog.find()
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .select('action dataType legalBasis createdAt')
+        ]);
+
+        return {
+          consents: consentStats[0] || { total: 0, active: 0, expired: 0 },
+          breaches: breachStats[0] || { total: 0, unresolved: 0, unreported: 0 },
+          dpias: dpiaStats[0] || { total: 0, approved: 0, needsReview: 0 },
+          recentActivity: recentLogs
+        };
+      } catch (error) {
+        throw new Error(`Failed to load compliance dashboard: ${error.message}`);
+      }
+    }
   static async scheduleAuthorityNotification(breachId) {
     // Implementation would schedule automatic notification
     // Could use job queues, cron jobs, etc.

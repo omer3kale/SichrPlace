@@ -12,17 +12,37 @@ class AdvancedSearchService {
     try {
       const {
         query = '',
+        keywords = '',
         location = '',
+        city = '',
+        area = '',
         minPrice = 0,
         maxPrice = null,
+        minKaltmiete = null,
+        maxKaltmiete = null,
+        minWarmmiete = null,
+        maxWarmmiete = null,
+        priceType = 'both',
         minRooms = null,
         maxRooms = null,
+        rooms = null,
         bedrooms = null,
         bathrooms = null,
+        singleBeds = null,
+        doubleBeds = null,
+        minSize = null,
+        maxSize = null,
         propertyType = '',
+        furnishedStatus = '',
+        petsAllowed = null,
+        excludeExchange = false,
+        parkingType = '',
         amenities = [],
+        locationFeatures = [],
         moveInDate = null,
         moveOutDate = null,
+        timeSlotType = '',
+        earliestMoveIn = false,
         sortBy = 'created_at',
         sortOrder = 'desc',
         limit = 20,
@@ -49,21 +69,63 @@ class AdvancedSearchService {
         queryBuilder = queryBuilder.eq('status', 'available');
       }
 
-      // Text search (title, description, location)
-      if (query) {
-        queryBuilder = queryBuilder.or(`title.ilike.%${query}%,description.ilike.%${query}%,location.ilike.%${query}%`);
+      // Text search (title, description, location, city)
+      const searchTerms = [query, keywords].filter(Boolean)
+        .map(term => term.toString().trim())
+        .filter(term => term.length > 0)
+        .map(term => term.replace(/%/g, ''));
+
+      if (searchTerms.length > 0) {
+        const clauses = new Set();
+        searchTerms.forEach(term => {
+          const likeTerm = `%${term}%`;
+          clauses.add(`title.ilike.${likeTerm}`);
+          clauses.add(`description.ilike.${likeTerm}`);
+          clauses.add(`location.ilike.${likeTerm}`);
+          clauses.add(`city.ilike.${likeTerm}`);
+          clauses.add(`address.ilike.${likeTerm}`);
+        });
+        queryBuilder = queryBuilder.or(Array.from(clauses).join(','));
       }
 
-      // Location filter
+      // Location filters
       if (location) {
         queryBuilder = queryBuilder.ilike('location', `%${location}%`);
       }
+      if (city) {
+        queryBuilder = queryBuilder.ilike('ort', `%${city}%`);
+      }
+      if (area) {
+        queryBuilder = queryBuilder.ilike('stadtteil', `%${area}%`);
+      }
 
-      // Price range
-      if (minPrice > 0) {
+      // German rental price filters
+      const normalizedPriceType = ['kalt', 'warm', 'both'].includes((priceType || '').toLowerCase())
+        ? priceType.toLowerCase()
+        : 'both';
+
+      if (normalizedPriceType === 'kalt' || normalizedPriceType === 'both') {
+        if (minKaltmiete) {
+          queryBuilder = queryBuilder.gte('kaltmiete', minKaltmiete);
+        }
+        if (maxKaltmiete) {
+          queryBuilder = queryBuilder.lte('kaltmiete', maxKaltmiete);
+        }
+      }
+
+      if (normalizedPriceType === 'warm' || normalizedPriceType === 'both') {
+        if (minWarmmiete) {
+          queryBuilder = queryBuilder.gte('warmmiete', minWarmmiete);
+        }
+        if (maxWarmmiete) {
+          queryBuilder = queryBuilder.lte('warmmiete', maxWarmmiete);
+        }
+      }
+
+      if (!minKaltmiete && minPrice > 0) {
         queryBuilder = queryBuilder.gte('price', minPrice);
       }
-      if (maxPrice) {
+      if (!maxKaltmiete && maxPrice) {
         queryBuilder = queryBuilder.lte('price', maxPrice);
       }
 
@@ -73,6 +135,9 @@ class AdvancedSearchService {
       }
       if (maxRooms) {
         queryBuilder = queryBuilder.lte('rooms', maxRooms);
+      }
+      if (rooms) {
+        queryBuilder = queryBuilder.eq('rooms', rooms);
       }
 
       // Bedroom filter
@@ -85,9 +150,43 @@ class AdvancedSearchService {
         queryBuilder = queryBuilder.gte('bathrooms', bathrooms);
       }
 
+      // Bed configuration filters
+      if (singleBeds) {
+        queryBuilder = queryBuilder.eq('single_beds', singleBeds);
+      }
+      if (doubleBeds) {
+        queryBuilder = queryBuilder.eq('double_beds', doubleBeds);
+      }
+
+      // Size filters
+      if (minSize) {
+        queryBuilder = queryBuilder.gte('size', minSize);
+      }
+      if (maxSize) {
+        queryBuilder = queryBuilder.lte('size', maxSize);
+      }
+
       // Property type filter (using description or title search since no property_type column)
       if (propertyType) {
-        queryBuilder = queryBuilder.or(`title.ilike.%${propertyType}%,description.ilike.%${propertyType}%`);
+        const normalizedType = propertyType.toString().toLowerCase().replace(/[\s-]+/g, '_');
+        queryBuilder = queryBuilder.eq('property_type', normalizedType);
+      }
+
+      // Furnished status
+      if (furnishedStatus) {
+        queryBuilder = queryBuilder.eq('furnished_status', furnishedStatus);
+      }
+
+      // Pet policy
+      if (petsAllowed === true) {
+        queryBuilder = queryBuilder.eq('pets_policy', 'allowed');
+      } else if (petsAllowed === false) {
+        queryBuilder = queryBuilder.eq('pets_policy', 'not_allowed');
+      }
+
+      // Parking
+      if (parkingType) {
+        queryBuilder = queryBuilder.eq('parking_type', parkingType);
       }
 
       // Date filters
@@ -96,6 +195,13 @@ class AdvancedSearchService {
       }
       if (moveOutDate) {
         queryBuilder = queryBuilder.or(`available_to.is.null,available_to.gte.${moveOutDate}`);
+      }
+      if (timeSlotType) {
+        queryBuilder = queryBuilder.eq('timeslot_type', timeSlotType);
+      }
+
+      if (excludeExchange) {
+        queryBuilder = queryBuilder.neq('listing_type', 'exchange');
       }
 
       // Amenities filter (if amenities field exists as JSONB array)
@@ -107,14 +213,32 @@ class AdvancedSearchService {
       }
 
       // Sorting
-      const validSortFields = ['price', 'created_at', 'updated_at', 'size', 'rooms'];
+      const sortFieldMapping = {
+        price: normalizedPriceType === 'warm' ? 'warmmiete' : (minKaltmiete || maxKaltmiete ? 'kaltmiete' : 'price'),
+        kaltmiete: 'kaltmiete',
+        warmmiete: 'warmmiete',
+        size: 'size',
+        rooms: 'rooms',
+        created_at: 'created_at',
+        available_from: 'available_from'
+      };
+
+      const validSortFields = ['price', 'kaltmiete', 'warmmiete', 'created_at', 'updated_at', 'size', 'rooms', 'available_from'];
       const validSortOrders = ['asc', 'desc'];
-      
-      if (validSortFields.includes(sortBy) && validSortOrders.includes(sortOrder)) {
-        queryBuilder = queryBuilder.order(sortBy, { ascending: sortOrder === 'asc' });
-      } else {
-        queryBuilder = queryBuilder.order('created_at', { ascending: false });
+
+      let resolvedSortField = sortFieldMapping[sortBy] || sortBy;
+      if (!validSortFields.includes(resolvedSortField)) {
+        resolvedSortField = 'created_at';
       }
+
+      let resolvedSortOrder = validSortOrders.includes(sortOrder) ? sortOrder : 'desc';
+
+      if (earliestMoveIn) {
+        resolvedSortField = 'available_from';
+        resolvedSortOrder = 'asc';
+      }
+
+      queryBuilder = queryBuilder.order(resolvedSortField, { ascending: resolvedSortOrder === 'asc' });
 
       // Pagination
       queryBuilder = queryBuilder.range(offset, offset + limit - 1);
@@ -132,7 +256,28 @@ class AdvancedSearchService {
         this.logSearchAnalytics({
           userId,
           query,
-          filters: { location, minPrice, maxPrice, propertyType, amenities },
+          filters: {
+            location: { location, city, area },
+            price: {
+              minPrice,
+              maxPrice,
+              minKaltmiete,
+              maxKaltmiete,
+              minWarmmiete,
+              maxWarmmiete,
+              priceType: normalizedPriceType
+            },
+            rooms: { minRooms, maxRooms, rooms, bedrooms, bathrooms, singleBeds, doubleBeds },
+            size: { minSize, maxSize },
+            propertyType,
+            furnishedStatus,
+            petsAllowed,
+            excludeExchange,
+            parkingType,
+            locationFeatures,
+            timeSlotType,
+            amenities
+          },
           resultsCount: apartments ? apartments.length : 0,
           responseTime
         });
@@ -145,10 +290,26 @@ class AdvancedSearchService {
           totalResults: apartments ? apartments.length : 0,
           query,
           filters: {
-            location,
-            priceRange: { min: minPrice, max: maxPrice },
+            location: { location, city, area },
+            priceRange: {
+              minPrice,
+              maxPrice,
+              minKaltmiete,
+              maxKaltmiete,
+              minWarmmiete,
+              maxWarmmiete,
+              priceType: normalizedPriceType
+            },
+            rooms: { minRooms, maxRooms, rooms, bedrooms, bathrooms, singleBeds, doubleBeds },
+            size: { minSize, maxSize },
             propertyType,
+            furnishedStatus,
+            petsAllowed,
+            excludeExchange,
+            parkingType,
+            locationFeatures,
             amenities,
+            timeSlotType,
             dateRange: { moveIn: moveInDate, moveOut: moveOutDate }
           },
           pagination: {

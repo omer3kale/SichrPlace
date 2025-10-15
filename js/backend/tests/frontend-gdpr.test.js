@@ -69,6 +69,12 @@ describe('Frontend GDPR Compliance Tests', () => {
     `;
   });
 
+  afterEach(() => {
+    if (typeof fetch.mockReset === 'function') {
+      fetch.mockReset();
+    }
+  });
+
   describe('Cookie Consent Banner', () => {
     test('should display consent banner on first visit', () => {
       localStorage.getItem.mockReturnValue(null); // No previous consent
@@ -89,7 +95,7 @@ describe('Frontend GDPR Compliance Tests', () => {
       // Mock the consent recording
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ success: true })
+        json: async () => ({ success: true })
       });
 
       // Simulate click
@@ -215,7 +221,7 @@ describe('Frontend GDPR Compliance Tests', () => {
     test('should load current consent preferences', async () => {
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({
+        json: async () => ({
           consents: [
             { purpose: 'analytics', granted: true },
             { purpose: 'marketing', granted: false }
@@ -238,7 +244,7 @@ describe('Frontend GDPR Compliance Tests', () => {
 
       fetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve({ success: true })
+        json: async () => ({ success: true })
       });
 
       const result = await saveConsentPreferences({

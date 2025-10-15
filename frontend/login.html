@@ -413,18 +413,60 @@
     <header>
         <div class="header-logo">
             <a href="index.html" class="logo" aria-label="SichrPlace">
-                <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:48px;width:auto;display:block;">
-                <div class="brand-text">
-                    <span class="sichr-text">Sichr</span><span class="place-text">Place</span>
-                </div>
+                <img src="img/sichrplace-logo.jpg" alt="SichrPlace logo" style="height:48px;width:auto;display:block;">
+                <span class="brand-text">
+                    <span class="sichrplace-text">SichrPlace</span>
+                    <span class="certified-badge" style="display:none;">Verified</span>
+                </span>
             </a>
         </div>
-        <nav>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">
+            <span class="menu-bar"></span>
+            <span class="menu-bar"></span>
+            <span class="menu-bar"></span>
+        </button>
+        <nav class="main-nav" id="main-nav">
             <a href="login.html" data-translate="nav.login">Login</a>
             <a href="apartments-listing.html" data-translate="nav.apartments">Apartments</a>
-            <a href="marketplace.html" class="cart-icon" title="Marketplace" aria-label="Marketplace">
-                <i class="fas fa-shopping-cart"></i>
+            
+            <!-- View link for viewing requests -->
+            <a href="viewing-request.html" data-translate="nav.view">View</a>
+            
+            <!-- Marketplace Cart Icon - Enhanced Visibility -->
+            <a href="marketplace.html" class="cart-icon" title="Marketplace - Buy & Sell" aria-label="Marketplace" data-translate-title="nav.marketplace.title" data-translate-aria="nav.marketplace.aria">
+                <svg class="cart-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M7.01 18.5a1.5 1.5 0 1 1-2.999.001 1.5 1.5 0 0 1 2.999-.001Zm10 0a1.5 1.5 0 1 1-3.001 0 1.5 1.5 0 0 1 3.001 0ZM6.16 7l.44 2h11.56a1 1 0 0 1 .98 1.204l-1.2 6a1 1 0 0 1-.98.796H8.18a1 1 0 0 1-.98-.804L5.53 4.5H3a1 1 0 1 1 0-2h3a1 1 0 0 1 .98.804L7.62 7H6.16Z" fill="currentColor" />
+                </svg>
+                <span class="cart-label" data-translate="nav.marketplace.label">Marketplace</span>
             </a>
+            
+            <!-- Scam Stories -->
+            <a href="scam-stories.html" title="Rental Scam Stories & Protection" aria-label="Scam Stories" data-translate-title="nav.scams.title" data-translate-aria="nav.scams.aria">
+                <span data-translate="nav.scams">Scam Stories</span>
+            </a>
+            
+            <!-- Language Switcher moved to the rightmost position -->
+            <div class="language-switcher">
+                <button class="language-btn" id="language-btn" aria-label="Switch Language">
+                    <i class="fas fa-globe"></i>
+                    <span id="current-lang">EN</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="language-dropdown" id="language-dropdown">
+                    <a href="#" data-lang="en" class="lang-option active">
+                        <span class="flag-emoji">🇺🇸</span>
+                        English
+                    </a>
+                    <a href="#" data-lang="de" class="lang-option">
+                        <span class="flag-emoji">🇩🇪</span>
+                        Deutsch
+                    </a>
+                    <a href="#" data-lang="tr" class="lang-option">
+                        <span class="flag-emoji">🇹🇷</span>
+                        Türkçe
+                    </a>
+                </div>
+            </div>
         </nav>
     </header>
     
@@ -438,7 +480,7 @@
             </div>
             
             <div class="logo-section">
-                <p>Sign in to your secure apartment viewing account</p>
+                <p>Sign in to your SichrPlace account</p>
             </div>
 
             <form id="loginForm">
@@ -499,8 +541,7 @@
                 this.setupDemoCredentials();
             }
             
-            // Handles the login form submission
-
+            // Handles the login form submission - BULLETPROOF VERSION
             async handleLogin(e) {
                 e.preventDefault();
                 
@@ -508,8 +549,14 @@
                 const password = this.passwordInput.value;
                 const remember = this.rememberInput.checked;
 
+                // Enhanced validation
                 if (!email || !password) {
                     this.showAlert('Please fill in all fields', 'error');
+                    return;
+                }
+
+                if (!this.isValidEmail(email)) {
+                    this.showAlert('Please enter a valid email address', 'error');
                     return;
                 }
 
@@ -517,69 +564,159 @@
                 this.hideAlert();
 
                 try {
-                    console.log('🔐 Attempting login with credentials:', { email, remember });
-                    
+                    console.log('🔐 [LOGIN START]', {
+                        timestamp: new Date().toISOString(),
+                        email: email,
+                        remember: remember,
+                        endpoint: '/auth/login',
+                        frontend_url: window.location.href
+                    });
+
+                    // Add timeout protection (30 seconds)
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
                     const response = await fetch('/auth/login', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
                         },
-                        body: JSON.stringify({
-                            email: email,
-                            password: password,
-                            remember: remember
-                        })
+                        body: JSON.stringify({ email, password, remember }),
+                        signal: controller.signal
                     });
 
-                    console.log('📡 Login response status:', response.status);
+                    clearTimeout(timeoutId);
+
+                    console.log('📡 [RESPONSE]', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        ok: response.ok,
+                        headers: Object.fromEntries([...response.headers.entries()])
+                    });
+
+                    // Validate response content type
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error(`Unexpected response type: ${contentType}. Expected JSON. Server may be down.`);
+                    }
+
                     const result = await response.json();
-                    console.log('📝 Login response data:', result);
+                    console.log('📝 [RESPONSE DATA]', {
+                        success: result.success,
+                        hasToken: !!result.token,
+                        hasUser: !!result.user,
+                        message: result.message,
+                        requestId: result.requestId
+                    });
 
                     if (response.ok && result.success) {
-                        this.showAlert('Login successful! Redirecting...', 'success');
-                        
-                        // Store authentication data
-                        localStorage.setItem('token', result.token);
-                        localStorage.setItem('user', JSON.stringify(result.user));
-                        
-                        // Store in sessionStorage if remember is not checked
-                        if (!remember) {
-                            sessionStorage.setItem('token', result.token);
-                            sessionStorage.setItem('user', JSON.stringify(result.user));
+                        // Validate token before storing
+                        if (!result.token || typeof result.token !== 'string' || result.token.length < 10) {
+                            throw new Error('Invalid token received from server');
                         }
 
-                        console.log('✅ Login successful:', result.user);
+                        if (!result.user || !result.user.id || !result.user.role) {
+                            throw new Error('Invalid user data received from server');
+                        }
+
+                        console.log('✅ [LOGIN SUCCESS]', {
+                            userId: result.user.id,
+                            role: result.user.role,
+                            tokenLength: result.token.length,
+                            emailVerified: result.user.emailVerified
+                        });
+
+                        this.showAlert('Login successful! Redirecting...', 'success');
+
+                        // Store authentication data CORRECTLY
+                        try {
+                            if (remember) {
+                                // REMEMBER ME: Store in localStorage only
+                                localStorage.setItem('token', result.token);
+                                localStorage.setItem('user', JSON.stringify(result.user));
+                                // Clear sessionStorage to avoid conflicts
+                                sessionStorage.removeItem('token');
+                                sessionStorage.removeItem('user');
+                                console.log('💾 [STORAGE] Saved to localStorage (remember=true)');
+                            } else {
+                                // NO REMEMBER: Store in sessionStorage only
+                                sessionStorage.setItem('token', result.token);
+                                sessionStorage.setItem('user', JSON.stringify(result.user));
+                                // Clear localStorage to avoid conflicts
+                                localStorage.removeItem('token');
+                                localStorage.removeItem('user');
+                                console.log('💾 [STORAGE] Saved to sessionStorage (remember=false)');
+                            }
+                        } catch (storageError) {
+                            console.error('❌ [STORAGE FAILED]', storageError);
+                            this.showAlert('Login successful but session storage failed. Try with "Remember me" checked.', 'warning');
+                            return;
+                        }
+
+                        // Wait to ensure storage completes before redirect
+                        await new Promise(resolve => setTimeout(resolve, 500));
                         
-                        // Redirect based on user role
-                        setTimeout(() => {
-                            this.redirectUser(result.user.role);
-                        }, 1500);
+                        // Verify storage worked
+                        const storedToken = remember 
+                            ? localStorage.getItem('token')
+                            : sessionStorage.getItem('token');
+                        
+                        if (!storedToken) {
+                            console.error('❌ [STORAGE VERIFICATION FAILED]');
+                            this.showAlert('Session storage failed. Please try again or enable cookies.', 'error');
+                            return;
+                        }
+
+                        console.log('✅ [STORAGE VERIFIED] Token stored successfully');
+                        this.redirectUser(result.user.role);
+                        
                     } else {
-                        this.showAlert(result.message || 'Login failed. Please check your credentials.', 'error');
+                        const errorMsg = result.message || result.error || 'Login failed. Please check your credentials.';
+                        console.warn('⚠️ [LOGIN FAILED]', {
+                            status: response.status,
+                            message: errorMsg,
+                            errors: result.errors,
+                            requestId: result.requestId
+                        });
+                        this.showAlert(errorMsg, 'error');
                     }
+
                 } catch (error) {
-                    console.error('Login error:', error);
+                    console.error('❌ [LOGIN ERROR]', {
+                        name: error.name,
+                        message: error.message,
+                        stack: error.stack,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    let errorMessage = 'Login failed. ';
                     
-                    // Enhanced error handling with specific network error messages
-                    let errorMessage = 'An error occurred during login. Please try again.';
-                    
-                    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                        errorMessage = 'Network connection failed. Please check your internet connection and try again.';
-                    } else if (error.message.includes('timeout') || error.name === 'AbortError') {
-                        errorMessage = 'Request timed out. Please check your connection and try again.';
-                    } else if (error.message.includes('Network request failed')) {
-                        errorMessage = 'Unable to connect to server. Please ensure you have an internet connection and try again.';
-                    } else if (error.message.includes('404')) {
-                        errorMessage = 'Login service temporarily unavailable. Please try again in a few minutes.';
-                    } else if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
-                        errorMessage = 'Server is temporarily unavailable. Please try again in a few minutes.';
+                    if (error.name === 'AbortError') {
+                        errorMessage += 'Request timed out after 30 seconds. Please check your internet connection and try again.';
+                    } else if (error.message.includes('fetch') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                        errorMessage += 'Cannot connect to server. Please ensure you have internet connection and the backend server is running.';
+                    } else if (error.message.includes('Unexpected response type')) {
+                        errorMessage += 'Server returned invalid response. Backend may be down or misconfigured.';
+                    } else if (error.message.includes('Invalid token')) {
+                        errorMessage += 'Authentication token invalid. Please contact support.';
+                    } else if (error.message.includes('Invalid user data')) {
+                        errorMessage += 'Server returned invalid user data. Please contact support.';
+                    } else {
+                        errorMessage += error.message || 'An unexpected error occurred.';
                     }
-                    
+
+                    errorMessage += ' (Check browser console for details)';
                     this.showAlert(errorMessage, 'error');
+                    
                 } finally {
                     this.setLoading(false);
                 }
+            }
+
+            // Email validation helper
+            isValidEmail(email) {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
             }
 
             redirectUser(role) {
@@ -591,8 +728,9 @@
                         window.location.href = 'landlord-dashboard.html';
                         break;
                     case 'tenant':
+                    case 'applicant':
                     default:
-                        window.location.href = 'apartments-listing.html';
+                        window.location.href = 'applicant-dashboard.html';
                         break;
                 }
             }

@@ -3,25 +3,24 @@ const request = require('supertest');
 const express = require('express');
 const { expect } = require('chai');
 
+// Mock the auth middleware before loading the routes
+jest.mock('../middleware/auth', () => {
+  return (req, res, next) => {
+    req.user = { id: 'test-user-123', email: 'test@example.com' };
+    next();
+  };
+});
+
 // Create test app with PayPal routes
 const app = express();
 app.use(express.json());
-
-// Mock auth middleware for testing
-const mockAuth = (req, res, next) => {
-  req.user = { id: 'test-user-123', email: 'test@example.com' };
-  next();
-};
-
-// Apply mock auth to all routes
-app.use(mockAuth);
 
 // Import PayPal routes with mocked dependencies
 const paypalRoutes = require('../routes/paypal');
 app.use('/api/paypal', paypalRoutes);
 
-describe('PayPal Integration Tests', function() {
-  this.timeout(10000);
+describe('PayPal Integration Tests', () => {
+  // Jest uses different syntax - no this.timeout() needed, use jest.setTimeout() in setupFilesAfterEnv
 
   describe('GET /api/paypal/config', () => {
     it('should return PayPal configuration', async () => {

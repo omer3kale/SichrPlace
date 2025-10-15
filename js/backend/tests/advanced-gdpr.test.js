@@ -1,11 +1,9 @@
 const AdvancedGdprService = require('../utils/advancedGdprService');
 const PrivacyComplianceScanner = require('../utils/privacyComplianceScanner');
 
-// Mock models
-jest.mock('../models/ConsentPurpose');
-jest.mock('../models/DataBreach');
-jest.mock('../models/DPIA');
-jest.mock('../models/DataProcessingLog');
+// Using real auth middleware - no mocks needed
+
+// Using real models - no mocks needed
 
 describe('Advanced GDPR Service Tests', () => {
   describe('Consent Management', () => {
@@ -78,7 +76,7 @@ describe('Advanced GDPR Service Tests', () => {
       
       expect(riskAssessment.riskScore).toBeGreaterThan(8);
       expect(riskAssessment.requiresAuthorityNotification).toBe(true);
-      expect(riskAssessment.overallRisk).toBe('medium' || 'high');
+  expect(['medium', 'high']).toContain(riskAssessment.overallRisk);
     });
 
     test('should provide appropriate breach recommendations', () => {

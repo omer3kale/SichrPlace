@@ -2,152 +2,181 @@ import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { sendVerificationEmail } from './utils/email.mjs';
 
-// Simple inline hash function
-function hashToken(token) {
+// Supabase configuration with service role
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing required Supabase environment variables');
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
+
+// Helper functions
+const buildHeaders = () => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Origin, Authorization, Content-Type',
+});
+
+const respond = (statusCode, body) => ({
+  statusCode,
+  headers: buildHeaders(),
+  body: typeof body === 'string' ? body : JSON.stringify(body),
+});
+
+const httpError = (status, message, details = null) => {
+  const error = { error: { message, status } };
+  if (details && process.env.NODE_ENV !== 'production') {
+    error.error.details = details;
+  }
+  return { status, ...error };
+};
+
+// Hash token for secure storage
+const hashToken = (token) => {
   if (!token || typeof token !== 'string') return '';
   return crypto.createHash('sha256').update(token, 'utf8').digest('hex');
-}
+};
 
-// Environment variable validation with fallbacks
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.REACT_APP_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
-const jwtSecret = process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
-
-// More robust environment validation
-function validateEnvironment() {
-  const missing = [];
-  if (!supabaseUrl) missing.push('SUPABASE_URL');
-  if (!supabaseServiceKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
-  if (!jwtSecret) missing.push('JWT_SECRET');
+// Input validation for registration
+const validateRegistrationInput = (data) => {
+  const errors = [];
+  
+  if (!data.username) {
+    errors.push('Username is required');
+  } else if (data.username.length < 3) {
+    errors.push('Username must be at least 3 characters');
+  } else if (data.username.length > 50) {
+    errors.push('Username cannot exceed 50 characters');
+  } else if (!/^[a-zA-Z0-9_-]+$/.test(data.username)) {
+    errors.push('Username can only contain letters, numbers, hyphens, and underscores');
+  }
+  
+  if (!data.email) {
+    errors.push('Email is required');
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      errors.push('Invalid email format');
+    }
+  }
+  
+  if (!data.password) {
+    errors.push('Password is required');
+  } else if (data.password.length < 6) {
+    errors.push('Password must be at least 6 characters');
+  } else if (data.password.length > 128) {
+    errors.push('Password cannot exceed 128 characters');
+  }
+  
+  if (!data.userType) {
+    errors.push('User type is required');
+  } else if (!['landlord', 'applicant', 'tenant'].includes(data.userType)) {
+    errors.push('Invalid user type. Must be landlord, applicant, or tenant');
+  }
+  
+  // Optional field validation
+  if (data.fullName && data.fullName.length > 100) {
+    errors.push('Full name cannot exceed 100 characters');
+  }
+  
+  if (data.phone && !/^\+?[-\d\s()]{8,20}$/.test(data.phone)) {
+    errors.push('Invalid phone number format');
+  }
   
   return {
-    isValid: missing.length === 0,
-    missing,
-    config: {
-      supabaseUrl: supabaseUrl ? 'configured' : 'missing',
-      supabaseKey: supabaseServiceKey ? 'configured' : 'missing', 
-      jwtSecret: jwtSecret ? 'configured' : 'missing'
+    valid: errors.length === 0,
+    errors,
+    sanitized: {
+      username: data.username?.trim().toLowerCase(),
+      email: data.email?.trim().toLowerCase(),
+      password: data.password,
+      userType: data.userType,
+      fullName: data.fullName?.trim() || '',
+      phone: data.phone?.trim() || null,
     }
   };
-}
+};
 
-const envValidation = validateEnvironment();
-
-// Initialize Supabase client only if environment is valid
-let supabase = null;
-if (envValidation.isValid) {
-  supabase = createClient(supabaseUrl, supabaseServiceKey);
-} else {
-  console.error('❌ Missing environment variables:', envValidation.missing);
-}
-
-export const handler = async (event, context) => {
-  // Handle CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
+// Field mapping for frontend compatibility
+const mapUserToFrontend = (user) => {
+  if (!user) return null;
+  
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    user_type: user.user_type,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    phone: user.phone,
+    status: user.status,
+    email_verified: user.email_verified,
+    verified: user.verified,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
   };
+};
 
+export const handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  // Return environment status for GET requests (debugging)
-  if (event.httpMethod === 'GET') {
-    return {
-      statusCode: envValidation.isValid ? 200 : 503,
-      headers,
-      body: JSON.stringify({
-        status: envValidation.isValid ? 'ready' : 'configuration_error',
-        environment: envValidation.config,
-        missing: envValidation.missing,
-        message: envValidation.isValid ? 
-          'Registration endpoint is ready' : 
-          `Missing required environment variables: ${envValidation.missing.join(', ')}`
-      })
-    };
+    return respond(200, {});
   }
 
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
-  }
-
-  // Check environment before processing registration
-  if (!envValidation.isValid) {
-    return {
-      statusCode: 503,
-      headers,
-      body: JSON.stringify({ 
-        error: 'Service temporarily unavailable',
-        message: 'Server configuration incomplete. Please try again later.',
-        missing_config: envValidation.missing
-      })
-    };
+    return respond(405, {
+      error: { message: 'Method not allowed' }
+    });
   }
 
   try {
-    const { username, email, password, userType, fullName, phone } = JSON.parse(event.body);
-
-    // Validation
-    if (!username || !email || !password || !userType) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Missing required fields' })
-      };
+    // Parse and validate input
+    let requestData;
+    try {
+      requestData = JSON.parse(event.body || '{}');
+    } catch (parseError) {
+      throw httpError(400, 'Invalid JSON format');
     }
 
-    if (password.length < 6) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Password must be at least 6 characters' })
-      };
+    const validation = validateRegistrationInput(requestData);
+    if (!validation.valid) {
+      throw httpError(400, 'Validation failed', { errors: validation.errors });
     }
 
-    if (!['landlord', 'applicant'].includes(userType)) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Invalid user type' })
-      };
-    }
+    const { username, email, password, userType, fullName, phone } = validation.sanitized;
 
-    // Check if user already exists - use maybeSingle() to handle no results gracefully
+    // Check if user already exists (username or email)
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
-      .select('id')
+      .select('id, username, email')
       .or(`username.eq.${username},email.eq.${email}`)
       .maybeSingle();
 
-    if (checkError) {
-      console.error('Database check error:', checkError);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: 'Database error during user check' })
-      };
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw httpError(500, 'Database error during user check', checkError);
     }
 
     if (existingUser) {
-      return {
-        statusCode: 409,
-        headers,
-        body: JSON.stringify({ error: 'Username or email already exists' })
-      };
+      const conflictField = existingUser.username === username ? 'Username' : 'Email';
+      throw httpError(409, `${conflictField} already exists`);
     }
 
-    // Hash password
+    // Hash password securely
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create verification token (raw for email link) and hashed for storage
+    // Create email verification token
+    const jwtSecret = process.env.JWT_SECRET || 'your_super_secret_jwt_key_here';
     const verificationToken = jwt.sign(
       { email, type: 'email_verification' },
       jwtSecret,
@@ -155,130 +184,102 @@ export const handler = async (event, context) => {
     );
     const verificationTokenHash = hashToken(verificationToken);
 
-    // Insert user with ONLY fields that exist in the actual schema
+    // Parse full name into first and last name
+    const nameParts = fullName.split(' ');
+    const firstName = nameParts[0] || username;
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // Create user record
+    const userData = {
+      username,
+      email,
+      password: hashedPassword,
+      role: userType === 'landlord' ? 'landlord' : 'applicant',
+      user_type: userType,
+      
+      // Personal information
+      first_name: firstName,
+      last_name: lastName,
+      phone: phone || null,
+      
+      // Account status
+      status: 'active',
+      email_verified: false,
+      verified: false,
+      verification_token_hash: verificationTokenHash,
+      
+      // GDPR compliance
+      gdpr_consent: true,
+      data_processing_consent: true,
+      
+      // Timestamps (created_at is auto-generated)
+      updated_at: new Date().toISOString()
+    };
+
     const { data: newUser, error: insertError } = await supabase
       .from('users')
-      .insert({
-        username,
-        email,
-        password: hashedPassword,
-        role: 'user', // Always 'user' role for now
-        first_name: fullName ? fullName.split(' ')[0] : username,
-        last_name: fullName ? fullName.split(' ').slice(1).join(' ') : '',
-        phone: phone || null,
-        email_verified: false,
-        gdpr_consent: true,
-        data_processing_consent: true
-        // Removed email_verification_token - column doesn't exist
-        // Removed created_at - auto-generated
-      })
+      .insert(userData)
       .select()
       .single();
 
     if (insertError) {
-      console.error('Database insert error:', insertError);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ 
-          error: 'Failed to create user',
-          details: insertError.message 
-        })
-      };
+      if (insertError.code === '23505') { // Unique constraint violation
+        throw httpError(409, 'Username or email already exists');
+      }
+      throw httpError(500, 'Failed to create user account', insertError);
     }
 
-    // Skip profile creation for now - tables don't exist
-    // TODO: Create proper profile tables or remove this logic
-    
-    // Log registration activity - only if activity_logs table exists
-    // await supabase.from('activity_logs').insert({
-    //   user_id: newUser.id,
-    //   action: 'user_registration',
-    //   details: { user_type: userType },
-    //   created_at: new Date().toISOString()
-    // });
-
-    // Send verification email
+    let emailSent = false;
     try {
-      // Try different import approaches for email service
-      let EmailServiceClass;
-      try {
-        EmailServiceClass = (await import('../../js/backend/services/emailService.js')).default;
-      } catch (importError) {
-        console.warn('Email service import failed, using fallback:', importError.message);
-        // Continue without email verification for now
-        return {
-          statusCode: 201,
-          headers,
-          body: JSON.stringify({
-            success: true,
-            message: 'Registration successful. Email verification is temporarily unavailable.',
-            user: {
-              id: newUser.id,
-              username: newUser.username,
-              email: newUser.email,
-              userType: newUser.user_type,
-              verified: newUser.verified
-            }
-          })
-        };
-      }
-      
-      if (EmailServiceClass) {
-        const emailService = new EmailServiceClass();
-        await emailService.sendVerificationEmail(newUser.email, newUser.full_name || newUser.username || 'there', verificationToken);
-      }
-    } catch (mailErr) {
-      console.warn('Verification email dispatch failed:', mailErr?.message || mailErr);
-      // Continue registration success even if email fails
+      const emailResult = await sendVerificationEmail({
+        to: email,
+        firstName,
+        verificationToken
+      });
+      emailSent = Boolean(emailResult?.success);
+    } catch (emailError) {
+      console.warn('Failed to send verification email:', emailError.message);
+      // Continue registration even if email fails
     }
 
-    return {
-      statusCode: 201,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Registration successful. Please check your email for verification.',
-        user: {
-          id: newUser.id,
-          username: newUser.username,
-          email: newUser.email,
-          userType: newUser.user_type,
-          verified: newUser.verified
-        }
-      })
-    };
+    // Generate a welcome token for immediate use (optional)
+    const welcomeToken = jwt.sign(
+      {
+        userId: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+        username: newUser.username,
+        emailVerified: false
+      },
+      jwtSecret,
+      { expiresIn: '24h' }
+    );
+
+    return respond(201, {
+      success: true,
+      message: emailSent 
+        ? 'Registration successful. Please check your email for verification.'
+        : 'Registration successful. Email verification is pending.',
+      user: mapUserToFrontend(newUser),
+      token: welcomeToken, // Allow immediate limited access
+      data: {
+        redirectUrl: userType === 'landlord' ? '/landlord-dashboard' : '/dashboard',
+        emailVerificationRequired: true,
+        verificationToken: process.env.NODE_ENV === 'development' ? verificationToken : undefined
+      }
+    });
 
   } catch (error) {
-    console.error('Registration error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
-    
-    // Return more specific error information for debugging
-    let errorMessage = 'Internal server error';
-    let statusCode = 500;
-    
-    if (error.message?.includes('duplicate') || error.message?.includes('unique')) {
-      errorMessage = 'Username or email already exists';
-      statusCode = 409;
-    } else if (error.message?.includes('validation') || error.message?.includes('required')) {
-      errorMessage = 'Invalid input data';
-      statusCode = 400;
-    } else if (error.message?.includes('network') || error.message?.includes('connection')) {
-      errorMessage = 'Database connection error. Please try again.';
-      statusCode = 503;
+    if (error.status) {
+      return respond(error.status, error);
     }
     
-    return {
-      statusCode,
-      headers,
-      body: JSON.stringify({ 
-        error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      })
-    };
+    console.error('Registration error:', error);
+    return respond(500, {
+      error: { 
+        message: 'Internal server error',
+        ...(process.env.NODE_ENV !== 'production' && { details: error.message })
+      }
+    });
   }
 };

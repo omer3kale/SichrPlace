@@ -7,7 +7,7 @@ const cacheStats = {
   flushes: 0
 };
 
-export const handler = async (event, context) => {
+export const handler = async (event, _context) => {
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -204,6 +204,7 @@ async function setCacheValue(key, value, ttl, headers) {
     };
 
   } catch (error) {
+    console.error('Set cache value error:', error);
     throw error;
   }
 }
@@ -240,6 +241,7 @@ async function deleteCacheValue(key, headers) {
     };
 
   } catch (error) {
+    console.error('Delete cache value error:', error);
     throw error;
   }
 }
@@ -286,6 +288,7 @@ async function flushCache(pattern, headers) {
     };
 
   } catch (error) {
+    console.error('Flush cache error:', error);
     throw error;
   }
 }
@@ -299,7 +302,7 @@ async function getCacheStats(headers) {
     const now = Date.now();
 
     // Calculate statistics
-    for (const [key, entry] of cacheStorage.entries()) {
+    for (const entry of cacheStorage.values()) {
       totalSizeBytes += entry.size_bytes || 0;
       if (entry.expires && now > entry.expires) {
         expiredKeys++;
@@ -342,6 +345,7 @@ async function getCacheStats(headers) {
     };
 
   } catch (error) {
+    console.error('Get cache statistics error:', error);
     throw error;
   }
 }
@@ -356,7 +360,7 @@ async function getCacheHealth(headers) {
     let newestEntry = 0;
     const now = Date.now();
 
-    for (const [key, entry] of cacheStorage.entries()) {
+    for (const entry of cacheStorage.values()) {
       totalSizeBytes += entry.size_bytes || 0;
       
       if (entry.expires && now > entry.expires) {
@@ -432,6 +436,7 @@ async function getCacheHealth(headers) {
     };
 
   } catch (error) {
+    console.error('Get cache health error:', error);
     throw error;
   }
 }
@@ -476,6 +481,7 @@ async function listCacheKeys(pattern, headers) {
     };
 
   } catch (error) {
+    console.error('Cache maintenance error:', error);
     throw error;
   }
 }

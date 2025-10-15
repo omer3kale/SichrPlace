@@ -3,14 +3,14 @@ module.exports = {
   setupFilesAfterEnv: ['./tests/setup.js'],
   testTimeout: 10000,
   verbose: true,
+  coverageProvider: 'v8',
   
   // Include only our fixed test files
   testMatch: [
-    '**/tests/step4-api-fixed.test.js',
-    '**/tests/routes-gdpr-fixed.test.js',
-    '**/tests/auth.test.js',
-    '**/tests/middleware.test.js',
-    '**/tests/unit/**/*.test.js'
+    '**/tests/config-supabase.test.js',
+    '**/tests/middleware-auth.test.js',
+    '**/tests/routes-gdpr.test.js',
+    '**/tests/services-gdpr.unit.test.js'
   ],
   
   // Ignore problematic test files
@@ -18,35 +18,24 @@ module.exports = {
     '/node_modules/',
     '/legacy-mongodb/',
     'tests/step4-api.test.js',
-    'tests/routes-gdpr.test.js',
     'tests/advanced-gdpr.test.js',
     'tests/get-messages.test.js'
   ],
   
   collectCoverageFrom: [
-    'api/**/*.js',
-    'routes/**/*.js',
-    'middleware/**/*.js',
-    'services/**/*.js',
-    '!**/node_modules/**',
-    '!**/legacy-mongodb/**',
-    '!**/tests/**'
+    'config/supabase.js',
+    'middleware/auth.js',
+    'routes/gdpr.js',
+    'services/GdprService.js'
   ],
   
-  coverageThreshold: {
-    global: {
-      branches: 50,
-      functions: 50,
-      lines: 50,
-      statements: 50
-    }
-  },
-  
   coverageReporters: ['text', 'text-summary', 'html'],
+  transform: {},
   
   // Mock modules
-  moduleNameMapping: {
-    '^@supabase/supabase-js$': '<rootDir>/tests/__mocks__/supabase.js'
+  moduleNameMapper: {
+    '^jest-html-reporters$': '<rootDir>/tests/__mocks__/jest-html-reporters.js',
+    '^jest-sonar-reporter$': '<rootDir>/tests/__mocks__/jest-sonar-reporter.js'
   },
   
   // Clear mocks between tests

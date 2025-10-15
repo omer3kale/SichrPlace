@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-export const handler = async (event, context) => {
+export const handler = async (event, _context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Webhook-Signature',
@@ -79,7 +73,7 @@ export const handler = async (event, context) => {
       const { action, webhook_data } = JSON.parse(event.body || '{}');
       
       switch (action) {
-        case 'create_webhook':
+        case 'create_webhook': {
           const newWebhook = {
             id: `webhook_${Date.now()}`,
             url: webhook_data.url,
@@ -87,7 +81,7 @@ export const handler = async (event, context) => {
             status: 'active',
             created_at: new Date().toISOString()
           };
-          
+
           return {
             statusCode: 201,
             headers,
@@ -97,8 +91,9 @@ export const handler = async (event, context) => {
               message: 'Webhook created successfully'
             })
           };
-          
-        case 'trigger_webhook':
+        }
+
+        case 'trigger_webhook': {
           return {
             statusCode: 200,
             headers,
@@ -109,8 +104,9 @@ export const handler = async (event, context) => {
               timestamp: new Date().toISOString()
             })
           };
-          
-        case 'test_webhook':
+        }
+
+        case 'test_webhook': {
           return {
             statusCode: 200,
             headers,
@@ -119,6 +115,17 @@ export const handler = async (event, context) => {
               message: 'Webhook test completed',
               test_result: 'passed',
               response_time: '123ms'
+            })
+          };
+        }
+
+        default:
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({
+              success: false,
+              message: 'Unsupported webhook action'
             })
           };
       }
@@ -133,7 +140,8 @@ export const handler = async (event, context) => {
         body: JSON.stringify({
           success: true,
           message: `Webhook ${webhook_id} updated successfully`,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          applied_updates: updates || {}
         })
       };
     }

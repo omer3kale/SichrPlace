@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -8,10 +9,24 @@ const lusca = require('lusca'); // switched from csurf to lusca for CSRF protect
 const cookieParser = require('cookie-parser');
 const session = require('express-session'); // required for lusca CSRF
 const morgan = require('morgan');
-require('dotenv').config({ path: __dirname + '/.env' });
+const dotenv = require('dotenv');
+
+// Load environment variables preferring process environment, then local overrides
+const envCandidates = [
+  path.join(__dirname, '.env.local'),
+  path.join(__dirname, '.env'),
+  path.join(__dirname, '..', '.env'),
+  path.join(process.cwd(), '.env')
+];
+
+envCandidates.forEach((envPath) => {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath, override: false });
+  }
+});
 
 // Import Supabase configuration
-const { supabase, testConnection } = require('./config/supabase');
+const { testConnection } = require('./config/supabase');
 
 // Import your admin routes and models
 const sendMessageRoute = require('./api/send-message');
@@ -34,7 +49,9 @@ const emailRoutes = require('./routes/emails');
 const googleFormsRoutes = require('./routes/googleForms');
 const configRoutes = require('./routes/config');
 const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = require('./swagger.json');
+const swaggerDocument = require('../../backend/swagger.json');
+const bookingRequestsLegacyRoutes = require('./routes/booking-requests');
+const integrationHealthRoutes = require('./routes/integration-health');
 
 // Import viewing requests routes (Step 3)
 const viewingRequestsRoutes = require('./routes/viewing-requests');
@@ -46,13 +63,84 @@ const mapsRoutes = require('./routes/maps');
 const performanceRoutes = require('./routes/performance');
 
 // Import Redis Cache Service (Step 9.1)
-const { cacheService, cacheMiddleware } = require('./services/RedisCacheService');
+const { cacheService } = require('./services/RedisCacheService');
 
 const app = express();
 const PORT = process.env.PORT || 3000; // Changed to match the running port
 
+// ===== CRITICAL: ENVIRONMENT VALIDATION =====
+console.log('🔍 ===== ENVIRONMENT CONFIGURATION CHECK =====');
+const requiredEnvVars = {
+  'SUPABASE_URL': process.env.SUPABASE_URL,
+  'SUPABASE_SERVICE_ROLE_KEY': process.env.SUPABASE_SERVICE_ROLE_KEY,
+  'JWT_SECRET': process.env.JWT_SECRET
+};
+
+const optionalEnvVars = {
+  'FRONTEND_URL': process.env.FRONTEND_URL,
+  'NODE_ENV': process.env.NODE_ENV,
+  'GMAIL_USER': process.env.GMAIL_USER,
+  'PAYPAL_CLIENT_ID': process.env.PAYPAL_CLIENT_ID
+};
+
+let hasErrors = false;
+
+// Check required variables
+for (const [varName, value] of Object.entries(requiredEnvVars)) {
+  if (!value) {
+    console.error(`❌ CRITICAL: Missing required environment variable: ${varName}`);
+    hasErrors = true;
+  } else if (varName === 'JWT_SECRET' && (value === 'default-secret' || value.length < 32)) {
+    console.error(`❌ CRITICAL: ${varName} is insecure (${value === 'default-secret' ? 'using default' : 'too short'})`);
+    hasErrors = true;
+  } else {
+    const preview = varName.includes('SECRET') || varName.includes('KEY') 
+      ? '[CONFIGURED]' 
+      : value.substring(0, 30) + (value.length > 30 ? '...' : '');
+    console.log(`✅ ${varName}: ${preview}`);
+  }
+}
+
+// Check optional variables
+for (const [varName, value] of Object.entries(optionalEnvVars)) {
+  if (!value) {
+    console.warn(`⚠️ Optional: ${varName} is not set`);
+  } else {
+    const preview = varName.includes('SECRET') || varName.includes('KEY') 
+      ? '[CONFIGURED]' 
+      : value.substring(0, 30) + (value.length > 30 ? '...' : '');
+    console.log(`✅ ${varName}: ${preview}`);
+  }
+}
+
+if (hasErrors) {
+  console.error('\n❌❌❌ CRITICAL ERRORS FOUND IN ENVIRONMENT CONFIGURATION ❌❌❌');
+  console.error('❌ Authentication will NOT work properly!');
+  console.error('❌ Please configure missing variables in your .env file');
+  console.error('❌ Location: js/backend/.env\n');
+  
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ EXITING due to missing required environment variables in PRODUCTION mode');
+    process.exit(1);
+  } else {
+    console.warn('⚠️ Continuing in DEVELOPMENT mode, but authentication may fail\n');
+  }
+} else {
+  console.log('✅ All required environment variables present and valid\n');
+}
+
+console.log('🚀 Server Configuration:', {
+  port: PORT,
+  nodeEnv: process.env.NODE_ENV || 'development',
+  frontendUrl: process.env.FRONTEND_URL || 'not configured'
+});
+console.log('===============================================\n');
+
 // Initialize Redis Cache Service
 console.log('🚀 Initializing Redis Cache Service...');
+if (!cacheService.enabled) {
+  console.log('ℹ️ Redis cache disabled. Set REDIS_ENABLED=true (and REDIS_URL) once a Redis instance is provisioned.');
+}
 
 // --- LOGGING MIDDLEWARE ---
 app.use(morgan('combined'));
@@ -110,8 +198,18 @@ app.use(limiter);
 
 // --- CORS CONFIGURATION ---
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://sichrplace-production.up.railway.app', 'https://www.sichrplace.com']
-  : ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://localhost:5000'];
+  ? [
+      'https://sichrplace-production.up.railway.app', 
+      'https://www.sichrplace.com',
+      'https://sichrplace.com', // Allow both with and without www
+      process.env.FRONTEND_URL // Allow configured frontend URL
+    ].filter(Boolean)
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://localhost:5000', 'http://127.0.0.1:5500'];
+
+console.log('🔒 CORS Configuration:', {
+  nodeEnv: process.env.NODE_ENV || 'development',
+  allowedOrigins
+});
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -123,14 +221,17 @@ app.use(cors({
     } else {
       // In development, be more permissive for testing
       if (process.env.NODE_ENV !== 'production') {
-        console.log('CORS allowing origin for development:', origin);
+        console.log('⚠️ CORS allowing unlisted origin for development:', origin);
         return callback(null, true);
       }
-      console.log('CORS blocked origin:', origin);
+      console.error('❌ CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(bodyParser.json());
@@ -191,27 +292,6 @@ testConnection().then(connected => {
 // Note: Database models have been migrated to Supabase
 // Legacy booking request endpoints will be updated to use ViewingRequestService
 
-// TODO: Update these endpoints to use Supabase ViewingRequestService
-// API to create a booking request (DEPRECATED - use /api/viewing-requests)
-app.post('/api/booking-request', async (req, res) => {
-  // This endpoint is deprecated - redirect to new viewing request system
-  res.status(410).json({ 
-    success: false, 
-    error: 'This endpoint is deprecated. Please use /api/viewing-requests instead.',
-    migration: 'Migrated to Supabase - use ViewingRequestService'
-  });
-});
-
-// API to get all booking requests for an apartment (DEPRECATED)
-app.get('/api/booking-requests/:apartmentId', async (req, res) => {
-  // This endpoint is deprecated - redirect to new viewing request system
-  res.status(410).json({ 
-    success: false, 
-    error: 'This endpoint is deprecated. Please use /api/viewing-requests instead.',
-    migration: 'Migrated to Supabase - use ViewingRequestService'
-  });
-});
-
 // Existing routes
 app.use('/api/send-message', sendMessageRoute);
 app.use('/api', viewingRequestRoute); // Updated to mount at /api level for new endpoints
@@ -253,6 +333,7 @@ app.use('/api/analytics', analyticsDashboardRoute);
 
 // --- VIEWING REQUESTS ROUTES (Step 3) ---
 app.use('/api/viewing-requests', viewingRequestsRoutes);
+app.use('/api', bookingRequestsLegacyRoutes);
 
 // --- GOOGLE MAPS ROUTES (Step 9.2) ---
 app.use('/api/maps', mapsRoutes);
@@ -260,6 +341,9 @@ app.use('/api/maps', mapsRoutes);
 // --- PERFORMANCE ROUTES (Step 9.1) ---
 app.use('/api/performance', performanceRoutes);
 console.log('📊 Performance monitoring routes loaded');
+
+// --- INTEGRATION HEALTH ROUTES ---
+app.use('/api/integration-health', integrationHealthRoutes);
 
 app.use('/auth', authRoutes); // Fixed route path - should be /auth not /api/auth
 app.use('/api/gdpr', gdprRoutes);
@@ -274,10 +358,24 @@ app.use('/api/feedback', feedbackRoute);
 const paymentRoutes = require('./routes/payment');
 app.use('/api/payment', paymentRoutes);
 
+// Add RESTful payments routes (for integration tests)
+const paymentsRoutes = require('./routes/payments');
+app.use('/api/payments', paymentsRoutes);
+
 // Add PayPal payment routes
 const paypalRoutes = require('./routes/paypal');
 app.use('/api/payment/paypal', paypalRoutes);
 app.use('/api/paypal', paypalRoutes); // Also mount on /api/paypal for compatibility
+
+// Add Marketplace routes
+const marketplaceRoutes = require('./routes/marketplace');
+app.use('/api/marketplace', marketplaceRoutes);
+console.log('🛒 Marketplace routes loaded');
+
+// Add Smart Matching routes
+const smartMatchingRoutes = require('./routes/smartMatching');
+app.use('/api/matching', smartMatchingRoutes);
+console.log('🎯 Smart matching routes loaded');
 
 // --- CSRF Token Endpoint ---
 app.get('/api/csrf-token', (req, res) => {
@@ -321,9 +419,14 @@ app.get('/api/health', async (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    cache: {
+    cache: cacheService.enabled ? {
+      enabled: true,
       connected: cacheService.connected,
       status: cacheService.connected ? 'healthy' : 'disconnected'
+    } : {
+      enabled: false,
+      connected: false,
+      status: 'disabled'
     }
   };
   
@@ -343,7 +446,8 @@ app.get('/api/health', async (req, res) => {
   }
   
   // Set appropriate status code
-  const isHealthy = healthData.cache.connected && healthData.database.connected;
+  const cacheHealthy = !cacheService.enabled || healthData.cache.connected;
+  const isHealthy = cacheHealthy && healthData.database.connected;
   res.status(isHealthy ? 200 : 503).json(healthData);
 });
 

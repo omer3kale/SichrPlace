@@ -3,6 +3,58 @@ const router = express.Router();
 const AdvancedGdprService = require('../utils/advancedGdprService');
 const PrivacyComplianceScanner = require('../utils/privacyComplianceScanner');
 const GdprService = require('../services/GdprService');
+const ConsentPurpose = require('../models/ConsentPurpose');
+const DataBreach = require('../models/DataBreach');
+const DPIA = require('../models/DPIA');
+const DataProcessingLog = require('../models/DataProcessingLog');
+
+const ensureAuthenticated = (req, res) => {
+  if (!req.user) {
+    res.status(401).json({ success: false, error: 'Unauthorized' });
+    return false;
+  }
+  return true;
+};
+
+const sendValidationErrors = (res, errors) => {
+  return res.status(400).json({ success: false, errors });
+};
+
+const BREACH_SEVERITIES = ['low', 'medium', 'high', 'critical'];
+const REQUEST_STATUSES = ['pending', 'in_progress', 'completed', 'denied'];
+
+const validateBreachPayload = (payload = {}) => {
+  const errors = [];
+
+  if (!payload.description) {
+    errors.push('Description is required');
+  }
+
+  if (!payload.severity) {
+    errors.push('Severity is required');
+  } else if (!BREACH_SEVERITIES.includes(payload.severity)) {
+    errors.push('Invalid severity value');
+  }
+
+  if (!Array.isArray(payload.dataTypesAffected) || payload.dataTypesAffected.length === 0) {
+    errors.push('At least one affected data type is required');
+  }
+
+  return errors;
+};
+
+const validateDpiaPayload = (payload = {}) => {
+  const errors = [];
+  const { processingActivity } = payload;
+
+  if (!processingActivity || typeof processingActivity !== 'object') {
+    errors.push('Processing activity details are required');
+  } else if (!processingActivity.name) {
+    errors.push('Processing activity name is required');
+  }
+
+  return errors;
+};
 
 /**
  * Advanced Consent Management Routes
@@ -37,6 +89,30 @@ router.post('/requests', async (req, res) => {
   }
 });
 
+router.get('/requests', async (req, res) => {
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
+  try {
+    const { status } = req.query;
+    const filter = {};
+    if (status) {
+      filter.status = status;
+    }
+
+    const requests = await GdprService.getRequests(filter);
+
+    res.json({
+      success: true,
+      requests,
+      total: Array.isArray(requests) ? requests.length : 0
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to fetch GDPR requests', details: error.message });
+  }
+});
+
 // Get all consent purposes with statistics
 router.get('/consent-purposes', async (req, res) => {
   try {
@@ -58,10 +134,38 @@ router.get('/consent-purposes', async (req, res) => {
         totalItems: total,
         itemsPerPage: limit
       },
+      total,
       statistics: stats
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/requests/:requestId/status', async (req, res) => {
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
+  const { requestId } = req.params;
+  const { status, notes } = req.body;
+
+  const errors = [];
+  if (!status) {
+    errors.push('Status is required');
+  } else if (!REQUEST_STATUSES.includes(status)) {
+    errors.push('Invalid status value');
+  }
+
+  if (errors.length) {
+    return sendValidationErrors(res, errors);
+  }
+
+  try {
+    const updatedRequest = await GdprService.updateRequestStatus(requestId, status, notes);
+    res.json({ success: true, request: updatedRequest });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to update request status', details: error.message });
   }
 });
 
@@ -119,62 +223,53 @@ router.post('/consent-purposes/cleanup', async (req, res) => {
  * Data Breach Management Routes
  */
 
-// Get all data breaches
-router.get('/data-breaches', async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-    const { status, severity } = req.query;
+const listBreaches = async (req, res) => {
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
 
+  try {
+    const { status, severity } = req.query;
     const filter = {};
     if (status) filter.status = status;
     if (severity) filter.severity = severity;
 
-    const breaches = await DataBreach.find(filter)
-      .sort({ discoveredAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const total = await DataBreach.countDocuments(filter);
-
-    // Get breach statistics
-    const stats = await DataBreach.aggregate([
-      {
-        $group: {
-          _id: null,
-          totalBreaches: { $sum: 1 },
-          unreported: { $sum: { $cond: [{ $eq: ['$reportedToAuthority', false] }, 1, 0] } },
-          highRisk: { $sum: { $cond: [{ $eq: ['$riskAssessment.overallRisk', 'high'] }, 1, 0] } },
-          resolved: { $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] } }
-        }
-      }
-    ]);
+    const breaches = await GdprService.getDataBreaches(filter);
 
     res.json({
-      breaches,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        totalItems: total,
-        itemsPerPage: limit
-      },
-      statistics: stats[0] || {}
+      success: true,
+      breaches
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: 'Failed to fetch data breaches', details: error.message });
   }
-});
+};
 
-// Create new data breach report
-router.post('/data-breaches', async (req, res) => {
+const createBreach = async (req, res) => {
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
+  const errors = validateBreachPayload(req.body);
+  if (errors.length) {
+    return sendValidationErrors(res, errors);
+  }
+
   try {
     const breach = await AdvancedGdprService.reportDataBreach(req.body);
-    res.status(201).json(breach);
+    res.status(201).json({ success: true, breach });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: 'Failed to report data breach', details: error.message });
   }
-});
+};
+
+// Get all data breaches (canonical and alias)
+router.get('/data-breaches', listBreaches);
+router.get('/breaches', listBreaches);
+
+// Create new data breach report (canonical and alias)
+router.post('/data-breaches', createBreach);
+router.post('/breach', createBreach);
 
 // Update breach status
 router.put('/data-breaches/:breachId/status', async (req, res) => {
@@ -362,54 +457,8 @@ router.get('/compliance/scan', async (req, res) => {
 // Get compliance dashboard data
 router.get('/compliance/dashboard', async (req, res) => {
   try {
-    const [
-      consentStats,
-      breachStats,
-      dpiaStats,
-      recentLogs
-    ] = await Promise.all([
-      ConsentPurpose.aggregate([
-        {
-          $group: {
-            _id: null,
-            total: { $sum: 1 },
-            active: { $sum: { $cond: ['$isActive', 1, 0] } },
-            expired: { $sum: { $cond: [{ $lt: ['$expiryDate', new Date()] }, 1, 0] } }
-          }
-        }
-      ]),
-      DataBreach.aggregate([
-        {
-          $group: {
-            _id: null,
-            total: { $sum: 1 },
-            unresolved: { $sum: { $cond: [{ $ne: ['$status', 'resolved'] }, 1, 0] } },
-            unreported: { $sum: { $cond: [{ $eq: ['$reportedToAuthority', false] }, 1, 0] } }
-          }
-        }
-      ]),
-      DPIA.aggregate([
-        {
-          $group: {
-            _id: null,
-            total: { $sum: 1 },
-            approved: { $sum: { $cond: [{ $eq: ['$status', 'approved'] }, 1, 0] } },
-            needsReview: { $sum: { $cond: [{ $lt: ['$reviewSchedule.nextReview', new Date()] }, 1, 0] } }
-          }
-        }
-      ]),
-      DataProcessingLog.find()
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .select('action dataType legalBasis createdAt')
-    ]);
-
-    res.json({
-      consents: consentStats[0] || { total: 0, active: 0, expired: 0 },
-      breaches: breachStats[0] || { total: 0, unresolved: 0, unreported: 0 },
-      dpias: dpiaStats[0] || { total: 0, approved: 0, needsReview: 0 },
-      recentActivity: recentLogs
-    });
+    const dashboard = await AdvancedGdprService.getComplianceDashboard();
+    res.json(dashboard);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -450,64 +499,63 @@ router.get('/processing-logs', async (req, res) => {
   }
 });
 
-// Export compliance report
-router.get('/compliance/export', async (req, res) => {
+const complianceReportHandler = async (req, res) => {
   try {
     const { format = 'json', dateFrom, dateTo } = req.query;
-    
-    const dateFilter = {};
-    if (dateFrom) dateFilter.$gte = new Date(dateFrom);
-    if (dateTo) dateFilter.$lte = new Date(dateTo);
-    
-    const filter = {};
-    if (Object.keys(dateFilter).length > 0) {
-      filter.createdAt = dateFilter;
+    if (format === 'csv') {
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=compliance-report.csv');
+      return res.send('CSV export not implemented yet');
     }
 
-    const [
-      consents,
-      breaches,
-      dpias,
-      logs
-    ] = await Promise.all([
-      ConsentPurpose.find(filter),
-      DataBreach.find(filter),
-      DPIA.find(filter),
-      DataProcessingLog.find(filter).limit(1000) // Limit to prevent memory issues
+    const filter = { dateFrom, dateTo };
+
+    const [consentsRaw, requestsRaw, breachesRaw, dpiasRaw, logsRaw] = await Promise.all([
+      GdprService.getConsentPurposes(filter),
+      GdprService.getRequests(filter),
+      GdprService.getDataBreaches(filter),
+      GdprService.getDPIAs ? GdprService.getDPIAs(filter) : Promise.resolve([]),
+      GdprService.getDataProcessingLogs
+        ? GdprService.getDataProcessingLogs(filter)
+        : Promise.resolve([])
     ]);
+
+    const consents = Array.isArray(consentsRaw) ? consentsRaw : [];
+    const requests = Array.isArray(requestsRaw) ? requestsRaw : [];
+    const breaches = Array.isArray(breachesRaw) ? breachesRaw : [];
+    const dpias = Array.isArray(dpiasRaw) ? dpiasRaw : [];
+    const logs = Array.isArray(logsRaw) ? logsRaw : [];
 
     const reportData = {
       exportDate: new Date(),
       period: { from: dateFrom, to: dateTo },
       summary: {
         consents: consents.length,
+        requests: requests.length,
         breaches: breaches.length,
         dpias: dpias.length,
         processingLogs: logs.length
       },
       data: {
         consents,
+        requests,
         breaches,
         dpias,
         processingLogs: logs
       }
     };
 
-    if (format === 'csv') {
-      // Convert to CSV format (simplified)
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=compliance-report.csv');
-      // CSV conversion logic would go here
-      res.send('CSV export not implemented yet');
-    } else {
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', 'attachment; filename=compliance-report.json');
-      res.json(reportData);
-    }
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename=compliance-report.json');
+    res.json(reportData);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
+};
+
+// Export compliance report (alias maintained for backwards compatibility)
+router.get('/compliance/export', complianceReportHandler);
+router.get('/compliance/report', complianceReportHandler);
 
 // Run daily compliance check manually
 router.post('/compliance/daily-check', async (req, res) => {
@@ -516,6 +564,25 @@ router.post('/compliance/daily-check', async (req, res) => {
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Create DPIA (singular endpoint for tests)
+router.post('/dpia', async (req, res) => {
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
+  const errors = validateDpiaPayload(req.body);
+  if (errors.length) {
+    return sendValidationErrors(res, errors);
+  }
+
+  try {
+    const dpia = await AdvancedGdprService.createDPIA(req.body);
+    res.status(201).json({ success: true, dpia });
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Failed to create DPIA', details: error.message });
   }
 });
 

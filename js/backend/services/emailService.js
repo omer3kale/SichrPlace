@@ -1,6 +1,4 @@
 const nodemailer = require('nodemailer');
-const path = require('path');
-const fs = require('fs').promises;
 
 /**
  * Gmail Email Service for SichrPlace Platform
@@ -27,8 +25,8 @@ class EmailService {
       
       console.log('📧 Initializing Gmail SMTP...');
       console.log(`🔍 OAuth2 available: ${hasOAuth2 ? 'YES - Configured' : 'NO - Using App Password fallback'}`);
-      console.log(`🔍 App Password available: ${!!process.env.GMAIL_APP_PASSWORD ? 'YES' : 'NO'}`);
-  console.log(`🔍 Gmail User: ${process.env.GMAIL_USER || 'sichrplace@gmail.com'}`);
+  console.log(`🔍 App Password available: ${process.env.GMAIL_APP_PASSWORD ? 'YES' : 'NO'}`);
+    console.log(`🔍 Gmail User: ${process.env.GMAIL_USER || 'sichrplace@gmail.com'}`);
       
       if (hasOAuth2) {
         console.log('🔐 Using OAuth2 authentication (Production Grade)');
@@ -47,7 +45,7 @@ class EmailService {
             accessToken: process.env.GMAIL_ACCESS_TOKEN
           }
         });
-            } else if (process.env.GMAIL_APP_PASSWORD) {
+  } else if (process.env.GMAIL_APP_PASSWORD) {
         console.log('🔑 Using App Password authentication (Development Mode)');
         // Fallback to App Password authentication
         this.transporter = nodemailer.createTransport({
@@ -214,6 +212,101 @@ class EmailService {
   }
 
   /**
+   * Email: Viewing Approved Notification
+   * Sent when landlord approves a viewing request
+   */
+  async sendViewingApprovedEmail(userEmail, { firstName, apartmentTitle, confirmedDate, timezone = 'Europe/Berlin', paymentLink = null, additionalNotes = '' }) {
+    const formattedDate = confirmedDate
+      ? new Date(confirmedDate).toLocaleString('de-DE', {
+          timeZone: timezone,
+          dateStyle: 'full',
+          timeStyle: 'short'
+        })
+      : 'bald bestätigten Termin';
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+          .header { background: #2c5aa0; color: white; padding: 20px; text-align: center; }
+          .content { padding: 30px 20px; }
+          .footer { background: #f4f4f4; padding: 20px; text-align: center; font-size: 14px; color: #666; }
+          .highlight { background: #e8f4fd; border-left: 4px solid #2c5aa0; padding: 15px; margin: 20px 0; }
+          .cta { display: inline-block; background: #28a745; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>SichrPlace</h1>
+          <p>Deine Besichtigung wurde bestätigt</p>
+        </div>
+        <div class="content">
+          <p>Hallo ${firstName || 'there'},</p>
+          <p><strong>gute Nachrichten:</strong> Deine Anfrage zur Wohnungsbesichtigung wurde vom Vermieter akzeptiert.</p>
+          <div class="highlight">
+            <p><strong>Wohnung:</strong> ${apartmentTitle || 'SichrPlace Apartment'}</p>
+            <p><strong>Termin:</strong> ${formattedDate}</p>
+          </div>
+          ${paymentLink ? `<p>Bitte schließe die Zahlung vor dem Termin ab, um unseren Vor-Ort-Service zu sichern.</p>
+          <a class="cta" href="${paymentLink}">Jetzt bezahlen</a>` : ''}
+          ${additionalNotes ? `<p><strong>Hinweis:</strong> ${additionalNotes}</p>` : ''}
+          <p>Wir erinnern dich noch einmal 24 Stunden vor dem Termin.</p>
+          <p>Viele Grüße<br>Dein SichrPlace Team</p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} SichrPlace Team | sichrplace@gmail.com</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail(userEmail, 'Deine Wohnungsbesichtigung ist bestätigt ✅', html, 'viewing_approved');
+  }
+
+  /**
+   * Email: Viewing Rejected Notification
+   * Sent when landlord rejects a viewing request
+   */
+  async sendViewingRejectedEmail(userEmail, { firstName, apartmentTitle, reason }) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; }
+          .header { background: #c0392b; color: white; padding: 20px; text-align: center; }
+          .content { padding: 30px 20px; }
+          .footer { background: #f4f4f4; padding: 20px; text-align: center; font-size: 14px; color: #666; }
+          .highlight { background: #fdecea; border-left: 4px solid #c0392b; padding: 15px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>SichrPlace</h1>
+          <p>Deine Besichtigungsanfrage wurde abgelehnt</p>
+        </div>
+        <div class="content">
+          <p>Hallo ${firstName || 'there'},</p>
+          <p>leider konnte deine Besichtigungsanfrage für <strong>${apartmentTitle || 'die ausgewählte Wohnung'}</strong> nicht bestätigt werden.</p>
+          ${reason ? `<div class="highlight"><p><strong>Begründung des Vermieters:</strong><br>${reason}</p></div>` : ''}
+          <p>Bitte melde dich, wenn du Fragen hast oder Unterstützung bei alternativen Wohnungen benötigst.</p>
+          <p>Viele Grüße<br>Dein SichrPlace Team</p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} SichrPlace Team | sichrplace@gmail.com</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail(userEmail, 'Update zu deiner Besichtigungsanfrage', html, 'viewing_rejected');
+  }
+
+  /**
    * Email #3: Viewing Results with Secure Video
    * Sent when apartment viewing video is ready with secure link
    */
@@ -329,7 +422,8 @@ class EmailService {
       return {
         success: true,
         messageId: result.messageId,
-        emailType: emailType
+        emailType: emailType,
+        subject
       };
 
     } catch (error) {
@@ -341,7 +435,8 @@ class EmailService {
       return {
         success: false,
         error: error.message,
-        emailType: emailType
+        emailType: emailType,
+        subject
       };
     }
   }
@@ -605,7 +700,8 @@ class EmailService {
    */
   async sendVerificationEmail(email, firstName, verificationToken) {
     try {
-      const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+      // Use production Netlify URL - frontend folder is the publish root
+      const verificationUrl = `${process.env.FRONTEND_URL || 'https://www.sichrplace.com'}/verify-email.html?token=${verificationToken}`;
       
       const mailOptions = {
         from: {
@@ -976,4 +1072,4 @@ class EmailService {
   }
 }
 
-export default EmailService;
+module.exports = EmailService;

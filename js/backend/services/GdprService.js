@@ -1,5 +1,11 @@
 const { supabase } = require('../config/supabase');
 
+const assertNoError = (error) => {
+  if (error) {
+    throw error;
+  }
+};
+
 class FeedbackService {
   static async create(feedbackData) {
     const { data, error } = await supabase
@@ -16,8 +22,8 @@ class FeedbackService {
         )
       `)
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -36,8 +42,8 @@ class FeedbackService {
       `)
       .eq('id', id)
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -76,17 +82,21 @@ class FeedbackService {
     query = query.order('created_at', { ascending: false });
     
     // Pagination
-    if (options.limit) {
+    const hasNumericLimit = Number.isInteger(options.limit);
+    const hasNumericOffset = Number.isInteger(options.offset);
+
+    if (hasNumericLimit) {
       query = query.limit(options.limit);
     }
-    
-    if (options.offset) {
-      query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+
+    if (hasNumericOffset) {
+      const effectiveLimit = hasNumericLimit ? options.limit : 10;
+      query = query.range(options.offset, options.offset + effectiveLimit - 1);
     }
     
     const { data, error } = await query;
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -106,8 +116,8 @@ class FeedbackService {
         )
       `)
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -120,8 +130,8 @@ class FeedbackService {
       .from('feedback')
       .delete()
       .eq('id', id);
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return true;
   }
 
@@ -129,8 +139,8 @@ class FeedbackService {
     const { data: allFeedback, error } = await supabase
       .from('feedback')
       .select('rating, resolved, category');
-    
-    if (error) throw error;
+
+    assertNoError(error);
     
     const stats = {
       total: allFeedback.length,
@@ -187,8 +197,8 @@ class GdprService {
         )
       `)
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -220,8 +230,8 @@ class GdprService {
     }
     
     const { data, error } = await query;
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -236,8 +246,8 @@ class GdprService {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -247,8 +257,8 @@ class GdprService {
       .insert([logData])
       .select()
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -271,8 +281,8 @@ class GdprService {
     }
     
     const { data, error } = await query;
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -300,8 +310,8 @@ class GdprService {
       .insert([consentData])
       .select()
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -312,8 +322,8 @@ class GdprService {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -330,9 +340,35 @@ class GdprService {
         )
       `)
       .eq('user_id', userId);
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
+  }
+
+  static async getUserConsent(userId) {
+    const consents = await this.getUserConsents(userId);
+    if (!Array.isArray(consents) || consents.length === 0) {
+      return null;
+    }
+
+    const consentTypes = consents.reduce((acc, consent) => {
+      const key = consent.purpose?.name || consent.purpose_id || consent.purpose || consent.id;
+      acc[key] = {
+        granted: consent.granted,
+        granted_at: consent.granted_at,
+        withdrawn_at: consent.withdrawn_at || consent.withdrawal_timestamp || null
+      };
+      return acc;
+    }, {});
+
+    const timestampSource = consents.find(item => item.granted_at) || consents[0];
+
+    return {
+      consentTypes,
+      privacyPolicyVersion: timestampSource?.privacy_policy_version || null,
+      termsVersion: timestampSource?.terms_version || null,
+      createdAt: timestampSource?.granted_at || timestampSource?.created_at || null
+    };
   }
 
   // Consent Management Methods
@@ -353,8 +389,8 @@ class GdprService {
       `)
       .order('created_at', { ascending: false })
       .range(skip, skip + limit - 1);
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -362,8 +398,8 @@ class GdprService {
     const { count, error } = await supabase
       .from('consent_purposes')
       .select('*', { count: 'exact', head: true });
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return count;
   }
 
@@ -372,8 +408,8 @@ class GdprService {
     const { data, error } = await supabase
       .from('consent_purposes')
       .select('purpose, consented, withdrawal_timestamp, expiry_date');
-    
-    if (error) throw error;
+
+    assertNoError(error);
     
     // Group by purpose and calculate stats
     const stats = {};
@@ -402,8 +438,8 @@ class GdprService {
       .eq('id', id)
       .select()
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -423,7 +459,8 @@ class GdprService {
     }
     
     const { data, error } = await query;
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -433,8 +470,8 @@ class GdprService {
       .insert([dpiaData])
       .select()
       .single();
-    
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
   }
 
@@ -454,13 +491,54 @@ class GdprService {
     }
     
     const { data, error } = await query;
-    if (error) throw error;
+
+    assertNoError(error);
     return data;
+  }
+
+  static async exportUserData({ userId }) {
+    let userProfile = null;
+    const profileQuery = supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId);
+
+    let profileData;
+    let profileError;
+    if (typeof profileQuery.maybeSingle === 'function') {
+      ({ data: profileData, error: profileError } = await profileQuery.maybeSingle());
+    } else {
+      ({ data: profileData, error: profileError } = await profileQuery.single());
+    }
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      throw profileError;
+    }
+
+    userProfile = profileData || null;
+
+    const [consents, requests, processingLogs] = await Promise.all([
+      this.getUserConsents(userId),
+      this.getRequests({ userId }),
+      this.getProcessingLogs({ userId })
+    ]);
+
+    return {
+      profile: userProfile,
+      consents: consents || [],
+      requests: requests || [],
+      processingLogs: processingLogs || []
+    };
   }
 
   // Alias for backward compatibility
   static async createGdprRequest(requestData) {
     return this.createRequest(requestData);
+  }
+
+  // Method for recording consent (alias for createConsent)
+  static async recordConsent(consentData) {
+    return this.createConsent(consentData);
   }
 }
 

@@ -16,12 +16,19 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
+import dotenv from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const errors = [];
 const warnings = [];
+
+// Load environment variables from project root .env if available
+const envPath = resolve(process.cwd(), '.env');
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
 
 function section(title) {
   // eslint-disable-next-line no-console

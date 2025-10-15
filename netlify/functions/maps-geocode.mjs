@@ -1,59 +1,91 @@
+// Environment validation
 const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 
 if (!googleMapsApiKey) {
   console.error('GOOGLE_MAPS_API_KEY environment variable is not set');
 }
 
-export const handler = async (event, context) => {
-  // Handle CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+// Helper function to build standardized headers
+const buildHeaders = (additionalHeaders = {}) => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Origin, Access-Control-Request-Headers',
+  ...additionalHeaders
+});
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
+// Helper function to create standardized responses
+const respond = (data, additionalHeaders = {}) => ({
+  statusCode: 200,
+  headers: buildHeaders(additionalHeaders),
+  body: JSON.stringify(data)
+});
 
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
-  }
-
+// Helper function to parse request body safely
+const parseRequestBody = (body) => {
+  if (!body) throw new Error('Request body is required');
   try {
-    const { address } = JSON.parse(event.body);
+    return JSON.parse(body);
+  } catch (error) {
+    throw new Error('Invalid JSON in request body');
+  }
+};
 
-    if (!address) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Address is required'
-        })
-      };
+// Helper function to sanitize string inputs
+const sanitizeString = (value, maxLength = 500) => {
+  if (typeof value !== 'string') return '';
+  return value.trim().substring(0, maxLength);
+};
+
+// Helper function to create HTTP errors
+const httpError = (statusCode, message, details = {}) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.details = details;
+  return error;
+};
+
+export const handler = async (event, context) => {
+  try {
+    // Handle CORS preflight
+    if (event.httpMethod === 'OPTIONS') {
+      return { statusCode: 200, headers: buildHeaders(), body: '' };
     }
 
+    if (event.httpMethod !== 'POST') {
+      throw httpError(405, 'Method not allowed');
+    }
+
+    // Validate environment
     if (!googleMapsApiKey) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Google Maps API key not configured'
-        })
-      };
+      throw httpError(500, 'Google Maps API key not configured');
     }
 
+    // Parse and validate input
+    const { address } = parseRequestBody(event.body);
+    
+    if (!address || typeof address !== 'string') {
+      throw httpError(400, 'Address is required and must be a string');
+    }
+
+    const sanitizedAddress = sanitizeString(address, 500);
+    if (!sanitizedAddress) {
+      throw httpError(400, 'Valid address is required');
+    }
+    
     // Call Google Geocoding API
-    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsApiKey}`;
+    const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(sanitizedAddress)}&key=${googleMapsApiKey}`;
     
     const response = await fetch(geocodeUrl);
+    
+    if (!response.ok) {
+      throw httpError(502, 'Google Maps API request failed', { 
+        status: response.status, 
+        statusText: response.statusText 
+      });
+    }
+    
     const data = await response.json();
 
     if (data.status === 'OK' && data.results.length > 0) {
@@ -101,47 +133,46 @@ export const handler = async (event, context) => {
         viewport: result.geometry.viewport || null
       };
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          data: geocodeResult
-        })
-      };
+      return respond({
+        success: true,
+        data: geocodeResult
+      });
     }
 
     if (data.status === 'ZERO_RESULTS') {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Address not found'
-        })
-      };
+      throw httpError(404, 'Address not found');
     }
 
     // Handle other API errors
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        message: `Geocoding failed: ${data.status}`,
-        error: data.error_message || 'Unknown error'
-      })
-    };
+    throw httpError(400, `Geocoding failed: ${data.status}`, {
+      apiError: data.error_message || 'Unknown error',
+      status: data.status
+    });
 
   } catch (error) {
     console.error('Geocoding error:', error);
+    
+    // Handle HTTP errors (from httpError helper)
+    if (error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: buildHeaders(),
+        body: JSON.stringify({
+          success: false,
+          message: error.message,
+          ...(error.details && process.env.NODE_ENV === 'development' && { details: error.details })
+        })
+      };
+    }
+    
+    // Handle unexpected errors
     return {
       statusCode: 500,
-      headers,
+      headers: buildHeaders(),
       body: JSON.stringify({
         success: false,
         message: 'Geocoding failed',
-        error: error.message
+        ...(process.env.NODE_ENV === 'development' && { error: error.message })
       })
     };
   }

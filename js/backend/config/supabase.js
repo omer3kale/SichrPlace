@@ -1,27 +1,51 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-// Supabase configuration
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+let supabaseUrl = process.env.SUPABASE_URL;
+let supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 let supabase;
 let supabasePublic;
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
+const buildMockClient = () => {
+  const thenFn = () => {};
+
+  const limitFn = () => ({ then: thenFn });
+
+  const selectFn = () => ({ limit: limitFn });
+
+  const fromFn = () => ({ select: selectFn });
+
+  return { from: fromFn };
+};
+
+const handleMissingConfig = (env, exitFn) => {
   console.error('❌ Missing Supabase configuration');
   console.log('Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your .env file');
-  if (process.env.NODE_ENV === 'test' || process.env.PRE_FLIGHT === 'true') {
-    // Provide a lightweight mock so the rest of the app can load for preflight checks.
-    const mock = () => ({ select: () => ({ then: () => {} }) });
-    supabase = { from: () => ({ select: () => ({ limit: () => ({ then: () => {} }) }) }) };
-    supabasePublic = supabase;
-  } else {
-    process.exit(1);
+
+  if (env.NODE_ENV === 'test' || env.PRE_FLIGHT === 'true') {
+    const mockClient = buildMockClient();
+    supabase = mockClient;
+    supabasePublic = mockClient;
+    return { supabase, supabasePublic, usedMock: true, exited: false };
   }
-} else {
-  // Create Supabase client with service role for backend operations
+
+  exitFn(1);
+  supabase = undefined;
+  supabasePublic = undefined;
+  return { supabase, supabasePublic, usedMock: false, exited: true };
+};
+
+const initializeSupabase = (env = process.env, exitFn = process.exit) => {
+  supabaseUrl = env.SUPABASE_URL;
+  supabaseServiceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  supabaseAnonKey = env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    return handleMissingConfig(env, exitFn);
+  }
+
   supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
       autoRefreshToken: false,
@@ -29,23 +53,27 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
     }
   });
 
-  // Create public client for frontend operations
   supabasePublic = createClient(supabaseUrl, supabaseAnonKey || supabaseServiceRoleKey);
-}
+  return { supabase, supabasePublic, usedMock: false, exited: false };
+};
 
-// (Replaced by conditional initialization above)
+initializeSupabase();
 
-// Test connection
 const testConnection = async () => {
   try {
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      // In preflight mode treat missing config as soft-fail
+    if (!supabaseUrl || !supabaseServiceRoleKey || !supabase) {
       return false;
     }
-    const { error } = await supabase.from('users').select('count').limit(1);
-    if (error && error.code !== 'PGRST116') { // table missing is acceptable during early migrations
+
+    const { error } = await supabase
+      .from('users')
+      .select('count')
+      .limit(1);
+
+    if (error && error.code !== 'PGRST116') {
       throw error;
     }
+
     console.log('✅ Supabase connection successful');
     return true;
   } catch (err) {
@@ -55,7 +83,16 @@ const testConnection = async () => {
 };
 
 module.exports = {
-  supabase,
-  supabasePublic,
-  testConnection
+  initializeSupabase,
+  testConnection,
+  get supabase() {
+    return supabase;
+  },
+  get supabasePublic() {
+    return supabasePublic;
+  },
+  __internal: {
+    buildMockClient,
+    handleMissingConfig
+  }
 };

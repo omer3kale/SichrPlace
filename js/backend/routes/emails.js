@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const EmailService = require('../services/emailService');
 const ViewingRequestService = require('../services/ViewingRequestService');
-const UserService = require('../services/UserService');
+const { supabase } = require('../config/supabase');
+const { logEmailActivity } = require('../services/EmailLogService');
 
 // Initialize email service
 const emailService = new EmailService();
@@ -11,32 +12,6 @@ const emailService = new EmailService();
  * Email Activity Logging Function
  * Logs email activities for tracking and audit purposes
  */
-async function logEmailActivity(userEmail, emailType, messageId, requestId = null) {
-    try {
-        // Create log entry
-        const logEntry = {
-            userEmail,
-            emailType,
-            messageId,
-            requestId,
-            sentAt: new Date(),
-            status: 'sent'
-        };
-
-        // You can implement database logging here
-        // For now, we'll use console logging
-        console.log('📧 Email Activity Logged:', logEntry);
-        
-        // TODO: Implement database logging
-        // await EmailActivity.create(logEntry);
-        
-        return { success: true, logEntry };
-    } catch (error) {
-        console.error('Failed to log email activity:', error);
-        return { success: false, error: error.message };
-    }
-}
-
 /**
  * Email Flow Integration for SichrPlace Viewing Requests
  * Handles all three email stages of the viewing process
@@ -151,7 +126,13 @@ router.post('/send-request-confirmation', async (req, res) => {
         if (emailResult.success) {
             // Log email sent in database
             try {
-                await logEmailActivity(userEmail, 'request_confirmation', emailResult.messageId, userData.requestId);
+                await logEmailActivity({
+                    recipientEmail: userEmail,
+                    emailType: 'request_confirmation',
+                    subject: emailResult.subject,
+                    messageId: emailResult.messageId,
+                    viewingRequestId: userData.requestId
+                });
             } catch (logError) {
                 console.warn('Failed to log email activity:', logError.message);
             }
@@ -206,20 +187,35 @@ router.post('/send-viewing-confirmation', async (req, res) => {
             // Update viewing request status
             try {
                 if (userData.requestId) {
-                    await ViewingRequest.findByIdAndUpdate(userData.requestId, {
-                        status: 'payment_pending',
-                        viewerAssigned: viewerData.name,
-                        paymentLink: paymentData.paymentLink,
-                        emailSent: {
-                            viewingConfirmation: {
-                                sentAt: new Date(),
-                                messageId: emailResult.messageId
-                            }
+                    const updates = {
+                        status: 'payment_required',
+                        payment_status: paymentData?.status || 'pending',
+                        payment_id: paymentData?.paymentId || paymentData?.paypalOrderId || null,
+                        booking_fee: paymentData?.amount ? Number(paymentData.amount) : undefined,
+                        notes: [
+                            viewerData?.name ? `Viewer assigned: ${viewerData.name}` : null,
+                            paymentData?.paymentLink ? `Payment link: ${paymentData.paymentLink}` : null
+                        ]
+                        .filter(Boolean)
+                        .join(' | ') || undefined
+                    };
+
+                    Object.keys(updates).forEach((key) => {
+                        if (updates[key] === undefined || updates[key] === null || updates[key] === '') {
+                            delete updates[key];
                         }
                     });
+
+                    await ViewingRequestService.update(userData.requestId, updates);
                 }
 
-                await logEmailActivity(userEmail, 'viewing_confirmation', emailResult.messageId, userData.requestId);
+                await logEmailActivity({
+                    recipientEmail: userEmail,
+                    emailType: 'viewing_confirmation',
+                    subject: emailResult.subject,
+                    messageId: emailResult.messageId,
+                    viewingRequestId: userData.requestId
+                });
             } catch (updateError) {
                 console.warn('Failed to update viewing request:', updateError.message);
             }
@@ -273,19 +269,32 @@ router.post('/send-viewing-results', async (req, res) => {
             // Update viewing request status to completed
             try {
                 if (userData.requestId) {
-                    await ViewingRequest.findByIdAndUpdate(userData.requestId, {
+                    const updates = {
                         status: 'completed',
-                        resultsDelivered: true,
-                        videoLink: resultsData.videoLink,
-                        completedAt: new Date(),
-                        'emailSent.viewingResults': {
-                            sentAt: new Date(),
-                            messageId: emailResult.messageId
+                        notes: [
+                            resultsData?.videoLink ? `Video: ${resultsData.videoLink}` : null,
+                            resultsData?.summary ? `Summary: ${resultsData.summary}` : null
+                        ]
+                        .filter(Boolean)
+                        .join(' | ') || undefined
+                    };
+
+                    Object.keys(updates).forEach((key) => {
+                        if (updates[key] === undefined || updates[key] === null || updates[key] === '') {
+                            delete updates[key];
                         }
                     });
+
+                    await ViewingRequestService.update(userData.requestId, updates);
                 }
 
-                await logEmailActivity(userEmail, 'viewing_results', emailResult.messageId, userData.requestId);
+                await logEmailActivity({
+                    recipientEmail: userEmail,
+                    emailType: 'viewing_results',
+                    subject: emailResult.subject,
+                    messageId: emailResult.messageId,
+                    viewingRequestId: userData.requestId
+                });
             } catch (updateError) {
                 console.warn('Failed to update viewing request:', updateError.message);
             }
@@ -339,20 +348,29 @@ router.post('/send-payment-confirmation', async (req, res) => {
             // Update viewing request status to payment confirmed
             try {
                 if (userData.requestId) {
-                    await ViewingRequest.findByIdAndUpdate(userData.requestId, {
-                        status: 'payment_confirmed',
-                        paymentConfirmed: true,
-                        transactionId: paymentData.transactionId,
-                        emailSent: {
-                            paymentConfirmation: {
-                                sentAt: new Date(),
-                                messageId: emailResult.messageId
-                            }
+                    const updates = {
+                        status: 'approved',
+                        payment_status: paymentData?.status || 'paid',
+                        payment_id: paymentData?.transactionId || paymentData?.paymentId || null,
+                        payment_amount: paymentData?.amount ? Number(paymentData.amount) : undefined
+                    };
+
+                    Object.keys(updates).forEach((key) => {
+                        if (updates[key] === undefined || updates[key] === null || updates[key] === '') {
+                            delete updates[key];
                         }
                     });
+
+                    await ViewingRequestService.update(userData.requestId, updates);
                 }
 
-                await logEmailActivity(userEmail, 'payment_confirmation', emailResult.messageId, userData.requestId);
+                await logEmailActivity({
+                    recipientEmail: userEmail,
+                    emailType: 'payment_confirmation',
+                    subject: emailResult.subject,
+                    messageId: emailResult.messageId,
+                    viewingRequestId: userData.requestId
+                });
             } catch (updateError) {
                 console.warn('Failed to update viewing request:', updateError.message);
             }
@@ -406,18 +424,29 @@ router.post('/send-viewing-reminder', async (req, res) => {
             // Update viewing request with reminder sent
             try {
                 if (userData.requestId) {
-                    await ViewingRequest.findByIdAndUpdate(userData.requestId, {
-                        reminderSent: true,
-                        emailSent: {
-                            viewingReminder: {
-                                sentAt: new Date(),
-                                messageId: emailResult.messageId
-                            }
+                    try {
+                        const existing = await ViewingRequestService.findById(userData.requestId);
+                        const noteParts = [];
+                        if (existing?.notes) {
+                            noteParts.push(existing.notes);
                         }
-                    });
+                        noteParts.push(`Reminder email sent ${new Date().toISOString()}`);
+
+                        await ViewingRequestService.update(userData.requestId, {
+                            notes: noteParts.join(' | ')
+                        });
+                    } catch (updateError) {
+                        console.warn('Failed to record reminder note:', updateError.message);
+                    }
                 }
 
-                await logEmailActivity(userEmail, 'viewing_reminder', emailResult.messageId, userData.requestId);
+                await logEmailActivity({
+                    recipientEmail: userEmail,
+                    emailType: 'viewing_reminder',
+                    subject: emailResult.subject,
+                    messageId: emailResult.messageId,
+                    viewingRequestId: userData.requestId
+                });
             } catch (updateError) {
                 console.warn('Failed to update viewing request:', updateError.message);
             }
@@ -473,7 +502,13 @@ router.get('/email-status/:requestId', async (req, res) => {
     try {
         const { requestId } = req.params;
         
-        const viewingRequest = await ViewingRequest.findById(requestId);
+        let viewingRequest = null;
+        try {
+            viewingRequest = await ViewingRequestService.findById(requestId);
+        } catch (serviceError) {
+            console.warn('Failed to fetch viewing request for email status:', serviceError.message);
+        }
+
         if (!viewingRequest) {
             return res.status(404).json({
                 success: false,
@@ -481,13 +516,71 @@ router.get('/email-status/:requestId', async (req, res) => {
             });
         }
 
+        const statusSummary = {
+            request_confirmation: null,
+            viewing_confirmation: null,
+            viewing_results: null,
+            payment_confirmation: null,
+            viewing_reminder: null
+        };
+
+        if (supabase && typeof supabase.from === 'function') {
+            const candidateFilters = [
+                { column: 'viewing_request_id', value: requestId },
+                { column: 'related_entity_id', value: requestId }
+            ];
+
+            const recipientEmail = viewingRequest.email || viewingRequest.requester_email;
+            if (recipientEmail) {
+                candidateFilters.push({ column: 'recipient_email', value: recipientEmail });
+            }
+
+            for (const filter of candidateFilters) {
+                try {
+                    const { data, error } = await supabase
+                        .from('email_logs')
+                        .select('email_type, status, sent_at, subject')
+                        .eq(filter.column, filter.value)
+                        .order('sent_at', { ascending: false })
+                        .limit(20);
+
+                    if (error) {
+                        console.warn(`Email status query failed for column ${filter.column}:`, error.message);
+                        continue;
+                    }
+
+                    if (Array.isArray(data)) {
+                        for (const log of data) {
+                            if (log?.email_type && statusSummary.hasOwnProperty(log.email_type) && !statusSummary[log.email_type]) {
+                                statusSummary[log.email_type] = {
+                                    status: log.status || 'sent',
+                                    sentAt: log.sent_at,
+                                    subject: log.subject
+                                };
+                            }
+                        }
+                        // If we've captured all statuses, no need for further queries
+                        const remaining = Object.values(statusSummary).filter((entry) => entry === null).length;
+                        if (remaining === 0) {
+                            break;
+                        }
+                    }
+                } catch (logError) {
+                    console.warn('Email status lookup error:', logError.message);
+                }
+            }
+        }
+
         res.json({
             success: true,
             emailStatus: {
-                requestConfirmation: viewingRequest.emailSent?.requestConfirmation || null,
-                viewingConfirmation: viewingRequest.emailSent?.viewingConfirmation || null,
-                viewingResults: viewingRequest.emailSent?.viewingResults || null
-            }
+                requestConfirmation: statusSummary.request_confirmation,
+                viewingConfirmation: statusSummary.viewing_confirmation,
+                viewingResults: statusSummary.viewing_results,
+                paymentConfirmation: statusSummary.payment_confirmation,
+                viewingReminder: statusSummary.viewing_reminder
+            },
+            viewingRequest
         });
     } catch (error) {
         res.status(500).json({

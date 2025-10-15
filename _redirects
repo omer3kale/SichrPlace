@@ -14,7 +14,11 @@
 /auth/forgot-password /.netlify/functions/auth-forgot-password 200
 /auth/reset-password /.netlify/functions/auth-reset-password 200
 /auth/verify /.netlify/functions/auth-verify 200
+/auth/resend-verification /.netlify/functions/auth-resend-verification 200
 /auth/me /.netlify/functions/auth-me 200
 
-# TEMPORARY: Removed catch-all redirect to test functions
+# SPA fallback - serve index.html for all non-API routes
+/* /index.html 200
+
+# TEMPORARY: Removed catch-all redirect to test functions  
 /api/* /.netlify/functions/:splat 200

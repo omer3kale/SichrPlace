@@ -1,4 +1,4 @@
-export const handler = async (event, context) => {
+export const handler = async (event, _context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -72,7 +72,7 @@ export const handler = async (event, context) => {
       const { action, log_data } = JSON.parse(event.body || '{}');
       
       switch (action) {
-        case 'add_log':
+        case 'add_log': {
           const logEntry = {
             timestamp: new Date().toISOString(),
             level: log_data.level,
@@ -81,7 +81,7 @@ export const handler = async (event, context) => {
             metadata: log_data.metadata || {},
             log_id: `log_${Date.now()}`
           };
-          
+
           return {
             statusCode: 201,
             headers,
@@ -91,8 +91,9 @@ export const handler = async (event, context) => {
               message: 'Log entry added successfully'
             })
           };
-          
-        case 'search_logs':
+        }
+
+        case 'search_logs': {
           const searchResults = {
             query: log_data.query,
             timeframe: log_data.timeframe,
@@ -100,7 +101,7 @@ export const handler = async (event, context) => {
             total_matches: 0,
             search_time: '45ms'
           };
-          
+
           return {
             statusCode: 200,
             headers,
@@ -110,8 +111,9 @@ export const handler = async (event, context) => {
               message: 'Log search completed'
             })
           };
-          
-        case 'export_logs':
+        }
+
+        case 'export_logs': {
           return {
             statusCode: 200,
             headers,
@@ -120,6 +122,17 @@ export const handler = async (event, context) => {
               export_url: `https://exports.sichrplace.netlify.app/logs_${Date.now()}.zip`,
               expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
               message: 'Log export initiated'
+            })
+          };
+        }
+
+        default:
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({
+              success: false,
+              message: 'Unsupported logging action'
             })
           };
       }

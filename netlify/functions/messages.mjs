@@ -1,166 +1,297 @@
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing Supabase environment variables');
+  throw new Error('Missing Supabase environment variables for messages function');
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
 
-// Helper function to verify JWT token
-const verifyToken = (token) => {
+const AVAILABLE_ACTIONS = [
+  'get_messages',
+  'send_message',
+  'update_message',
+  'delete_message',
+  'mark_as_read',
+  'get_message_details',
+  'upload_attachment',
+  'get_attachments',
+  'search_messages',
+  'get_message_history',
+  'react_to_message',
+  'get_message_reactions',
+  'forward_message',
+  'reply_to_message',
+];
+
+const buildHeaders = () => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Authorization',
+});
+
+const respond = (statusCode, payload) => ({
+  statusCode,
+  headers: buildHeaders(),
+  body: JSON.stringify(payload),
+});
+
+const getHeader = (headers = {}, name) => {
+  const target = name.toLowerCase();
+  const entry = Object.entries(headers || {}).find(([key]) => key.toLowerCase() === target);
+  return entry ? entry[1] : null;
+};
+
+const extractBearerToken = (headers) => {
+  const value = getHeader(headers, 'authorization');
+  if (!value) return null;
+  const parts = value.trim().split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
+  return parts[1];
+};
+
+const parseRequestBody = (body) => {
+  if (!body) return {};
   try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_here');
+    if (typeof body === 'object') {
+      return body;
+    }
+    return JSON.parse(body);
   } catch (error) {
-    return null;
+    throw httpError(400, 'Request body must be valid JSON');
   }
 };
 
-export const handler = async (event, context) => {
-  // Handle CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+const isUuid = (value) =>
+  typeof value === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const clampNumber = (value, { min, max, fallback }) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, parsed));
+};
+
+const sanitizeString = (value, { maxLength, allowEmpty = false } = {}) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!allowEmpty && trimmed.length === 0) return null;
+  if (maxLength && trimmed.length > maxLength) {
+    return trimmed.slice(0, maxLength);
+  }
+  return trimmed;
+};
+
+const httpError = (status, message, details = null) => {
+  const error = new Error(message);
+  error.status = status;
+  if (details) {
+    error.details = details;
+  }
+  return error;
+};
+
+// Standardized helper functions
+const isMissingTableError = (error) => {
+  return error && error.code === 'PGRST116';
+};
+
+const safeSelect = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Query failed`, error.message);
+  }
+};
+
+const safeInsert = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Table not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Insert failed`, error.message);
+  }
+};
+
+const safeUpdate = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Update failed`, error.message);
+  }
+};
+
+const safeDelete = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Delete failed`, error.message);
+  }
+};
+
+const getAuthContext = async (event, options = {}) => {
+  const token = extractBearerToken(event.headers || {});
+  if (!token) {
+    throw httpError(401, 'Authorization token is required');
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data?.user?.id) {
+    throw httpError(401, 'Invalid or expired token');
+  }
+
+  const { data: profile, error: profileError } = await safeSelect(
+    supabase
+      .from('profiles')
+      .select('id, email, role, status, account_status, is_blocked, is_admin, is_staff, notification_preferences')
+      .eq('id', data.user.id)
+      .single(),
+    'profiles',
+    'Failed to fetch user profile'
+  );
+
+  if (profileError) {
+    throw profileError;
+  }
+
+  if (!profile) {
+    throw httpError(403, 'User profile not found');
+  }
+
+  // Check if account is blocked or suspended
+  if (profile.is_blocked || ['suspended', 'deleted'].includes(profile.account_status) || profile.status === 'suspended') {
+    throw httpError(403, 'Account access restricted');
+  }
+
+  // Check role requirements
+  if (options.requireAdmin && !profile.is_admin) {
+    throw httpError(403, 'Admin access required');
+  }
+
+  return { user: data.user, profile, token };
+};
+
+// Authentication functions removed - using getAuthContext instead
+
+const buildActionDetails = () => ({ available_actions: AVAILABLE_ACTIONS });
+
+const ACTION_HANDLERS = {
+  get_messages: ({ userId, event }) =>
+    getMessages(userId, event.queryStringParameters),
+  send_message: ({ userId, event }) => sendMessage(userId, event.body),
+  update_message: ({ userId, event }) => updateMessage(userId, event.body),
+  delete_message: ({ userId, event }) => deleteMessage(userId, event.body),
+  mark_as_read: ({ userId, event }) => markAsRead(userId, event.body),
+  get_message_details: ({ userId, event }) =>
+    getMessageDetails(userId, event.queryStringParameters),
+  upload_attachment: ({ userId, event }) => uploadAttachment(userId, event.body),
+  get_attachments: ({ userId, event }) =>
+    getAttachments(userId, event.queryStringParameters),
+  search_messages: ({ userId, event }) =>
+    searchMessages(userId, event.queryStringParameters),
+  get_message_history: ({ userId, event }) =>
+    getMessageHistory(userId, event.queryStringParameters),
+  react_to_message: ({ userId, event }) => reactToMessage(userId, event.body),
+  get_message_reactions: ({ userId, event }) =>
+    getMessageReactions(userId, event.queryStringParameters),
+  forward_message: ({ userId, event }) => forwardMessage(userId, event.body),
+  reply_to_message: ({ userId, event }) => replyToMessage(userId, event.body),
+};
+
+export const handler = async (event) => {
+  console.log('Messages handler called:', {
+    method: event.httpMethod,
+    path: event.path,
+    action: event.queryStringParameters?.action
+  });
 
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return respond(200, '');
   }
 
   try {
-    const { action } = event.queryStringParameters || {};
-    
+    const action = sanitizeString(event.queryStringParameters?.action, {
+      maxLength: 64,
+      allowEmpty: false,
+    });
+
     if (!action) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Action parameter is required',
-          available_actions: [
-            'get_messages',
-            'send_message',
-            'update_message',
-            'delete_message',
-            'mark_as_read',
-            'get_message_details',
-            'upload_attachment',
-            'get_attachments',
-            'search_messages',
-            'get_message_history',
-            'react_to_message',
-            'get_message_reactions',
-            'forward_message',
-            'reply_to_message'
-          ]
-        })
-      };
+      throw httpError(400, 'Action parameter is required', buildActionDetails());
     }
 
-    // Get authentication
-    const authHeader = event.headers.authorization || event.headers.Authorization;
-    let user = null;
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      user = verifyToken(token);
-      
-      if (!user) {
-        return {
-          statusCode: 401,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            message: 'Invalid authentication token'
-          })
-        };
-      }
-    } else {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Authentication required'
-        })
-      };
+    const handlerFn = ACTION_HANDLERS[action];
+    if (!handlerFn) {
+      throw httpError(400, 'Invalid action specified', buildActionDetails());
     }
 
-    switch (action) {
-      case 'get_messages':
-        return await getMessages(user.id, event.queryStringParameters, headers);
-      
-      case 'send_message':
-        return await sendMessage(user.id, event.body, headers);
-      
-      case 'update_message':
-        return await updateMessage(user.id, event.body, headers);
-      
-      case 'delete_message':
-        return await deleteMessage(user.id, event.body, headers);
-      
-      case 'mark_as_read':
-        return await markAsRead(user.id, event.body, headers);
-      
-      case 'get_message_details':
-        return await getMessageDetails(user.id, event.queryStringParameters, headers);
-      
-      case 'upload_attachment':
-        return await uploadAttachment(user.id, event.body, headers);
-      
-      case 'get_attachments':
-        return await getAttachments(user.id, event.queryStringParameters, headers);
-      
-      case 'search_messages':
-        return await searchMessages(user.id, event.queryStringParameters, headers);
-      
-      case 'get_message_history':
-        return await getMessageHistory(user.id, event.queryStringParameters, headers);
-      
-      case 'react_to_message':
-        return await reactToMessage(user.id, event.body, headers);
-      
-      case 'get_message_reactions':
-        return await getMessageReactions(user.id, event.queryStringParameters, headers);
-      
-      case 'forward_message':
-        return await forwardMessage(user.id, event.body, headers);
-      
-      case 'reply_to_message':
-        return await replyToMessage(user.id, event.body, headers);
-      
-      default:
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            message: 'Invalid action specified'
-          })
-        };
-    }
+    const { profile } = await getAuthContext(event);
 
+    return await handlerFn({ userId: profile.id, event });
   } catch (error) {
-    console.error('Messages error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        message: 'Message operation failed',
-        error: error.message
-      })
+    console.error('Messages handler error:', error);
+
+    const status = error.status || 500;
+    const message = status === 500 ? 'Message operation failed' : error.message;
+    
+    const errorResponse = {
+      success: false,
+      error: message
     };
+
+    if (error.details && status !== 500) {
+      errorResponse.details = error.details;
+    }
+
+    if (status === 500 && process.env.NODE_ENV === 'development') {
+      errorResponse.details = error.details || error.message;
+    }
+
+    return respond(status, errorResponse);
   }
 };
 
 // Get messages from a conversation
-async function getMessages(userId, queryParams, headers) {
+async function getMessages(userId, queryParams) {
   try {
     const {
       conversation_id,
@@ -171,22 +302,20 @@ async function getMessages(userId, queryParams, headers) {
       message_type = 'all'
     } = queryParams || {};
 
-    if (!conversation_id) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Conversation ID is required'
-        })
-      };
+    const conversationId = sanitizeString(conversation_id, { maxLength: 36 });
+    if (!conversationId || !isUuid(conversationId)) {
+      throw httpError(400, 'Valid conversation ID is required');
     }
+
+    const safeLimit = clampNumber(limit, { min: 1, max: 100, fallback: 50 });
+    const safeOffset = clampNumber(offset, { min: 0, max: 5000, fallback: 0 });
+    const normalizedMessageType = sanitizeString(message_type, { maxLength: 30, allowEmpty: true }) || 'all';
 
     // Verify user is participant in conversation
     const { data: participation, error: participationError } = await supabase
       .from('conversation_participants')
       .select('id, last_read_at')
-      .eq('conversation_id', conversation_id)
+      .eq('conversation_id', conversationId)
       .eq('user_id', userId)
       .single();
 
@@ -230,22 +359,33 @@ async function getMessages(userId, queryParams, headers) {
           user:users!user_id(username, profile_image)
         )
       `)
-      .eq('conversation_id', conversation_id)
+      .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
-      .limit(parseInt(limit))
-      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+      .limit(safeLimit)
+      .range(safeOffset, safeOffset + safeLimit - 1);
 
     // Apply filters
-    if (message_type !== 'all') {
-      query = query.eq('message_type', message_type);
+    if (normalizedMessageType !== 'all') {
+      query = query.eq('message_type', normalizedMessageType);
     }
 
     if (before_message_id) {
+      const beforeId = sanitizeString(before_message_id, { maxLength: 36 });
+      if (!isUuid(beforeId)) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: 'Invalid before_message_id provided'
+          })
+        };
+      }
       // Get messages before a specific message (pagination)
       const { data: beforeMessage, error: beforeError } = await supabase
         .from('messages')
         .select('created_at')
-        .eq('id', before_message_id)
+        .eq('id', beforeId)
         .single();
 
       if (!beforeError && beforeMessage) {
@@ -254,11 +394,22 @@ async function getMessages(userId, queryParams, headers) {
     }
 
     if (after_message_id) {
+      const afterId = sanitizeString(after_message_id, { maxLength: 36 });
+      if (!isUuid(afterId)) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: 'Invalid after_message_id provided'
+          })
+        };
+      }
       // Get messages after a specific message
       const { data: afterMessage, error: afterError } = await supabase
         .from('messages')
         .select('created_at')
-        .eq('id', after_message_id)
+        .eq('id', afterId)
         .single();
 
       if (!afterError && afterMessage) {
@@ -301,9 +452,9 @@ async function getMessages(userId, queryParams, headers) {
           messages: messagesWithReadStatus,
           total_fetched: messagesWithReadStatus.length,
           pagination: {
-            offset: parseInt(offset),
-            limit: parseInt(limit),
-            has_more: messagesWithReadStatus.length === parseInt(limit)
+            offset: safeOffset,
+            limit: safeLimit,
+            has_more: messagesWithReadStatus.length === safeLimit
           }
         }
       })
@@ -325,16 +476,77 @@ async function sendMessage(userId, requestBody, headers) {
       parent_message_id,
       attachments = [],
       metadata = {}
-    } = JSON.parse(requestBody);
+    } = parseRequestBody(requestBody);
 
-    if (!conversation_id || (!content && attachments.length === 0)) {
+    const conversationId = sanitizeString(conversation_id, { maxLength: 36 });
+    if (!conversationId || !isUuid(conversationId)) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Conversation ID and content (or attachments) are required'
+          message: 'Valid conversation ID is required'
         })
+      };
+    }
+
+    const normalizedMessageType = (sanitizeString(message_type, { maxLength: 30, allowEmpty: true }) || 'text').toLowerCase();
+    const allowedMessageTypes = new Set([
+      'text',
+      'image',
+      'file',
+      'system',
+      'video',
+      'audio',
+      'location',
+      'gif',
+      'voice',
+      'sticker',
+    ]);
+    const safeMessageType = allowedMessageTypes.has(normalizedMessageType)
+      ? normalizedMessageType
+      : 'text';
+
+    const hasAttachmentArray = Array.isArray(attachments);
+    const safeContent = sanitizeString(content, {
+      maxLength: 5000,
+      allowEmpty: hasAttachmentArray && attachments.length > 0,
+    });
+
+    const safeAttachments = hasAttachmentArray
+      ? attachments
+          .slice(0, 10)
+          .map((item) => {
+            const fileUrl = sanitizeString(item?.file_url, { maxLength: 2048 });
+            const fileName = sanitizeString(item?.file_name, { maxLength: 255 });
+            const fileType = sanitizeString(item?.file_type, { maxLength: 120, allowEmpty: true }) || null;
+            const thumbnailUrl = sanitizeString(item?.thumbnail_url, { maxLength: 2048, allowEmpty: true });
+            const fileSizeNumber = Number.parseInt(item?.file_size, 10);
+            const fileSize = Number.isFinite(fileSizeNumber) && fileSizeNumber >= 0 ? fileSizeNumber : null;
+
+            return fileUrl && fileName
+              ? {
+                  file_url: fileUrl,
+                  file_name: fileName,
+                  file_type: fileType,
+                  file_size: fileSize,
+                  thumbnail_url: thumbnailUrl,
+                }
+              : null;
+          })
+          .filter(Boolean)
+      : [];
+
+    const safeMetadata = metadata && typeof metadata === 'object' && !Array.isArray(metadata) ? metadata : {};
+
+    if (!safeContent && safeAttachments.length === 0) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Message content or attachments are required',
+        }),
       };
     }
 
@@ -342,7 +554,7 @@ async function sendMessage(userId, requestBody, headers) {
     const { data: participation, error: participationError } = await supabase
       .from('conversation_participants')
       .select('id, role, is_muted')
-      .eq('conversation_id', conversation_id)
+      .eq('conversation_id', conversationId)
       .eq('user_id', userId)
       .single();
 
@@ -361,7 +573,7 @@ async function sendMessage(userId, requestBody, headers) {
     const { data: conversation, error: conversationError } = await supabase
       .from('conversations')
       .select('status')
-      .eq('id', conversation_id)
+      .eq('id', conversationId)
       .single();
 
     if (conversationError || !conversation || conversation.status !== 'active') {
@@ -381,7 +593,7 @@ async function sendMessage(userId, requestBody, headers) {
         .from('messages')
         .select('id, conversation_id')
         .eq('id', parent_message_id)
-        .eq('conversation_id', conversation_id)
+        .eq('conversation_id', conversationId)
         .single();
 
       if (parentError || !parentMessage) {
@@ -398,16 +610,20 @@ async function sendMessage(userId, requestBody, headers) {
 
     // Create message
     const messageData = {
-      conversation_id,
+      conversation_id: conversationId,
       sender_id: userId,
       parent_message_id: parent_message_id || null,
-      content: content || '',
-      message_type,
+      message_type: safeMessageType,
       status: 'sent',
-      metadata,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
+    messageData.content = safeContent || '';
+
+    if (Object.keys(safeMetadata).length > 0) {
+      messageData.metadata = safeMetadata;
+    }
     const { data: message, error: messageError } = await supabase
       .from('messages')
       .insert(messageData)
@@ -429,8 +645,8 @@ async function sendMessage(userId, requestBody, headers) {
 
     // Handle attachments if provided
     const messageAttachments = [];
-    if (attachments.length > 0) {
-      for (const attachment of attachments) {
+    if (safeAttachments.length > 0) {
+      for (const attachment of safeAttachments) {
         const { data: attachmentRecord, error: attachmentError } = await supabase
           .from('message_attachments')
           .insert({
@@ -445,7 +661,7 @@ async function sendMessage(userId, requestBody, headers) {
           .select()
           .single();
 
-        if (!attachmentError) {
+        if (!attachmentError && attachmentRecord) {
           messageAttachments.push(attachmentRecord);
         }
       }
@@ -458,7 +674,7 @@ async function sendMessage(userId, requestBody, headers) {
         last_message_at: message.created_at,
         updated_at: new Date().toISOString()
       })
-      .eq('id', conversation_id);
+  .eq('id', conversationId);
 
     // Update sender's last read timestamp
     await supabase
@@ -467,7 +683,7 @@ async function sendMessage(userId, requestBody, headers) {
         last_read_at: message.created_at,
         updated_at: new Date().toISOString()
       })
-      .eq('conversation_id', conversation_id)
+  .eq('conversation_id', conversationId)
       .eq('user_id', userId);
 
     // Log activity
@@ -476,8 +692,8 @@ async function sendMessage(userId, requestBody, headers) {
       .insert({
         user_id: userId,
         action: 'message_sent',
-        details: `Sent message in conversation ${conversation_id}`,
-        metadata: { conversation_id, message_id: message.id },
+        details: `Sent message in conversation ${conversationId}`,
+        metadata: { conversation_id: conversationId, message_id: message.id },
         created_at: new Date().toISOString()
       });
 
@@ -505,27 +721,25 @@ async function sendMessage(userId, requestBody, headers) {
 // Update message content
 async function updateMessage(userId, requestBody, headers) {
   try {
-    const {
-      message_id,
-      content
-    } = JSON.parse(requestBody);
+    const { message_id, content } = parseRequestBody(requestBody);
+    const messageId = sanitizeString(message_id, { maxLength: 36 });
+    const sanitizedContent = sanitizeString(content, { maxLength: 5000 });
 
-    if (!message_id || !content) {
+    if (!messageId || !isUuid(messageId) || !sanitizedContent) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message ID and content are required'
-        })
+          message: 'Valid message ID and non-empty content are required',
+        }),
       };
     }
 
-    // Verify user owns the message
     const { data: message, error: messageError } = await supabase
       .from('messages')
-      .select('*')
-      .eq('id', message_id)
+      .select('id, created_at')
+      .eq('id', messageId)
       .eq('sender_id', userId)
       .single();
 
@@ -535,35 +749,33 @@ async function updateMessage(userId, requestBody, headers) {
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message not found or access denied'
-        })
+          message: 'Message not found or access denied',
+        }),
       };
     }
 
-    // Check if message can be edited (e.g., within time limit)
     const messageAge = Date.now() - new Date(message.created_at).getTime();
-    const editTimeLimit = 24 * 60 * 60 * 1000; // 24 hours
-
-    if (messageAge > editTimeLimit) {
+    const editTimeLimitMs = 24 * 60 * 60 * 1000;
+    if (messageAge > editTimeLimitMs) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message is too old to edit'
-        })
+          message: 'Message is too old to edit',
+        }),
       };
     }
 
-    // Update message
     const { data: updatedMessage, error: updateError } = await supabase
       .from('messages')
       .update({
-        content,
+        content: sanitizedContent,
         edited_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        status: 'edited',
       })
-      .eq('id', message_id)
+      .eq('id', messageId)
       .select(`
         *,
         sender:users!sender_id(
@@ -582,8 +794,8 @@ async function updateMessage(userId, requestBody, headers) {
       body: JSON.stringify({
         success: true,
         message: 'Message updated successfully',
-        data: updatedMessage
-      })
+        data: updatedMessage,
+      }),
     };
 
   } catch (error) {
@@ -595,27 +807,27 @@ async function updateMessage(userId, requestBody, headers) {
 // Delete message
 async function deleteMessage(userId, requestBody, headers) {
   try {
-    const {
-      message_id,
-      delete_for_everyone = false
-    } = JSON.parse(requestBody);
+    const { message_id, delete_for_everyone } = parseRequestBody(requestBody);
+    const messageId = sanitizeString(message_id, { maxLength: 36 });
+    const deleteForEveryone = typeof delete_for_everyone === 'string'
+      ? delete_for_everyone.toLowerCase() === 'true'
+      : Boolean(delete_for_everyone);
 
-    if (!message_id) {
+    if (!messageId || !isUuid(messageId)) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message ID is required'
-        })
+          message: 'Valid message ID is required',
+        }),
       };
     }
 
-    // Verify user owns the message
     const { data: message, error: messageError } = await supabase
       .from('messages')
-      .select('*')
-      .eq('id', message_id)
+      .select('id, conversation_id, sender_id, status, created_at')
+      .eq('id', messageId)
       .eq('sender_id', userId)
       .single();
 
@@ -625,32 +837,31 @@ async function deleteMessage(userId, requestBody, headers) {
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message not found or access denied'
-        })
+          message: 'Message not found or access denied',
+        }),
       };
     }
 
-    if (delete_for_everyone) {
-      // Hard delete the message
+    if (deleteForEveryone) {
       const { error: deleteError } = await supabase
         .from('messages')
         .delete()
-        .eq('id', message_id);
+        .eq('id', messageId);
 
       if (deleteError) {
         throw deleteError;
       }
     } else {
-      // Soft delete - mark as deleted
+      const nowIso = new Date().toISOString();
       const { error: updateError } = await supabase
         .from('messages')
         .update({
           status: 'deleted',
           content: '[Message deleted]',
-          deleted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          deleted_at: nowIso,
+          updated_at: nowIso,
         })
-        .eq('id', message_id);
+        .eq('id', messageId);
 
       if (updateError) {
         throw updateError;
@@ -664,11 +875,11 @@ async function deleteMessage(userId, requestBody, headers) {
         success: true,
         message: 'Message deleted successfully',
         data: {
-          message_id,
-          deleted_for_everyone: delete_for_everyone,
-          deleted_at: new Date().toISOString()
-        }
-      })
+          message_id: messageId,
+          deleted_for_everyone: deleteForEveryone,
+          deleted_at: new Date().toISOString(),
+        },
+      }),
     };
 
   } catch (error) {
@@ -680,48 +891,79 @@ async function deleteMessage(userId, requestBody, headers) {
 // Mark messages as read
 async function markAsRead(userId, requestBody, headers) {
   try {
-    const {
-      conversation_id,
-      message_id
-    } = JSON.parse(requestBody);
+    const { conversation_id, message_id } = parseRequestBody(requestBody);
+    const conversationId = sanitizeString(conversation_id, { maxLength: 36 });
+    const messageId = sanitizeString(message_id, { maxLength: 36, allowEmpty: true });
 
-    if (!conversation_id) {
+    if (!conversationId || !isUuid(conversationId)) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Conversation ID is required'
-        })
+          message: 'Valid conversation ID is required',
+        }),
+      };
+    }
+
+    if (messageId && !isUuid(messageId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Invalid message ID provided',
+        }),
+      };
+    }
+
+    const { data: participation, error: participationError } = await supabase
+      .from('conversation_participants')
+      .select('id')
+      .eq('conversation_id', conversationId)
+      .eq('user_id', userId)
+      .single();
+
+    if (participationError || !participation) {
+      return {
+        statusCode: 403,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Access denied or conversation not found',
+        }),
       };
     }
 
     let readTimestamp = new Date().toISOString();
 
-    // If specific message ID provided, use its timestamp
-    if (message_id) {
+    if (messageId) {
       const { data: message, error: messageError } = await supabase
         .from('messages')
         .select('created_at')
-        .eq('id', message_id)
-        .eq('conversation_id', conversation_id)
+        .eq('id', messageId)
+        .eq('conversation_id', conversationId)
         .single();
 
-      if (!messageError && message) {
+      if (messageError && messageError.code !== 'PGRST116') {
+        throw messageError;
+      }
+
+      if (message) {
         readTimestamp = message.created_at;
       }
     }
 
-    // Update user's last read timestamp
+    const nowIso = new Date().toISOString();
     const { data: updatedParticipation, error: updateError } = await supabase
       .from('conversation_participants')
       .update({
         last_read_at: readTimestamp,
-        updated_at: new Date().toISOString()
+        updated_at: nowIso,
       })
-      .eq('conversation_id', conversation_id)
+      .eq('conversation_id', conversationId)
       .eq('user_id', userId)
-      .select()
+      .select('conversation_id, user_id, last_read_at')
       .single();
 
     if (updateError) {
@@ -735,10 +977,10 @@ async function markAsRead(userId, requestBody, headers) {
         success: true,
         message: 'Messages marked as read',
         data: {
-          conversation_id,
-          last_read_at: readTimestamp
-        }
-      })
+          conversation_id: conversationId,
+          last_read_at: updatedParticipation?.last_read_at || readTimestamp,
+        },
+      }),
     };
 
   } catch (error) {
@@ -750,20 +992,20 @@ async function markAsRead(userId, requestBody, headers) {
 // Get detailed message information
 async function getMessageDetails(userId, queryParams, headers) {
   try {
-    const { message_id } = queryParams || {};
+    const rawMessageId = queryParams?.message_id;
+    const messageId = sanitizeString(rawMessageId, { maxLength: 36 });
 
-    if (!message_id) {
+    if (!messageId || !isUuid(messageId)) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message ID is required'
-        })
+          message: 'Valid message ID is required',
+        }),
       };
     }
 
-    // Get message with full details
     const { data: message, error: messageError } = await supabase
       .from('messages')
       .select(`
@@ -784,14 +1026,23 @@ async function getMessageDetails(userId, queryParams, headers) {
           id, title, type, status
         )
       `)
-      .eq('id', message_id)
+      .eq('id', messageId)
       .single();
 
-    if (messageError) {
-      throw messageError;
+    if (messageError || !message) {
+      if (messageError?.code === 'PGRST116') {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: 'Message not found',
+          }),
+        };
+      }
+      throw messageError || new Error('Message not found');
     }
 
-    // Verify user has access to this message
     const { data: participation, error: participationError } = await supabase
       .from('conversation_participants')
       .select('id')
@@ -805,8 +1056,8 @@ async function getMessageDetails(userId, queryParams, headers) {
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Access denied'
-        })
+          message: 'Access denied',
+        }),
       };
     }
 
@@ -817,7 +1068,7 @@ async function getMessageDetails(userId, queryParams, headers) {
         id, content, created_at,
         sender:users!sender_id(username, profile_image)
       `)
-      .eq('parent_message_id', message_id)
+      .eq('parent_message_id', messageId)
       .order('created_at', { ascending: true });
 
     if (repliesError) {
@@ -855,25 +1106,32 @@ async function uploadAttachment(userId, requestBody, headers) {
       file_name,
       file_type,
       file_size,
-      thumbnail_url
-    } = JSON.parse(requestBody);
+      thumbnail_url,
+    } = parseRequestBody(requestBody);
 
-    if (!message_id || !file_url || !file_name) {
+    const messageId = sanitizeString(message_id, { maxLength: 36 });
+    const fileUrl = sanitizeString(file_url, { maxLength: 2048 });
+    const fileName = sanitizeString(file_name, { maxLength: 255 });
+    const fileType = sanitizeString(file_type, { maxLength: 120, allowEmpty: true }) || 'unknown';
+    const thumbnailUrl = sanitizeString(thumbnail_url, { maxLength: 2048, allowEmpty: true });
+    const fileSizeNumber = Number.parseInt(file_size, 10);
+    const safeFileSize = Number.isFinite(fileSizeNumber) && fileSizeNumber >= 0 ? fileSizeNumber : 0;
+
+    if (!messageId || !isUuid(messageId) || !fileUrl || !fileName) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message ID, file URL and file name are required'
-        })
+          message: 'Valid message ID, file URL, and file name are required',
+        }),
       };
     }
 
-    // Verify user owns the message
     const { data: message, error: messageError } = await supabase
       .from('messages')
-      .select('sender_id, conversation_id')
-      .eq('id', message_id)
+      .select('id')
+      .eq('id', messageId)
       .eq('sender_id', userId)
       .single();
 
@@ -883,24 +1141,24 @@ async function uploadAttachment(userId, requestBody, headers) {
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message not found or access denied'
-        })
+          message: 'Message not found or access denied',
+        }),
       };
     }
 
-    // Create attachment record
+    const nowIso = new Date().toISOString();
     const { data: attachment, error: attachmentError } = await supabase
       .from('message_attachments')
       .insert({
-        message_id,
-        file_url,
-        file_name,
-        file_type: file_type || 'unknown',
-        file_size: file_size || 0,
-        thumbnail_url: thumbnail_url || null,
-        created_at: new Date().toISOString()
+        message_id: messageId,
+        file_url: fileUrl,
+        file_name: fileName,
+        file_type: fileType,
+        file_size: safeFileSize,
+        thumbnail_url: thumbnailUrl || null,
+        created_at: nowIso,
       })
-      .select()
+      .select('*')
       .single();
 
     if (attachmentError) {
@@ -913,8 +1171,8 @@ async function uploadAttachment(userId, requestBody, headers) {
       body: JSON.stringify({
         success: true,
         message: 'Attachment uploaded successfully',
-        data: attachment
-      })
+        data: attachment,
+      }),
     };
 
   } catch (error) {
@@ -931,26 +1189,53 @@ async function getAttachments(userId, queryParams, headers) {
       message_id,
       file_type,
       limit = '50',
-      offset = '0'
+      offset = '0',
     } = queryParams || {};
 
-    if (!conversation_id && !message_id) {
+    const conversationId = sanitizeString(conversation_id, { maxLength: 36, allowEmpty: true });
+    const messageId = sanitizeString(message_id, { maxLength: 36, allowEmpty: true });
+    const fileTypeFilter = sanitizeString(file_type, { maxLength: 120, allowEmpty: true });
+    const safeLimit = clampNumber(limit, { min: 1, max: 100, fallback: 50 });
+    const safeOffset = clampNumber(offset, { min: 0, max: 5000, fallback: 0 });
+
+    if (!conversationId && !messageId) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Conversation ID or Message ID is required'
-        })
+          message: 'Conversation ID or Message ID is required',
+        }),
       };
     }
 
-    // Verify user has access
-    if (conversation_id) {
+    if (conversationId && !isUuid(conversationId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Invalid conversation ID provided',
+        }),
+      };
+    }
+
+    if (messageId && !isUuid(messageId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Invalid message ID provided',
+        }),
+      };
+    }
+
+    if (conversationId) {
       const { data: participation, error: participationError } = await supabase
         .from('conversation_participants')
         .select('id')
-        .eq('conversation_id', conversation_id)
+        .eq('conversation_id', conversationId)
         .eq('user_id', userId)
         .single();
 
@@ -960,13 +1245,49 @@ async function getAttachments(userId, queryParams, headers) {
           headers,
           body: JSON.stringify({
             success: false,
-            message: 'Access denied'
-          })
+            message: 'Access denied',
+          }),
         };
       }
     }
 
-    // Build query for attachments
+    if (messageId && !conversationId) {
+      const { data: message, error: messageError } = await supabase
+        .from('messages')
+        .select('conversation_id')
+        .eq('id', messageId)
+        .single();
+
+      if (messageError || !message) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: 'Message not found',
+          }),
+        };
+      }
+
+      const { data: participation, error: participationError } = await supabase
+        .from('conversation_participants')
+        .select('id')
+        .eq('conversation_id', message.conversation_id)
+        .eq('user_id', userId)
+        .single();
+
+      if (participationError || !participation) {
+        return {
+          statusCode: 403,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            message: 'Access denied',
+          }),
+        };
+      }
+    }
+
     let query = supabase
       .from('message_attachments')
       .select(`
@@ -977,19 +1298,18 @@ async function getAttachments(userId, queryParams, headers) {
         )
       `)
       .order('created_at', { ascending: false })
-      .limit(parseInt(limit))
-      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+      .range(safeOffset, safeOffset + safeLimit - 1);
 
-    if (conversation_id) {
-      query = query.eq('message.conversation_id', conversation_id);
+    if (conversationId) {
+      query = query.eq('message.conversation_id', conversationId);
     }
 
-    if (message_id) {
-      query = query.eq('message_id', message_id);
+    if (messageId) {
+      query = query.eq('message_id', messageId);
     }
 
-    if (file_type) {
-      query = query.eq('file_type', file_type);
+    if (fileTypeFilter) {
+      query = query.eq('file_type', fileTypeFilter);
     }
 
     const { data: attachments, error: attachmentsError } = await query;
@@ -1005,9 +1325,9 @@ async function getAttachments(userId, queryParams, headers) {
         success: true,
         data: {
           attachments: attachments || [],
-          total_fetched: attachments?.length || 0
-        }
-      })
+          total_fetched: attachments?.length || 0,
+        },
+      }),
     };
 
   } catch (error) {
@@ -1027,21 +1347,51 @@ async function searchMessages(userId, queryParams, headers) {
       start_date,
       end_date,
       limit = '50',
-      offset = '0'
+      offset = '0',
     } = queryParams || {};
 
-    if (!searchQuery.trim()) {
+    const sanitizedQuery = sanitizeString(searchQuery, { maxLength: 500 });
+    const conversationId = sanitizeString(conversation_id, { maxLength: 36, allowEmpty: true });
+    const senderId = sanitizeString(sender_id, { maxLength: 36, allowEmpty: true });
+    const messageTypeFilter = sanitizeString(message_type, { maxLength: 30, allowEmpty: true });
+    const safeLimit = clampNumber(limit, { min: 1, max: 100, fallback: 50 });
+    const safeOffset = clampNumber(offset, { min: 0, max: 5000, fallback: 0 });
+    const startDateSanitized = sanitizeString(start_date, { maxLength: 30, allowEmpty: true });
+    const endDateSanitized = sanitizeString(end_date, { maxLength: 30, allowEmpty: true });
+
+    if (!sanitizedQuery) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Search query is required'
-        })
+          message: 'Search query is required',
+        }),
       };
     }
 
-    // Build search query
+    if (conversationId && !isUuid(conversationId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Invalid conversation ID provided',
+        }),
+      };
+    }
+
+    if (senderId && !isUuid(senderId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Invalid sender ID provided',
+        }),
+      };
+    }
+
     let query = supabase
       .from('messages')
       .select(`
@@ -1055,30 +1405,28 @@ async function searchMessages(userId, queryParams, headers) {
         )
       `)
       .eq('conversation.conversation_participants.user_id', userId)
-      .ilike('content', `%${searchQuery}%`)
+      .ilike('content', `%${sanitizedQuery}%`)
       .order('created_at', { ascending: false })
-      .limit(parseInt(limit))
-      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+      .range(safeOffset, safeOffset + safeLimit - 1);
 
-    // Apply filters
-    if (conversation_id) {
-      query = query.eq('conversation_id', conversation_id);
+    if (conversationId) {
+      query = query.eq('conversation_id', conversationId);
     }
 
-    if (sender_id) {
-      query = query.eq('sender_id', sender_id);
+    if (senderId) {
+      query = query.eq('sender_id', senderId);
     }
 
-    if (message_type) {
-      query = query.eq('message_type', message_type);
+    if (messageTypeFilter) {
+      query = query.eq('message_type', messageTypeFilter);
     }
 
-    if (start_date) {
-      query = query.gte('created_at', start_date);
+    if (startDateSanitized) {
+      query = query.gte('created_at', startDateSanitized);
     }
 
-    if (end_date) {
-      query = query.lte('created_at', end_date);
+    if (endDateSanitized) {
+      query = query.lte('created_at', endDateSanitized);
     }
 
     const { data: messages, error: messagesError } = await query;
@@ -1094,10 +1442,10 @@ async function searchMessages(userId, queryParams, headers) {
         success: true,
         data: {
           messages: messages || [],
-          search_query: searchQuery,
-          total_results: messages?.length || 0
-        }
-      })
+          search_query: sanitizedQuery,
+          total_results: messages?.length || 0,
+        },
+      }),
     };
 
   } catch (error) {
@@ -1109,20 +1457,20 @@ async function searchMessages(userId, queryParams, headers) {
 // Get message edit/delete history
 async function getMessageHistory(userId, queryParams, headers) {
   try {
-    const { message_id } = queryParams || {};
+    const rawMessageId = queryParams?.message_id;
+    const messageId = sanitizeString(rawMessageId, { maxLength: 36 });
 
-    if (!message_id) {
+    if (!messageId || !isUuid(messageId)) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message ID is required'
-        })
+          message: 'Valid message ID is required',
+        }),
       };
     }
 
-    // Get message and verify access
     const { data: message, error: messageError } = await supabase
       .from('messages')
       .select(`
@@ -1131,7 +1479,7 @@ async function getMessageHistory(userId, queryParams, headers) {
           conversation_participants!inner(user_id)
         )
       `)
-      .eq('id', message_id)
+      .eq('id', messageId)
       .eq('conversation.conversation_participants.user_id', userId)
       .single();
 
@@ -1141,16 +1489,15 @@ async function getMessageHistory(userId, queryParams, headers) {
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message not found or access denied'
-        })
+          message: 'Message not found or access denied',
+        }),
       };
     }
 
-    // Get message history/audit logs
     const { data: history, error: historyError } = await supabase
       .from('message_audit_log')
       .select('*')
-      .eq('message_id', message_id)
+      .eq('message_id', messageId)
       .order('created_at', { ascending: false });
 
     if (historyError) {
@@ -1161,7 +1508,7 @@ async function getMessageHistory(userId, queryParams, headers) {
       message,
       history: history || [],
       has_been_edited: !!message.edited_at,
-      edit_count: history?.filter(h => h.action === 'edit').length || 0
+      edit_count: history?.filter((h) => h.action === 'edit').length || 0,
     };
 
     return {
@@ -1169,8 +1516,8 @@ async function getMessageHistory(userId, queryParams, headers) {
       headers,
       body: JSON.stringify({
         success: true,
-        data: messageHistory
-      })
+        data: messageHistory,
+      }),
     };
 
   } catch (error) {
@@ -1185,21 +1532,24 @@ async function reactToMessage(userId, requestBody, headers) {
     const {
       message_id,
       emoji,
-      action = 'add' // 'add' or 'remove'
-    } = JSON.parse(requestBody);
+      action = 'add',
+    } = parseRequestBody(requestBody);
 
-    if (!message_id || !emoji) {
+    const messageId = sanitizeString(message_id, { maxLength: 36 });
+    const sanitizedEmoji = sanitizeString(emoji, { maxLength: 16 });
+    const normalizedAction = sanitizeString(action, { maxLength: 10, allowEmpty: true })?.toLowerCase() || 'add';
+
+    if (!messageId || !isUuid(messageId) || !sanitizedEmoji) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message ID and emoji are required'
-        })
+          message: 'Valid message ID and emoji are required',
+        }),
       };
     }
 
-    // Verify user has access to the message
     const { data: message, error: messageError } = await supabase
       .from('messages')
       .select(`
@@ -1208,7 +1558,7 @@ async function reactToMessage(userId, requestBody, headers) {
           conversation_participants!inner(user_id)
         )
       `)
-      .eq('id', message_id)
+      .eq('id', messageId)
       .eq('conversation.conversation_participants.user_id', userId)
       .single();
 
@@ -1218,23 +1568,26 @@ async function reactToMessage(userId, requestBody, headers) {
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message not found or access denied'
-        })
+          message: 'Message not found or access denied',
+        }),
       };
     }
 
-    if (action === 'add') {
-      // Add reaction (or update if exists)
+    if (normalizedAction === 'add') {
+      const nowIso = new Date().toISOString();
       const { data: reaction, error: reactionError } = await supabase
         .from('message_reactions')
-        .upsert({
-          message_id,
-          user_id: userId,
-          emoji,
-          created_at: new Date().toISOString()
-        }, {
-          onConflict: 'message_id,user_id,emoji'
-        })
+        .upsert(
+          {
+            message_id: messageId,
+            user_id: userId,
+            emoji: sanitizedEmoji,
+            created_at: nowIso,
+          },
+          {
+            onConflict: 'message_id,user_id,emoji',
+          }
+        )
         .select(`
           *,
           user:users!user_id(username, profile_image)
@@ -1251,18 +1604,18 @@ async function reactToMessage(userId, requestBody, headers) {
         body: JSON.stringify({
           success: true,
           message: 'Reaction added successfully',
-          data: reaction
-        })
+          data: reaction,
+        }),
       };
+    }
 
-    } else if (action === 'remove') {
-      // Remove reaction
+    if (normalizedAction === 'remove') {
       const { error: removeError } = await supabase
         .from('message_reactions')
         .delete()
-        .eq('message_id', message_id)
+        .eq('message_id', messageId)
         .eq('user_id', userId)
-        .eq('emoji', emoji);
+        .eq('emoji', sanitizedEmoji);
 
       if (removeError) {
         throw removeError;
@@ -1273,8 +1626,8 @@ async function reactToMessage(userId, requestBody, headers) {
         headers,
         body: JSON.stringify({
           success: true,
-          message: 'Reaction removed successfully'
-        })
+          message: 'Reaction removed successfully',
+        }),
       };
     }
 
@@ -1283,8 +1636,8 @@ async function reactToMessage(userId, requestBody, headers) {
       headers,
       body: JSON.stringify({
         success: false,
-        message: 'Invalid action. Use "add" or "remove"'
-      })
+        message: 'Invalid action. Use "add" or "remove"',
+      }),
     };
 
   } catch (error) {
@@ -1296,20 +1649,20 @@ async function reactToMessage(userId, requestBody, headers) {
 // Get message reactions
 async function getMessageReactions(userId, queryParams, headers) {
   try {
-    const { message_id } = queryParams || {};
+    const rawMessageId = queryParams?.message_id;
+    const messageId = sanitizeString(rawMessageId, { maxLength: 36 });
 
-    if (!message_id) {
+    if (!messageId || !isUuid(messageId)) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message ID is required'
-        })
+          message: 'Valid message ID is required',
+        }),
       };
     }
 
-    // Verify user has access to the message
     const { data: message, error: messageError } = await supabase
       .from('messages')
       .select(`
@@ -1318,7 +1671,7 @@ async function getMessageReactions(userId, queryParams, headers) {
           conversation_participants!inner(user_id)
         )
       `)
-      .eq('id', message_id)
+      .eq('id', messageId)
       .eq('conversation.conversation_participants.user_id', userId)
       .single();
 
@@ -1328,12 +1681,11 @@ async function getMessageReactions(userId, queryParams, headers) {
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message not found or access denied'
-        })
+          message: 'Message not found or access denied',
+        }),
       };
     }
 
-    // Get all reactions for the message
     const { data: reactions, error: reactionsError } = await supabase
       .from('message_reactions')
       .select(`
@@ -1342,21 +1694,20 @@ async function getMessageReactions(userId, queryParams, headers) {
           id, username, full_name, profile_image
         )
       `)
-      .eq('message_id', message_id)
+      .eq('message_id', messageId)
       .order('created_at', { ascending: true });
 
     if (reactionsError) {
       throw reactionsError;
     }
 
-    // Group reactions by emoji
     const reactionsByEmoji = {};
-    reactions?.forEach(reaction => {
+    reactions?.forEach((reaction) => {
       if (!reactionsByEmoji[reaction.emoji]) {
         reactionsByEmoji[reaction.emoji] = {
           emoji: reaction.emoji,
           count: 0,
-          users: []
+          users: [],
         };
       }
       reactionsByEmoji[reaction.emoji].count++;
@@ -1371,9 +1722,9 @@ async function getMessageReactions(userId, queryParams, headers) {
         data: {
           reactions: reactions || [],
           reactions_by_emoji: reactionsByEmoji,
-          total_reactions: reactions?.length || 0
-        }
-      })
+          total_reactions: reactions?.length || 0,
+        },
+      }),
     };
 
   } catch (error) {
@@ -1388,21 +1739,24 @@ async function forwardMessage(userId, requestBody, headers) {
     const {
       message_id,
       target_conversation_id,
-      additional_message
-    } = JSON.parse(requestBody);
+      additional_message,
+    } = parseRequestBody(requestBody);
 
-    if (!message_id || !target_conversation_id) {
+    const messageId = sanitizeString(message_id, { maxLength: 36 });
+    const targetConversationId = sanitizeString(target_conversation_id, { maxLength: 36 });
+    const additionalMessage = sanitizeString(additional_message, { maxLength: 5000, allowEmpty: true });
+
+    if (!messageId || !isUuid(messageId) || !targetConversationId || !isUuid(targetConversationId)) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Message ID and target conversation ID are required'
-        })
+          message: 'Valid message ID and target conversation ID are required',
+        }),
       };
     }
 
-    // Verify user has access to both conversations
     const [sourceAccess, targetAccess] = await Promise.all([
       supabase
         .from('messages')
@@ -1412,16 +1766,15 @@ async function forwardMessage(userId, requestBody, headers) {
             conversation_participants!inner(user_id)
           )
         `)
-        .eq('id', message_id)
+        .eq('id', messageId)
         .eq('conversation.conversation_participants.user_id', userId)
         .single(),
-      
       supabase
         .from('conversation_participants')
         .select('id')
-        .eq('conversation_id', target_conversation_id)
+        .eq('conversation_id', targetConversationId)
         .eq('user_id', userId)
-        .single()
+        .single(),
     ]);
 
     if (sourceAccess.error || !sourceAccess.data || targetAccess.error || !targetAccess.data) {
@@ -1430,29 +1783,29 @@ async function forwardMessage(userId, requestBody, headers) {
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Access denied to source or target conversation'
-        })
+          message: 'Access denied to source or target conversation',
+        }),
       };
     }
 
     const originalMessage = sourceAccess.data;
+    const forwardedContent = `[Forwarded message]\n${originalMessage.content || ''}`.trim();
+    const nowIso = new Date().toISOString();
 
-    // Create forwarded message
-    const forwardedContent = `[Forwarded message]\n${originalMessage.content}`;
-    
     const { data: forwardedMessage, error: forwardError } = await supabase
       .from('messages')
       .insert({
-        conversation_id: target_conversation_id,
+        conversation_id: targetConversationId,
         sender_id: userId,
         content: forwardedContent,
         message_type: 'forwarded',
         metadata: {
-          original_message_id: message_id,
+          original_message_id: messageId,
           original_sender_id: originalMessage.sender_id,
-          forwarded_at: new Date().toISOString()
+          forwarded_at: nowIso,
         },
-        created_at: new Date().toISOString()
+        created_at: nowIso,
+        updated_at: nowIso,
       })
       .select(`
         *,
@@ -1464,27 +1817,26 @@ async function forwardMessage(userId, requestBody, headers) {
       throw forwardError;
     }
 
-    // Send additional message if provided
-    if (additional_message) {
+    if (additionalMessage) {
       await supabase
         .from('messages')
         .insert({
-          conversation_id: target_conversation_id,
+          conversation_id: targetConversationId,
           sender_id: userId,
-          content: additional_message,
+          content: additionalMessage,
           message_type: 'text',
-          created_at: new Date().toISOString()
+          created_at: nowIso,
+          updated_at: nowIso,
         });
     }
 
-    // Update target conversation timestamp
     await supabase
       .from('conversations')
       .update({
-        last_message_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        last_message_at: nowIso,
+        updated_at: nowIso,
       })
-      .eq('id', target_conversation_id);
+      .eq('id', targetConversationId);
 
     return {
       statusCode: 201,
@@ -1492,8 +1844,8 @@ async function forwardMessage(userId, requestBody, headers) {
       body: JSON.stringify({
         success: true,
         message: 'Message forwarded successfully',
-        data: forwardedMessage
-      })
+        data: forwardedMessage,
+      }),
     };
 
   } catch (error) {
@@ -1508,21 +1860,28 @@ async function replyToMessage(userId, requestBody, headers) {
     const {
       parent_message_id,
       content,
-      message_type = 'text'
-    } = JSON.parse(requestBody);
+      message_type = 'text',
+    } = parseRequestBody(requestBody);
 
-    if (!parent_message_id || !content) {
+    const parentMessageId = sanitizeString(parent_message_id, { maxLength: 36 });
+    const safeContent = sanitizeString(content, { maxLength: 5000 });
+    const normalizedMessageType = sanitizeString(message_type, { maxLength: 30, allowEmpty: true }) || 'text';
+    const allowedReplyTypes = new Set(['text', 'image', 'file', 'gif', 'sticker', 'voice', 'audio']);
+    const safeMessageType = allowedReplyTypes.has(normalizedMessageType.toLowerCase())
+      ? normalizedMessageType.toLowerCase()
+      : 'text';
+
+    if (!parentMessageId || !isUuid(parentMessageId) || !safeContent) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Parent message ID and content are required'
-        })
+          message: 'Valid parent message ID and content are required',
+        }),
       };
     }
 
-    // Get parent message and verify access
     const { data: parentMessage, error: parentError } = await supabase
       .from('messages')
       .select(`
@@ -1531,7 +1890,7 @@ async function replyToMessage(userId, requestBody, headers) {
           conversation_participants!inner(user_id)
         )
       `)
-      .eq('id', parent_message_id)
+      .eq('id', parentMessageId)
       .eq('conversation.conversation_participants.user_id', userId)
       .single();
 
@@ -1541,21 +1900,22 @@ async function replyToMessage(userId, requestBody, headers) {
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Parent message not found or access denied'
-        })
+          message: 'Parent message not found or access denied',
+        }),
       };
     }
 
-    // Create reply message
+    const nowIso = new Date().toISOString();
     const { data: replyMessage, error: replyError } = await supabase
       .from('messages')
       .insert({
         conversation_id: parentMessage.conversation_id,
         sender_id: userId,
-        parent_message_id: parent_message_id,
-        content,
-        message_type,
-        created_at: new Date().toISOString()
+        parent_message_id: parentMessageId,
+        content: safeContent,
+        message_type: safeMessageType,
+        created_at: nowIso,
+        updated_at: nowIso,
       })
       .select(`
         *,
@@ -1571,12 +1931,11 @@ async function replyToMessage(userId, requestBody, headers) {
       throw replyError;
     }
 
-    // Update conversation timestamp
     await supabase
       .from('conversations')
       .update({
-        last_message_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        last_message_at: nowIso,
+        updated_at: nowIso,
       })
       .eq('id', parentMessage.conversation_id);
 
@@ -1586,8 +1945,8 @@ async function replyToMessage(userId, requestBody, headers) {
       body: JSON.stringify({
         success: true,
         message: 'Reply sent successfully',
-        data: replyMessage
-      })
+        data: replyMessage,
+      }),
     };
 
   } catch (error) {

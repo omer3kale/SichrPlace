@@ -6,7 +6,7 @@
 
   // Configuration
   const ANALYTICS_CONFIG = {
-    googleAnalyticsId: 'G-XXXXXXXXXX', // Replace with actual GA4 ID
+    googleAnalyticsId: 'G-2FG8XLMM35', // Real GA4 ID
     enableErrorTracking: true,
     enablePerformanceTracking: true,
     debug: window.location.hostname === 'localhost'

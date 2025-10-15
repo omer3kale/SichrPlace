@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const GeocodingService = require('./GeocodingService');
 const PlacesService = require('./PlacesService');
 const DirectionsService = require('./DirectionsService');

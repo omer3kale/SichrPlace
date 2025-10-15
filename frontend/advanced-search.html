@@ -155,6 +155,26 @@
             font-family: var(--heading-font);
         }
 
+        .search-group.compact {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .search-group.compact label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0;
+            font-weight: 600;
+            color: var(--primary);
+            font-family: var(--heading-font);
+        }
+
+        .search-group.compact input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
         .search-group input,
         .search-group select {
             width: 100%;
@@ -563,26 +583,66 @@
   <header>
     <div class="header-logo">
       <a href="index.html" class="logo" aria-label="SichrPlace">
-        <img src="img/sichrplace-logo.jpg" alt="SichrPlace Logo" style="height:48px;width:auto;display:block;">
-        <div class="brand-text">
-          <span class="sichr-text">Sichr</span><span class="place-text">Place</span>
-        </div>
+        <img src="img/sichrplace-logo.jpg" alt="SichrPlace logo" style="height:48px;width:auto;display:block;">
+        <span class="brand-text">
+          <span class="sichrplace-text">SichrPlace</span>
+          <span class="certified-badge" style="display:none;">Verified</span>
+        </span>
       </a>
     </div>
-    <nav class="nav">
-      <a href="apartments-listing.html"><i class="fas fa-building"></i> Browse</a>
-      <a href="advanced-search.html" class="active"><i class="fas fa-search"></i> Advanced Search</a>
-      <a href="add-property.html"><i class="fas fa-plus"></i> List Property</a>
-      <span id="user-nav-section">
-        <a href="login.html"><i class="fas fa-sign-in-alt"></i> Login</a>
-        <a href="create-account.html"><i class="fas fa-user-plus"></i> Sign Up</a>
-      </span>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span class="menu-bar"></span>
+      <span class="menu-bar"></span>
+      <span class="menu-bar"></span>
+    </button>
+    <nav class="main-nav" id="main-nav">
+      <a href="login.html" data-translate="nav.login">Login</a>
+      <a href="apartments-listing.html" data-translate="nav.apartments">Apartments</a>
+      
+      <!-- View link for viewing requests -->
+      <a href="viewing-request.html" data-translate="nav.view">View</a>
+      
+      <!-- Marketplace Cart Icon - Enhanced Visibility -->
+      <a href="marketplace.html" class="cart-icon" title="Marketplace - Buy & Sell" aria-label="Marketplace" data-translate-title="nav.marketplace.title" data-translate-aria="nav.marketplace.aria">
+        <svg class="cart-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M7.01 18.5a1.5 1.5 0 1 1-2.999.001 1.5 1.5 0 0 1 2.999-.001Zm10 0a1.5 1.5 0 1 1-3.001 0 1.5 1.5 0 0 1 3.001 0ZM6.16 7l.44 2h11.56a1 1 0 0 1 .98 1.204l-1.2 6a1 1 0 0 1-.98.796H8.18a1 1 0 0 1-.98-.804L5.53 4.5H3a1 1 0 1 1 0-2h3a1 1 0 0 1 .98.804L7.62 7H6.16Z" fill="currentColor" />
+        </svg>
+        <span class="cart-label" data-translate="nav.marketplace.label">Marketplace</span>
+      </a>
+      
+      <!-- Scam Stories -->
+      <a href="scam-stories.html" title="Rental Scam Stories & Protection" aria-label="Scam Stories" data-translate-title="nav.scams.title" data-translate-aria="nav.scams.aria">
+        <span data-translate="nav.scams">Scam Stories</span>
+      </a>
+      
+      <!-- Language Switcher moved to the rightmost position -->
+      <div class="language-switcher">
+        <button class="language-btn" id="language-btn" aria-label="Switch Language">
+          <i class="fas fa-globe"></i>
+          <span id="current-lang">EN</span>
+          <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="language-dropdown" id="language-dropdown">
+          <a href="#" data-lang="en" class="lang-option active">
+            <span class="flag-emoji">🇺🇸</span>
+            English
+          </a>
+          <a href="#" data-lang="de" class="lang-option">
+            <span class="flag-emoji">🇩🇪</span>
+            Deutsch
+          </a>
+          <a href="#" data-lang="tr" class="lang-option">
+            <span class="flag-emoji">🇹🇷</span>
+            Türkçe
+          </a>
+        </div>
+      </div>
     </nav>
   </header>
 
     <div class="main-container">
-        <h1 class="page-title">🔍 Advanced Search</h1>
-        <p class="page-subtitle">Find your perfect apartment with our powerful search filters</p>
+      <h1 class="page-title">🔍 Advanced Search</h1>
+      <p class="page-subtitle">Find your perfect apartment with our powerful search filters</p>
 
         <!-- Search Suggestions -->
         <div class="search-suggestions">
@@ -611,8 +671,12 @@
                 <!-- Location & Property Type -->
                 <div class="search-row">
                     <div class="search-group">
-                        <label for="location">Location</label>
-                        <input type="text" id="location" placeholder="City or area...">
+                        <label for="city">City (Ort)</label>
+                        <input type="text" id="city" placeholder="e.g. Berlin, Köln">
+                    </div>
+                    <div class="search-group">
+                        <label for="area">District / Area (Stadtteil)</label>
+                        <input type="text" id="area" placeholder="e.g. Kreuzberg, Ehrenfeld">
                     </div>
                     <div class="search-group">
                         <label for="property-type">Property Type</label>
@@ -620,71 +684,109 @@
                             <option value="">Any Type</option>
                             <option value="apartment">Apartment</option>
                             <option value="studio">Studio</option>
-                            <option value="shared-room">Shared Room</option>
-                            <option value="private-room">Private Room</option>
+                            <option value="loft">Loft</option>
+                            <option value="house">House</option>
+                            <option value="shared_room">Shared Room</option>
+                            <option value="private_room">Private Room</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Price Range -->
+                <!-- German Rent Structure -->
                 <div class="search-row">
                     <div class="search-group">
-                        <label for="min-price">Min Price (€/month)</label>
-                        <input type="number" id="min-price" placeholder="0" min="0">
+                        <label for="min-kaltmiete">Min Kaltmiete (€/month)</label>
+                        <input type="number" id="min-kaltmiete" placeholder="0" min="0">
                     </div>
                     <div class="search-group">
-                        <label for="max-price">Max Price (€/month)</label>
-                        <input type="number" id="max-price" placeholder="No limit" min="0">
+                        <label for="max-kaltmiete">Max Kaltmiete (€/month)</label>
+                        <input type="number" id="max-kaltmiete" placeholder="No limit" min="0">
+                    </div>
+                    <div class="search-group">
+                        <label for="min-warmmiete">Min Warmmiete (€/month)</label>
+                        <input type="number" id="min-warmmiete" placeholder="0" min="0">
+                    </div>
+                    <div class="search-group">
+                        <label for="max-warmmiete">Max Warmmiete (€/month)</label>
+                        <input type="number" id="max-warmmiete" placeholder="No limit" min="0">
+                    </div>
+                </div>
+
+                <div class="search-row">
+                    <div class="search-group">
+                        <label for="price-type">Displayed Price</label>
+                        <select id="price-type">
+                            <option value="both">Kalt- or Warmmiete</option>
+                            <option value="kalt">Kaltmiete only</option>
+                            <option value="warm">Warmmiete only</option>
+                        </select>
+                    </div>
+                    <div class="search-group">
+                        <label for="keywords">Keywords</label>
+                        <input type="text" id="keywords" placeholder="e.g. Balkon, Nähe U-Bahn">
                     </div>
                 </div>
 
                 <!-- Rooms & Details -->
                 <div class="search-row">
                     <div class="search-group">
-                        <label for="bedrooms">Bedrooms</label>
-                        <select id="bedrooms">
-                            <option value="">Any</option>
-                            <option value="0">Studio (0 bed)</option>
-                            <option value="1">1 Bedroom</option>
-                            <option value="2">2 Bedrooms</option>
-                            <option value="3">3 Bedrooms</option>
-                            <option value="4">4+ Bedrooms</option>
-                        </select>
+                        <label for="min-rooms">Min Rooms</label>
+                        <input type="number" id="min-rooms" placeholder="Any" min="0">
                     </div>
+                    <div class="search-group">
+                        <label for="max-rooms">Max Rooms</label>
+                        <input type="number" id="max-rooms" placeholder="Any" min="0">
+                    </div>
+                    <div class="search-group">
+                        <label for="rooms">Exact Rooms</label>
+                        <input type="number" id="rooms" placeholder="Exact" min="0">
+                    </div>
+                    <div class="search-group">
+                        <label for="bedrooms">Bedrooms</label>
+                        <input type="number" id="bedrooms" placeholder="Any" min="0">
+                    </div>
+                </div>
+
+                <div class="search-row">
                     <div class="search-group">
                         <label for="bathrooms">Bathrooms</label>
-                        <select id="bathrooms">
-                            <option value="">Any</option>
-                            <option value="1">1+ Bath</option>
-                            <option value="2">2+ Baths</option>
-                            <option value="3">3+ Baths</option>
-                        </select>
+                        <input type="number" id="bathrooms" placeholder="Any" min="0">
                     </div>
                     <div class="search-group">
-                        <label for="min-area">Min Area (m²)</label>
+                        <label for="single-beds">Single Beds</label>
+                        <input type="number" id="single-beds" placeholder="Any" min="0">
+                    </div>
+                    <div class="search-group">
+                        <label for="double-beds">Double Beds</label>
+                        <input type="number" id="double-beds" placeholder="Any" min="0">
+                    </div>
+                    <div class="search-group">
+                        <label for="min-area">Min Size (m²)</label>
                         <input type="number" id="min-area" placeholder="0" min="0">
+                    </div>
+                    <div class="search-group">
+                        <label for="max-area">Max Size (m²)</label>
+                        <input type="number" id="max-area" placeholder="No limit" min="0">
                     </div>
                 </div>
 
                 <!-- Property Preferences -->
                 <div class="search-row">
                     <div class="search-group">
-                        <label for="furnished">Furnished Status</label>
-                        <select id="furnished">
+                        <label for="furnished-status">Furnished Status</label>
+                        <select id="furnished-status">
                             <option value="">Any</option>
                             <option value="furnished">Furnished</option>
+                            <option value="semi_furnished">Semi-furnished</option>
                             <option value="unfurnished">Unfurnished</option>
-                            <option value="semi-furnished">Semi-furnished</option>
                         </select>
                     </div>
                     <div class="search-group">
-                        <label for="pet-policy">Pet Policy</label>
-                        <select id="pet-policy">
+                        <label for="pets-allowed">Pet Policy</label>
+                        <select id="pets-allowed">
                             <option value="">Any</option>
-                            <option value="pet-friendly">Pet Friendly</option>
-                            <option value="no-pets">No Pets</option>
-                            <option value="cats-only">Cats Only</option>
-                            <option value="dogs-only">Dogs Only</option>
+                            <option value="true">Pets allowed</option>
+                            <option value="false">No pets</option>
                         </select>
                     </div>
                     <div class="search-group">
@@ -697,9 +799,15 @@
                             <option value="none">No Parking</option>
                         </select>
                     </div>
+                    <div class="search-group compact">
+                        <label for="exclude-exchange">
+                            <input type="checkbox" id="exclude-exchange">
+                            Exclude exchange offers
+                        </label>
+                    </div>
                 </div>
 
-                <!-- Dates -->
+                <!-- Dates & Timing -->
                 <div class="search-row">
                     <div class="search-group">
                         <label for="move-in-date">Move-in Date</label>
@@ -710,13 +818,18 @@
                         <input type="date" id="move-out-date">
                     </div>
                     <div class="search-group">
-                        <label for="min-rating">Minimum Rating</label>
-                        <select id="min-rating">
-                            <option value="">Any Rating</option>
-                            <option value="4">4+ Stars</option>
-                            <option value="4.5">4.5+ Stars</option>
-                            <option value="5">5 Stars Only</option>
+                        <label for="time-slot-type">Timing Preference</label>
+                        <select id="time-slot-type">
+                            <option value="">Any</option>
+                            <option value="flexible">Flexible</option>
+                            <option value="fixed">Fixed</option>
                         </select>
+                    </div>
+                    <div class="search-group compact">
+                        <label for="earliest-move-in">
+                            <input type="checkbox" id="earliest-move-in">
+                            Prefer earliest move-in
+                        </label>
                     </div>
                 </div>
 
@@ -734,20 +847,36 @@
                                 <span>🔥 Heating</span>
                             </label>
                             <label class="amenity-checkbox">
-                                <input type="checkbox" name="amenities" value="air-conditioning">
+                                <input type="checkbox" name="amenities" value="air_conditioning">
                                 <span>❄️ Air Conditioning</span>
                             </label>
                             <label class="amenity-checkbox">
-                                <input type="checkbox" name="amenities" value="washing-machine">
+                                <input type="checkbox" name="amenities" value="washing_machine">
                                 <span>🧺 Washing Machine</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="dryer">
+                                <span>🌀 Dryer</span>
                             </label>
                             <label class="amenity-checkbox">
                                 <input type="checkbox" name="amenities" value="dishwasher">
                                 <span>🍽️ Dishwasher</span>
                             </label>
                             <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="tv">
+                                <span>📺 TV</span>
+                            </label>
+                            <label class="amenity-checkbox">
                                 <input type="checkbox" name="amenities" value="kitchen">
                                 <span>🍳 Full Kitchen</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="private_bathroom">
+                                <span>🛁 Private Bathroom</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="wheelchair_accessible">
+                                <span>♿ Wheelchair Accessible</span>
                             </label>
                         </div>
                     </div>
@@ -759,20 +888,24 @@
                         <label>Lifestyle & Comfort</label>
                         <div class="amenities-grid">
                             <label class="amenity-checkbox">
-                                <input type="checkbox" name="amenities" value="balcony">
-                                <span>🌿 Balcony/Terrace</span>
-                            </label>
-                            <label class="amenity-checkbox">
-                                <input type="checkbox" name="amenities" value="garden">
-                                <span>🌳 Garden Access</span>
-                            </label>
-                            <label class="amenity-checkbox">
-                                <input type="checkbox" name="amenities" value="elevator">
+                                <input type="checkbox" name="amenities" value="lift">
                                 <span>🏢 Elevator</span>
                             </label>
                             <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="balcony">
+                                <span>🌿 Balcony</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="terrace">
+                                <span>� Terrace</span>
+                            </label>
+                            <label class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="garden">
+                                <span>� Garden Access</span>
+                            </label>
+                            <label class="amenity-checkbox">
                                 <input type="checkbox" name="amenities" value="gym">
-                                <span>� Gym/Fitness</span>
+                                <span>💪 Gym/Fitness</span>
                             </label>
                             <label class="amenity-checkbox">
                                 <input type="checkbox" name="amenities" value="pool">
@@ -792,8 +925,8 @@
                         <label>Location Features</label>
                         <div class="amenities-grid">
                             <label class="amenity-checkbox">
-                                <input type="checkbox" name="location-features" value="public-transport">
-                                <span>� Near Public Transport</span>
+                                <input type="checkbox" name="location-features" value="public_transport">
+                                <span>🚆 Near Public Transport</span>
                             </label>
                             <label class="amenity-checkbox">
                                 <input type="checkbox" name="location-features" value="shopping">
@@ -812,7 +945,7 @@
                                 <span>🌲 Near Parks</span>
                             </label>
                             <label class="amenity-checkbox">
-                                <input type="checkbox" name="location-features" value="city-center">
+                                <input type="checkbox" name="location-features" value="city_center">
                                 <span>🏙️ City Center</span>
                             </label>
                         </div>
@@ -873,11 +1006,13 @@
 
     <script>
         const API_BASE_URL = 'http://localhost:3000';
-        let currentSearchResults = [];
-        let currentSortBy = 'created_at';
+    let currentSearchResults = [];
+    let currentSearchFilters = {};
+    let currentSortBy = 'created_at';
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
+            loadFilterMetadata();
             loadPopularSearches();
             updateNavigation();
             
@@ -893,6 +1028,37 @@
             });
         });
 
+        // Load filter metadata from API
+        async function loadFilterMetadata() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/search/filters`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    const metadata = result.data;
+                    
+                    // Populate property types dropdown
+                    const propertyTypeSelect = document.getElementById('property-type');
+                    if (metadata.propertyTypes && propertyTypeSelect) {
+                        // Keep the "Any Type" option
+                        propertyTypeSelect.innerHTML = '<option value="">Any Type</option>';
+                        metadata.propertyTypes.forEach(type => {
+                            const option = document.createElement('option');
+                            option.value = type.value;
+                            option.textContent = `${type.label} (${type.count})`;
+                            propertyTypeSelect.appendChild(option);
+                        });
+                    }
+                    
+                    // Store metadata globally for potential future use
+                    window.filterMetadata = metadata;
+                }
+            } catch (error) {
+                console.error('Failed to load filter metadata:', error);
+                // Silently fail - keep default static options
+            }
+        }
+
         // Handle search form submission
         async function handleSearchSubmit(event) {
             event.preventDefault();
@@ -905,6 +1071,7 @@
             
             try {
                 const searchParams = buildSearchParams();
+                currentSearchFilters = { ...searchParams };
                 const queryString = new URLSearchParams(searchParams).toString();
                 
                 const response = await fetch(`${API_BASE_URL}/api/search/advanced?${queryString}`, {
@@ -917,8 +1084,10 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    currentSearchResults = data.data;
-                    displaySearchResults(data.data, data.metadata);
+                    const apartments = Array.isArray(data.data) ? data.data : [];
+                    const filteredResults = applyClientSideFilters(apartments, currentSearchFilters);
+                    currentSearchResults = filteredResults;
+                    displaySearchResults(filteredResults, data.metadata, apartments.length);
                 } else {
                     showNoResultsState();
                     console.error('Search failed:', data.error);
@@ -934,35 +1103,115 @@
         function buildSearchParams() {
             const amenities = Array.from(document.querySelectorAll('input[name="amenities"]:checked'))
                 .map(cb => cb.value);
-            
+
             const locationFeatures = Array.from(document.querySelectorAll('input[name="location-features"]:checked'))
                 .map(cb => cb.value);
-                
-            return {
+
+            const city = document.getElementById('city').value.trim();
+            const area = document.getElementById('area').value.trim();
+            const combinedLocation = [city, area].filter(Boolean).join(', ');
+
+            const params = {
                 query: document.getElementById('query').value.trim(),
-                location: document.getElementById('location').value.trim(),
+                city,
+                area,
+                location: combinedLocation,
                 propertyType: document.getElementById('property-type').value,
-                minPrice: document.getElementById('min-price').value,
-                maxPrice: document.getElementById('max-price').value,
+                minKaltmiete: document.getElementById('min-kaltmiete').value,
+                maxKaltmiete: document.getElementById('max-kaltmiete').value,
+                minWarmmiete: document.getElementById('min-warmmiete').value,
+                maxWarmmiete: document.getElementById('max-warmmiete').value,
+                priceType: document.getElementById('price-type').value,
+                keywords: document.getElementById('keywords').value.trim(),
+                minRooms: document.getElementById('min-rooms').value,
+                maxRooms: document.getElementById('max-rooms').value,
+                rooms: document.getElementById('rooms').value,
                 bedrooms: document.getElementById('bedrooms').value,
                 bathrooms: document.getElementById('bathrooms').value,
-                minArea: document.getElementById('min-area').value,
-                furnished: document.getElementById('furnished').value,
-                petPolicy: document.getElementById('pet-policy').value,
+                singleBeds: document.getElementById('single-beds').value,
+                doubleBeds: document.getElementById('double-beds').value,
+                minSize: document.getElementById('min-area').value,
+                maxSize: document.getElementById('max-area').value,
+                furnishedStatus: document.getElementById('furnished-status').value,
+                petsAllowed: document.getElementById('pets-allowed').value,
                 parkingType: document.getElementById('parking-type').value,
+                excludeExchange: document.getElementById('exclude-exchange').checked ? 'true' : '',
                 moveInDate: document.getElementById('move-in-date').value,
                 moveOutDate: document.getElementById('move-out-date').value,
-                minRating: document.getElementById('min-rating').value,
+                timeSlotType: document.getElementById('time-slot-type').value,
+                earliestMoveIn: document.getElementById('earliest-move-in').checked ? 'true' : '',
                 amenities: amenities.join(','),
                 locationFeatures: locationFeatures.join(','),
                 sortBy: currentSortBy.includes('_desc') ? currentSortBy.replace('_desc', '') : currentSortBy,
                 sortOrder: currentSortBy.includes('_desc') ? 'desc' : 'asc',
                 limit: 20
             };
+
+            if (params.minKaltmiete && !params.minPrice) {
+                params.minPrice = params.minKaltmiete;
+            }
+            if (params.maxKaltmiete && !params.maxPrice) {
+                params.maxPrice = params.maxKaltmiete;
+            }
+
+            Object.keys(params).forEach(key => {
+                const value = params[key];
+                if (value === '' || value === null || value === undefined) {
+                    delete params[key];
+                }
+            });
+
+            return params;
+        }
+
+        function applyClientSideFilters(apartments, filters) {
+            if (!filters) return apartments;
+            let results = Array.isArray(apartments) ? [...apartments] : [];
+
+            if (filters.excludeExchange === 'true') {
+                results = results.filter(apartment => {
+                    const listingType = (apartment.listing_type || apartment.listingType || '').toLowerCase();
+                    return listingType !== 'exchange';
+                });
+            }
+
+            if (filters.petsAllowed === 'true') {
+                results = results.filter(isPetFriendly);
+            } else if (filters.petsAllowed === 'false') {
+                results = results.filter(apartment => !isPetFriendly(apartment));
+            }
+
+            if (filters.timeSlotType) {
+                const desired = filters.timeSlotType.toLowerCase();
+                results = results.filter(apartment => {
+                    const slot = (apartment.timeslot_type || apartment.timeSlotType || '').toLowerCase();
+                    if (!slot) return true;
+                    return slot === desired;
+                });
+            }
+
+            return results;
+        }
+
+        function isPetFriendly(apartment) {
+            const policy = (apartment.pets_policy || apartment.petPolicy || apartment.haustiere || '').toString().toLowerCase();
+            if (['allowed', 'erlaubt', 'pet-friendly', 'pet_friendly', 'nach_vereinbarung'].includes(policy)) {
+                return true;
+            }
+            if (['not_allowed', 'nicht_erlaubt', 'no-pets'].includes(policy)) {
+                return false;
+            }
+            if (apartment.pet_friendly === true || apartment.petFriendly === true) {
+                return true;
+            }
+            if (apartment.pet_friendly === false || apartment.petFriendly === false) {
+                return false;
+            }
+            return false;
         }
 
         // Display search results
-        function displaySearchResults(apartments, metadata) {
+        function displaySearchResults(apartments, metadata = {}, originalCount = apartments.length) {
             hideLoadingState();
             
             const resultsInfo = document.getElementById('results-info');
@@ -973,7 +1222,13 @@
                 return;
             }
             
-            resultsInfo.innerHTML = `Found ${apartments.length} apartments`;
+            const visibleCount = apartments.length;
+            const totalServerResults = metadata?.totalResults ?? originalCount ?? visibleCount;
+            let infoText = `Found ${visibleCount} apartments`;
+            if (totalServerResults && totalServerResults > visibleCount) {
+                infoText += ` (filtered from ${totalServerResults})`;
+            }
+            resultsInfo.innerHTML = infoText;
             
             apartmentsList.innerHTML = apartments.map(apartment => `
                 <div class="apartment-card" onclick="openApartmentDetails('${apartment.id}')">
@@ -981,7 +1236,7 @@
                     <div class="apartment-details">
                         <div class="apartment-title">${apartment.title}</div>
                         <div class="apartment-location">📍 ${apartment.location}</div>
-                        <div class="apartment-price">€${apartment.price}/month</div>
+                        <div class="apartment-price">${formatRent(apartment)}</div>
                         <div class="apartment-features">
                             ${apartment.bedrooms ? `<div class="feature"><i class="fa fa-bed"></i> ${apartment.bedrooms} bed${apartment.bedrooms !== 1 ? 's' : ''}</div>` : ''}
                             ${apartment.bathrooms ? `<div class="feature"><i class="fa fa-bath"></i> ${apartment.bathrooms} bath${apartment.bathrooms !== 1 ? 's' : ''}</div>` : ''}
@@ -1012,9 +1267,13 @@
         }
 
         function formatPropertyType(type) {
-            return type.split('-').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ');
+            if (!type) return '';
+            return type
+                .replace(/[_-]+/g, ' ')
+                .split(' ')
+                .filter(Boolean)
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
         }
 
         function showLoadingState() {
@@ -1148,71 +1407,6 @@
             performSearch();
         }
 
-        // Handle sort changes
-        function handleSortChange() {
-            const sortSelect = document.getElementById('sort-by');
-            currentSortBy = sortSelect.value;
-            
-            if (currentSearchResults.length > 0) {
-                // Re-sort current results
-                const sortedResults = sortApartments(currentSearchResults, currentSortBy);
-                displayApartments(sortedResults);
-            }
-        }
-
-        // Sort apartments locally
-        function sortApartments(apartments, sortBy) {
-            return [...apartments].sort((a, b) => {
-                switch (sortBy) {
-                    case 'price':
-                        return (a.price || 0) - (b.price || 0);
-                    case 'price_desc':
-                        return (b.price || 0) - (a.price || 0);
-                    case 'size':
-                        return (b.area || b.size || 0) - (a.area || a.size || 0);
-                    case 'created_at':
-                    default:
-                        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-                }
-            });
-        }
-
-        // Display apartments in results
-        function displayApartments(apartments) {
-            const apartmentsList = document.getElementById('apartments-list');
-            
-            apartmentsList.innerHTML = apartments.map(apartment => `
-                <div class="listing-card" onclick="openApartmentDetails('${apartment.id}')">
-                    <div class="listing-image" style="background-image: url('${getApartmentImage(apartment)}');">
-                        <div class="listing-price-tag">€${apartment.price}/month</div>
-                    </div>
-                    <div class="listing-content">
-                        <h3 class="listing-title">${apartment.title || apartment.address}</h3>
-                        <p class="listing-location">
-                            <i class="fas fa-map-marker-alt"></i> ${apartment.location}
-                        </p>
-                        <div class="listing-features">
-                            <span><i class="fas fa-bed"></i> ${apartment.bedrooms || apartment.rooms || 'N/A'}</span>
-                            <span><i class="fas fa-bath"></i> ${apartment.bathrooms || 'N/A'}</span>
-                            <span><i class="fas fa-expand-arrows-alt"></i> ${apartment.area || apartment.size}m²</span>
-                        </div>
-                        <div class="listing-tags">
-                            ${apartment.petPolicy ? `<span class="tag pet-${apartment.petPolicy}">${formatPetPolicy(apartment.petPolicy)}</span>` : ''}
-                            ${apartment.furnished ? `<span class="tag furnished">${formatFurnished(apartment.furnished)}</span>` : ''}
-                        </div>
-                        <div class="listing-actions">
-                            <button class="btn btn-primary" onclick="event.stopPropagation(); scheduleViewing('${apartment.id}')">
-                                <i class="fas fa-calendar"></i> Schedule Viewing
-                            </button>
-                            <button class="btn btn-secondary" onclick="event.stopPropagation(); contactOwner('${apartment.id}')">
-                                <i class="fas fa-message"></i> Contact
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
         // Helper functions
         function getApartmentImage(apartment) {
             if (apartment.images && apartment.images.length > 0) {
@@ -1222,23 +1416,65 @@
             return `./img/${defaultImages[Math.floor(Math.random() * defaultImages.length)]}`;
         }
 
+        function formatRent(apartment) {
+            if (!apartment) return 'Price on request';
+            const rent = apartment.rent_display || {};
+            const kalt = rent.kaltmiete || rent.cold || rent.kalt;
+            const warm = rent.warmmiete || rent.warm;
+
+            if (kalt && warm) {
+                return `Kalt: ${kalt} · Warm: ${warm}`;
+            }
+            if (kalt) {
+                return `Kalt: ${kalt}`;
+            }
+            if (warm) {
+                return `Warm: ${warm}`;
+            }
+            if (typeof apartment.price === 'number') {
+                return `€${apartment.price}/month`;
+            }
+            if (apartment.price) {
+                return `${apartment.price}`;
+            }
+            return 'Price on request';
+        }
+
         function formatPetPolicy(policy) {
+            if (!policy) return 'Pet Policy';
+            const normalized = policy.toString().toLowerCase();
             const policies = {
                 'pet-friendly': 'Pet Friendly',
+                'pet_friendly': 'Pet Friendly',
+                'allowed': 'Pets Allowed',
+                'erlaubt': 'Haustiere erlaubt',
+                'nach_vereinbarung': 'Pets on request',
                 'no-pets': 'No Pets',
-                'cats-only': 'Cats Only', 
+                'no_pets': 'No Pets',
+                'not_allowed': 'Pets not allowed',
+                'nicht_erlaubt': 'Haustiere nicht erlaubt',
+                'cats-only': 'Cats Only',
                 'dogs-only': 'Dogs Only'
             };
-            return policies[policy] || policy;
+            return policies[normalized] || policy;
         }
 
         function formatFurnished(status) {
+            if (typeof status === 'boolean') {
+                return status ? 'Furnished' : 'Unfurnished';
+            }
+            if (!status) return 'Furnishing';
+            const normalized = status.toString().toLowerCase();
             const statuses = {
                 'furnished': 'Furnished',
+                'vollmoebliert': 'Fully furnished',
                 'unfurnished': 'Unfurnished',
-                'semi-furnished': 'Semi-furnished'
+                'unmoebliert': 'Unfurnished',
+                'semi-furnished': 'Semi-furnished',
+                'semi_furnished': 'Semi-furnished',
+                'teilmoebliert': 'Partially furnished'
             };
-            return statuses[status] || status;
+            return statuses[normalized] || status;
         }
 
         // Update navigation based on login status

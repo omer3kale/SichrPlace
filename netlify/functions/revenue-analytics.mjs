@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-export const handler = async (event, context) => {
+export const handler = async (event, _context) => {
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -79,7 +79,7 @@ export const handler = async (event, context) => {
         .from('apartments')
         .select(`
           id, price, commission_rate, landlord_id, created_at,
-          property_type, location
+          property_type, city
         `),
 
       // Users (for landlord analytics)
@@ -225,6 +225,7 @@ function calculateRevenueAnalytics(bookings, apartments, payments, subscriptions
   let commissionRevenue = 0;
   let bookingRevenue = 0;
   let totalCosts = 0;
+  let bookingFeesTotal = 0;
   const dailyRevenue = {};
   const monthlyRevenue = {};
   const paymentMethods = {};
@@ -233,7 +234,7 @@ function calculateRevenueAnalytics(bookings, apartments, payments, subscriptions
   bookings.forEach(booking => {
     const amount = parseFloat(booking.total_amount || 0);
     const commission = parseFloat(booking.commission_amount || 0);
-    const fee = parseFloat(booking.booking_fee || 0);
+  const fee = parseFloat(booking.booking_fee || 0);
     
     if (booking.status === 'confirmed' || booking.status === 'completed') {
       totalRevenue += amount;
@@ -252,6 +253,8 @@ function calculateRevenueAnalytics(bookings, apartments, payments, subscriptions
       const method = booking.payment_method || 'unknown';
       paymentMethods[method] = (paymentMethods[method] || 0) + amount;
     }
+
+    bookingFeesTotal += fee;
   });
 
   // Add subscription revenue
@@ -263,7 +266,7 @@ function calculateRevenueAnalytics(bookings, apartments, payments, subscriptions
   const paymentProcessingFees = totalRevenue * 0.029; // Assume 2.9% payment processing
   const operationalCosts = totalRevenue * 0.15; // Assume 15% operational costs
   
-  totalCosts = refundAmount + paymentProcessingFees + operationalCosts;
+  totalCosts = refundAmount + paymentProcessingFees + operationalCosts + bookingFeesTotal;
   const netRevenue = totalRevenue - totalCosts;
   const grossProfit = totalRevenue - refundAmount;
   const profitMargin = totalRevenue > 0 ? ((netRevenue / totalRevenue) * 100) : 0;
@@ -318,10 +321,13 @@ function calculateRevenueAnalytics(bookings, apartments, payments, subscriptions
     cost_breakdown: {
       refunds: Math.round(refundAmount * 100) / 100,
       payment_processing: Math.round(paymentProcessingFees * 100) / 100,
-      operational: Math.round(operationalCosts * 100) / 100
+  operational: Math.round(operationalCosts * 100) / 100,
+  booking_fees: Math.round(bookingFeesTotal * 100) / 100
     },
     cost_per_transaction: confirmedBookings.length > 0 ? Math.round((totalCosts / confirmedBookings.length) * 100) / 100 : 0,
-    operational_efficiency: Math.round(((totalRevenue - totalCosts) / totalRevenue) * 100 * 100) / 100,
+    operational_efficiency: totalRevenue > 0
+      ? Math.round(((totalRevenue - totalCosts) / totalRevenue) * 100 * 100) / 100
+      : 0,
     
     conversion_metrics: {
       booking_to_revenue_rate: Math.round((confirmedBookings.length / bookings.length) * 100 * 100) / 100,
@@ -337,6 +343,7 @@ function calculateRevenueAnalytics(bookings, apartments, payments, subscriptions
 
 // Calculate landlord analytics
 function calculateLandlordAnalytics(bookings, apartments, users) {
+  const landlordProfiles = new Map(users.map((user) => [user.id, user]));
   const landlordStats = {};
   const apartmentPerformance = {};
 
@@ -344,13 +351,15 @@ function calculateLandlordAnalytics(bookings, apartments, users) {
   apartments.forEach(apartment => {
     const landlordId = apartment.landlord_id;
     if (!landlordStats[landlordId]) {
+      const profile = landlordProfiles.get(landlordId);
       landlordStats[landlordId] = {
         landlord_id: landlordId,
         apartment_count: 0,
         total_revenue: 0,
         total_bookings: 0,
         avg_commission_rate: 0,
-        apartments: []
+        apartments: [],
+        landlord_profile: profile
       };
     }
     landlordStats[landlordId].apartment_count++;
@@ -424,18 +433,22 @@ function calculateLandlordAnalytics(bookings, apartments, users) {
 
 // Calculate customer analytics
 function calculateCustomerAnalytics(bookings, users) {
+  const userProfiles = new Map(users.map((user) => [user.id, user]));
   const customerStats = {};
   
   bookings.forEach(booking => {
     const userId = booking.user_id;
     if (!customerStats[userId]) {
+      const profile = userProfiles.get(userId);
       customerStats[userId] = {
         user_id: userId,
         total_bookings: 0,
         total_spent: 0,
         avg_booking_value: 0,
         first_booking: booking.created_at,
-        last_booking: booking.created_at
+        last_booking: booking.created_at,
+        user_type: profile?.user_type || 'guest',
+        joined_at: profile?.created_at || null
       };
     }
     
@@ -630,21 +643,28 @@ function getCurrentSeasonalMultiplier() {
 function generateSimulatedPayments(startDate, endDate) {
   // In real app, this would fetch from payment provider API
   return [
-    { id: 'pay_1', amount: 150.00, status: 'completed', method: 'card', created_at: new Date().toISOString() },
-    { id: 'pay_2', amount: 280.50, status: 'completed', method: 'paypal', created_at: new Date().toISOString() }
+    { id: 'pay_1', amount: 150.0, status: 'completed', method: 'card', created_at: getRandomTimestamp(startDate, endDate) },
+    { id: 'pay_2', amount: 280.5, status: 'completed', method: 'paypal', created_at: getRandomTimestamp(startDate, endDate) }
   ];
 }
 
 function generateSimulatedSubscriptions(startDate, endDate) {
   // In real app, this would fetch subscription data
   return [
-    { id: 'sub_1', amount: 29.99, plan: 'premium', status: 'active', created_at: new Date().toISOString() }
+    { id: 'sub_1', amount: 29.99, plan: 'premium', status: 'active', created_at: getRandomTimestamp(startDate, endDate) }
   ];
 }
 
 function generateSimulatedRefunds(startDate, endDate) {
   // In real app, this would fetch refund data
   return [
-    { id: 'ref_1', amount: 75.00, reason: 'cancelled', created_at: new Date().toISOString() }
+    { id: 'ref_1', amount: 75.0, reason: 'cancelled', created_at: getRandomTimestamp(startDate, endDate) }
   ];
+}
+
+function getRandomTimestamp(startDate, endDate) {
+  const startMs = new Date(startDate).getTime();
+  const endMs = new Date(endDate).getTime();
+  const randomMs = Math.floor(Math.random() * (endMs - startMs + 1)) + startMs;
+  return new Date(randomMs).toISOString();
 }

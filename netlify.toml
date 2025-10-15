@@ -68,6 +68,11 @@
 
 # === AUTHENTICATION & USER MANAGEMENT ===
 [[redirects]]
+  from = "/auth/register"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
   from = "/api/auth-register"
   to = "/.netlify/functions/auth-register"
   status = 200
@@ -82,6 +87,28 @@
   to = "/.netlify/functions/auth-register"
   status = 200
 
+# Authentication endpoints - CRITICAL FOR LOGIN
+[[redirects]]
+  from = "/auth/login"
+  to = "/.netlify/functions/auth-login"
+  status = 200
+
+[[redirects]]
+  from = "/auth/verify"
+  to = "/.netlify/functions/auth-verify"
+  status = 200
+
+[[redirects]]
+  from = "/auth/resend-verification"
+  to = "/.netlify/functions/auth-resend-verification"
+  status = 200
+
+[[redirects]]
+  from = "/auth/health"
+  to = "/.netlify/functions/auth-health"
+  status = 200
+
+# Auth with /api prefix
 [[redirects]]
   from = "/api/auth-login"
   to = "/.netlify/functions/auth-login"
@@ -90,6 +117,17 @@
 [[redirects]]
   from = "/api/login"
   to = "/.netlify/functions/auth-login"
+  status = 200
+
+# Auth with slash format /api/auth/* (CRITICAL FIX)
+[[redirects]]
+  from = "/api/auth/verify"
+  to = "/.netlify/functions/auth-verify"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth/change-email"
+  to = "/.netlify/functions/auth-change-email"
   status = 200
 
 [[redirects]]
@@ -105,6 +143,102 @@
 [[redirects]]
   from = "/api/auth-me"
   to = "/.netlify/functions/auth-me"
+  status = 200
+
+# PayPal routes with slash format /api/paypal/* (CRITICAL FIX)
+[[redirects]]
+  from = "/api/paypal/config"
+  to = "/.netlify/functions/paypal-payments"
+  status = 200
+
+[[redirects]]
+  from = "/api/paypal/create"
+  to = "/.netlify/functions/paypal-payments"
+  status = 200
+
+[[redirects]]
+  from = "/api/paypal/execute"
+  to = "/.netlify/functions/paypal-payments"
+  status = 200
+
+[[redirects]]
+  from = "/api/paypal/capture"
+  to = "/.netlify/functions/paypal-payments"
+  status = 200
+
+[[redirects]]
+  from = "/api/paypal/marketplace/capture"
+  to = "/.netlify/functions/paypal-enterprise"
+  status = 200
+
+# Email service routes with slash format /api/emails/*
+[[redirects]]
+  from = "/api/emails/*"
+  to = "/.netlify/functions/email-service"
+  status = 200
+
+# Viewing requests with sub-routes /api/viewing-requests/*
+[[redirects]]
+  from = "/api/viewing-requests/*"
+  to = "/.netlify/functions/viewing-requests"
+  status = 200
+
+[[redirects]]
+  from = "/api/create-viewing-order"
+  to = "/.netlify/functions/paypal-payments"
+  status = 200
+
+# GDPR routes with slash format /api/gdpr/*
+[[redirects]]
+  from = "/api/gdpr/*"
+  to = "/.netlify/functions/gdpr-compliance"
+  status = 200
+
+# Performance routes with slash format /api/performance/*
+[[redirects]]
+  from = "/api/performance/*"
+  to = "/.netlify/functions/performance-optimization"
+  status = 200
+
+# Admin routes with slash format /api/admin/*
+[[redirects]]
+  from = "/api/admin/*"
+  to = "/.netlify/functions/admin"
+  status = 200
+
+[[redirects]]
+  from = "/api/check-admin"
+  to = "/.netlify/functions/admin"
+  status = 200
+
+# Push notification routes
+[[redirects]]
+  from = "/api/push/*"
+  to = "/.netlify/functions/notifications"
+  status = 200
+
+# Maps routes
+[[redirects]]
+  from = "/api/maps/config"
+  to = "/.netlify/functions/configuration-management"
+  status = 200
+
+# Config routes
+[[redirects]]
+  from = "/api/config/*"
+  to = "/.netlify/functions/configuration-management"
+  status = 200
+
+# Video routes
+[[redirects]]
+  from = "/api/videos/*"
+  to = "/.netlify/functions/media-processing-cdn"
+  status = 200
+
+# Monitoring routes
+[[redirects]]
+  from = "/api/monitoring/*"
+  to = "/.netlify/functions/monitoring-dashboard"
   status = 200
 
 [[redirects]]
@@ -248,6 +382,11 @@
 [[redirects]]
   from = "/api/chats"
   to = "/.netlify/functions/chats"
+  status = 200
+
+[[redirects]]
+  from = "/api/feedback"
+  to = "/.netlify/functions/feedback"
   status = 200
 
 [[redirects]]

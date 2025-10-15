@@ -47,7 +47,7 @@ export const handler = async (event, context) => {
       .from('apartments')
       .select(`
         *,
-        users:owner_id (
+        users:landlord_id (
           first_name,
           last_name,
           email,

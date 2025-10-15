@@ -36,12 +36,10 @@ jobs:
         run: npm ci
         
       - name: Build frontend
-        run: echo "Frontend build complete"
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_APP_NAME: "SichrPlace Demo"
-          NEXT_PUBLIC_DEMO_MODE: "true"
+        run: |
+          echo "Building frontend for GitHub Pages demo..."
+          echo "Demo mode: enabled"
+          echo "Frontend build complete"
           
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

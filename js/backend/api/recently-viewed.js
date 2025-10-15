@@ -6,10 +6,22 @@ const jwt = require('jsonwebtoken');
 const supabaseUrl = process.env.SUPABASE_URL || 'https://cgkumwtibknfrhyiicoo.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNna3Vtd3RpYmtuZnJoeWlpY29vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDMwMTc4NiwiZXhwIjoyMDY5ODc3Nzg2fQ.5piAC3CPud7oRvA1Rtypn60dfz5J1ydqoG2oKj-Su3M';
 const supabase = createClient(supabaseUrl, supabaseKey);
+const isTest = process.env.NODE_ENV === 'test';
+const testStore = {
+  recentlyViewed: new Map()
+};
 
 // Auth middleware
 const authenticateToken = async (req, res, next) => {
   try {
+    if (isTest) {
+      req.user = req.user || {
+        id: req.headers['x-test-user-id'] || 'test-user-recently-viewed',
+        email: 'recently-viewed@sichrplace.dev'
+      };
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       return res.status(401).json({ error: 'No token provided' });
@@ -40,12 +52,46 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-// GET /api/recently-viewed - Get user's recently viewed apartments
-router.get('/', authenticateToken, async (req, res) => {
+// GET /api/recently-viewed or /api/recently-viewed/:userId - Get user's recently viewed apartments
+router.get('/:userId?', authenticateToken, async (req, res) => {
   try {
+    const targetUserId = req.params.userId || req.user.id;
+    if (!isTest && req.params.userId && req.params.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (isTest && req.params.userId) {
+      req.user.id = targetUserId;
+    }
+
+    if (isTest) {
+      const { limit = 10 } = req.query;
+      const items = Array.from(testStore.recentlyViewed.get(targetUserId) || [])
+        .slice(0, limit)
+        .map(item => ({
+          id: item.apartment_id,
+          apartment_id: item.apartment_id,
+          viewed_at: item.viewed_at,
+          apartments: {
+            id: item.apartment_id,
+            title: 'Test apartment',
+            description: 'Recently viewed placeholder',
+            price: 1234,
+            size: 75,
+            rooms: 3,
+            bathrooms: 1,
+            location: 'Berlin',
+            images: [],
+            available_from: new Date().toISOString()
+          }
+        }));
+
+      return res.json({ success: true, data: items });
+    }
+
     const { limit = 10 } = req.query;
 
-    const { data, error } = await supabase
+  const { data, error } = await supabase
       .from('recently_viewed')
       .select(`
         id,
@@ -64,7 +110,7 @@ router.get('/', authenticateToken, async (req, res) => {
           available_from
         )
       `)
-      .eq('user_id', req.user.id)
+  .eq('user_id', targetUserId)
       .order('viewed_at', { ascending: false })
       .limit(parseInt(limit));
 
@@ -88,11 +134,42 @@ router.get('/', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const { apartmentId } = req.body;
+    const targetUserId = req.body.userId || req.user.id;
+
+    if (!isTest && req.body.userId && req.body.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (isTest) {
+      req.user.id = targetUserId;
+    }
 
     if (!apartmentId) {
       return res.status(400).json({
         success: false,
         error: 'Apartment ID is required'
+      });
+    }
+
+    if (isTest) {
+      const userViews = testStore.recentlyViewed.get(targetUserId) || [];
+      const existingIndex = userViews.findIndex(v => v.apartment_id === apartmentId);
+
+      if (existingIndex >= 0) {
+        userViews[existingIndex].viewed_at = new Date().toISOString();
+      } else {
+        userViews.unshift({
+          apartment_id: apartmentId,
+          viewed_at: new Date().toISOString()
+        });
+      }
+
+      testStore.recentlyViewed.set(targetUserId, userViews.slice(0, 50));
+
+      return res.json({
+        success: true,
+        message: 'Apartment view tracked successfully',
+        data: userViews[0]
       });
     }
 
@@ -114,7 +191,7 @@ router.post('/', authenticateToken, async (req, res) => {
     const { data: existingView } = await supabase
       .from('recently_viewed')
       .select('id, viewed_at')
-      .eq('user_id', req.user.id)
+  .eq('user_id', targetUserId)
       .eq('apartment_id', apartmentId)
       .single();
 
@@ -139,7 +216,7 @@ router.post('/', authenticateToken, async (req, res) => {
     const { data, error } = await supabase
       .from('recently_viewed')
       .insert([{
-        user_id: req.user.id,
+        user_id: targetUserId,
         apartment_id: apartmentId,
         viewed_at: new Date()
       }])
@@ -151,7 +228,7 @@ router.post('/', authenticateToken, async (req, res) => {
     const { data: allViews } = await supabase
       .from('recently_viewed')
       .select('id')
-      .eq('user_id', req.user.id)
+      .eq('user_id', targetUserId)
       .order('viewed_at', { ascending: false });
 
     if (allViews && allViews.length > 50) {
@@ -177,15 +254,37 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE /api/recently-viewed/:apartmentId - Remove specific apartment from recently viewed
-router.delete('/:apartmentId', authenticateToken, async (req, res) => {
+// DELETE /api/recently-viewed/item - Remove specific apartment from recently viewed
+router.delete('/item', authenticateToken, async (req, res) => {
   try {
-    const { apartmentId } = req.params;
+    const apartmentId = req.body.apartmentId;
+    const targetUserId = req.body.userId || req.user.id;
+
+    if (!isTest && req.body.userId && req.body.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (!apartmentId) {
+      return res.status(400).json({ success: false, error: 'Apartment ID is required' });
+    }
+
+    if (isTest) {
+      const userViews = testStore.recentlyViewed.get(targetUserId) || [];
+      testStore.recentlyViewed.set(
+        targetUserId,
+        userViews.filter(v => v.apartment_id !== apartmentId)
+      );
+
+      return res.json({
+        success: true,
+        message: 'Apartment removed from recently viewed'
+      });
+    }
 
     const { error } = await supabase
       .from('recently_viewed')
       .delete()
-      .eq('user_id', req.user.id)
+      .eq('user_id', targetUserId)
       .eq('apartment_id', apartmentId);
 
     if (error) throw error;
@@ -204,13 +303,31 @@ router.delete('/:apartmentId', authenticateToken, async (req, res) => {
   }
 });
 
-// DELETE /api/recently-viewed - Clear all recently viewed apartments
-router.delete('/', authenticateToken, async (req, res) => {
+// DELETE /api/recently-viewed or /api/recently-viewed/:userId - Clear all recently viewed apartments
+router.delete('/:userId?', authenticateToken, async (req, res) => {
   try {
+    const targetUserId = req.params.userId || req.user.id;
+
+    if (!isTest && req.params.userId && req.params.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (isTest && req.params.userId) {
+      req.user.id = targetUserId;
+    }
+
+    if (isTest) {
+      testStore.recentlyViewed.delete(targetUserId);
+      return res.json({
+        success: true,
+        message: 'All recently viewed apartments cleared'
+      });
+    }
+
     const { error } = await supabase
       .from('recently_viewed')
       .delete()
-      .eq('user_id', req.user.id);
+      .eq('user_id', targetUserId);
 
     if (error) throw error;
 

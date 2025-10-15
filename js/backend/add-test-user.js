@@ -1,6 +1,6 @@
 // Add test user to Supabase with correct credentials
 const { createClient } = require('@supabase/supabase-js');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const supabaseUrl = process.env.SUPABASE_URL;

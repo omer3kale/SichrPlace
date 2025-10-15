@@ -5,24 +5,16 @@ const AdvancedGdprService = require('../utils/advancedGdprService');
 const PrivacyComplianceScanner = require('../utils/privacyComplianceScanner');
 const GdprService = require('../services/GdprService');
 
-// Mock services
-jest.mock('../utils/advancedGdprService');
-jest.mock('../utils/privacyComplianceScanner');
-jest.mock('../services/GdprService');
+// Using real auth middleware - no mocks needed
+
+// Using real services - no mocks needed
 
 const app = express();
 app.use(express.json());
 
-// Mock authentication middleware
-app.use((req, res, next) => {
-  req.user = { 
-    id: 'test-admin-123', 
-    email: 'admin@example.com',
-    username: 'admin',
-    role: 'admin'
-  };
-  next();
-});
+// Use real authentication middleware from the routes
+const authMiddleware = require('../middleware/auth');
+app.use(authMiddleware);
 
 app.use('/api/advanced-gdpr', advancedGdprRoutes);
 
@@ -359,7 +351,14 @@ describe('Advanced GDPR Routes Tests', () => {
         .get('/api/advanced-gdpr/compliance/scan');
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockReport);
+      expect(response.body).toMatchObject({
+        overallScore: mockReport.overallScore,
+        issues: mockReport.issues,
+        recommendations: mockReport.recommendations,
+        checks: mockReport.checks
+      });
+      expect(typeof response.body.timestamp).toBe('string');
+      expect(new Date(response.body.timestamp).toString()).not.toBe('Invalid Date');
     });
 
     test('should handle compliance scan errors', async () => {
@@ -377,30 +376,21 @@ describe('Advanced GDPR Routes Tests', () => {
 
   describe('GET /api/advanced-gdpr/compliance/dashboard', () => {
     test('should return compliance dashboard data', async () => {
-      const mockConsentStats = [
-        { _id: 'analytics', total: 100, consented: 80 }
-      ];
-      const mockBreachStats = [
-        { _id: 'high', count: 2 }
-      ];
-      const mockDPIAStats = [
-        { _id: 'approved', count: 5 }
-      ];
-      const mockRecentLogs = [
-        { action: 'consent_given', count: 25 }
-      ];
+      const mockDashboard = {
+        consents: { total: 10, active: 9, expired: 1 },
+        breaches: { total: 2, unresolved: 1, unreported: 0 },
+        dpias: { total: 3, approved: 1, needsReview: 1 },
+        recentActivity: []
+      };
 
-      // Mock aggregation methods (these would need to be implemented)
-      const mockAggregate = jest.fn()
-        .mockResolvedValueOnce(mockConsentStats)
-        .mockResolvedValueOnce(mockBreachStats)
-        .mockResolvedValueOnce(mockDPIAStats)
-        .mockResolvedValueOnce(mockRecentLogs);
+      AdvancedGdprService.getComplianceDashboard = jest.fn().mockResolvedValue(mockDashboard);
 
       const response = await request(app)
         .get('/api/advanced-gdpr/compliance/dashboard');
 
       expect(response.status).toBe(200);
+      expect(response.body).toEqual(mockDashboard);
+      expect(AdvancedGdprService.getComplianceDashboard).toHaveBeenCalled();
     });
   });
 
@@ -454,7 +444,11 @@ describe('Advanced GDPR Routes Tests', () => {
         .post('/api/advanced-gdpr/compliance/daily-check');
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual(mockResults);
+      expect(response.body).toMatchObject({
+        checks: mockResults.checks
+      });
+      expect(typeof response.body.timestamp).toBe('string');
+      expect(new Date(response.body.timestamp).toString()).not.toBe('Invalid Date');
     });
   });
 

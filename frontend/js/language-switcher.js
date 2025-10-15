@@ -1,5 +1,13 @@
 // Simple Language Switcher for SichrPlace
 let currentLanguage = 'en';
+try {
+    const storedLanguage = localStorage.getItem('sichrplace-language');
+    if (storedLanguage && typeof storedLanguage === 'string') {
+        currentLanguage = storedLanguage;
+    }
+} catch (storageError) {
+    console.warn('Language preference unavailable, defaulting to English.', storageError);
+}
 let translations = {};
 
 // Load translations and initialize
@@ -8,12 +16,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Load translations
         const response = await fetch('js/translations.json');
         translations = await response.json();
-        
+
+        if (!translations[currentLanguage]) {
+            currentLanguage = 'en';
+        }
+
         // Set up language dropdown
         setupLanguageDropdown();
         
         // Apply initial language
         applyLanguage(currentLanguage);
+        updateLanguageDisplay();
         
     } catch (error) {
         console.error('Error loading language switcher:', error);

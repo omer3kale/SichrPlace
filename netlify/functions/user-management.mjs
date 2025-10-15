@@ -1,688 +1,747 @@
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
+import { mapUserToFrontend } from './utils/field-mapper.mjs';
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing Supabase environment variables');
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  throw new Error('Missing Supabase environment variables for user-management function');
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
 
-// Helper function to verify JWT token
-const verifyToken = (token) => {
+const publicSupabase =
+  supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      })
+    : null;
+
+const PROFILE_SELECT_FIELDS = `
+  id,
+  email,
+  username,
+  first_name,
+  last_name,
+  phone,
+  role,
+  user_type,
+  profile_image,
+  bio,
+  preferences,
+  notification_settings,
+  privacy_settings,
+  address,
+  house_number,
+  postal_code,
+  city,
+  state,
+  land,
+  geburtsdatum,
+  created_at,
+  updated_at,
+  last_login,
+  account_status,
+  email_verified
+`;
+
+const buildHeaders = () => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Content-Type': 'application/json',
+  Vary: 'Origin, Authorization, Content-Type',
+});
+
+const respond = (statusCode, headers, payload) => ({
+  statusCode,
+  headers,
+  body: JSON.stringify(payload),
+});
+
+const getHeader = (headers = {}, name) => {
+  const target = name.toLowerCase();
+  const entry = Object.entries(headers || {}).find(([key]) => key.toLowerCase() === target);
+  return entry ? entry[1] : null;
+};
+
+const extractBearerToken = (headers) => {
+  const value = getHeader(headers, 'authorization');
+  if (!value) return null;
+  const parts = value.trim().split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
+  return parts[1];
+};
+
+const sanitizeUserRecord = (user) => {
+  if (!user) return null;
+  const allowedFields = [
+    'id',
+    'email',
+    'username',
+    'first_name',
+    'last_name',
+    'phone',
+    'role',
+    'user_type',
+    'profile_image',
+    'bio',
+    'preferences',
+    'notification_settings',
+    'privacy_settings',
+    'address',
+    'house_number',
+    'postal_code',
+    'city',
+    'state',
+    'land',
+    'geburtsdatum',
+    'created_at',
+    'updated_at',
+    'last_login',
+    'account_status',
+    'email_verified',
+  ];
+
+  const filtered = {};
+  allowedFields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(user, field)) {
+      filtered[field] = user[field];
+    }
+  });
+
+  return mapUserToFrontend(filtered, { keepLegacy: true });
+};
+
+const isMissingTableError = (error) => error?.code === 'PGRST116';
+
+const httpError = (status, message, details) => {
+  const error = new Error(message);
+  error.status = status;
+  if (details) {
+    error.details = details;
+  }
+  return error;
+};
+
+const parseRequestBody = (body) => {
+  if (!body) return {};
   try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_here');
+    if (typeof body === 'object') {
+      return body;
+    }
+    return JSON.parse(body);
   } catch (error) {
-    return null;
+    throw httpError(400, 'Request body must be valid JSON.');
   }
 };
 
-export const handler = async (event, context) => {
-  // Handle CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
+const sanitizeString = (value, { maxLength, allowEmpty = false } = {}) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!allowEmpty && trimmed.length === 0) return null;
+  if (maxLength && trimmed.length > maxLength) {
+    return trimmed.slice(0, maxLength);
+  }
+  return trimmed.length === 0 ? (allowEmpty ? '' : null) : trimmed;
+};
+
+const sanitizeObject = (value) => {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value;
+  }
+  return undefined;
+};
+
+const clampNumber = (value, { min, max, fallback }) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, parsed));
+};
+
+const buildProfileUpdatePayload = (payload) => {
+  if (!payload || typeof payload !== 'object') return {};
+
+  const updates = {};
+  const stringFields = {
+    first_name: 80,
+    last_name: 80,
+    phone: 40,
+    username: 60,
+    bio: 500,
+    address: 120,
+    house_number: 20,
+    postal_code: 16,
+    city: 80,
+    state: 80,
+    land: 80,
+    profile_image: 2048,
   };
+
+  Object.entries(stringFields).forEach(([key, maxLength]) => {
+    if (!Object.prototype.hasOwnProperty.call(payload, key)) return;
+
+    if (typeof payload[key] === 'string') {
+      const sanitized = sanitizeString(payload[key], { maxLength, allowEmpty: true });
+      if (sanitized === '') {
+        updates[key] = null;
+      } else if (sanitized) {
+        updates[key] = sanitized;
+      }
+    } else if (payload[key] === null) {
+      updates[key] = null;
+    }
+  });
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'preferences')) {
+    const preferences = sanitizeObject(payload.preferences);
+    updates.preferences = preferences ?? null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'notification_settings')) {
+    const notification = sanitizeObject(payload.notification_settings);
+    updates.notification_settings = notification ?? null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'privacy_settings')) {
+    const privacy = sanitizeObject(payload.privacy_settings);
+    updates.privacy_settings = privacy ?? null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'geburtsdatum')) {
+    if (payload.geburtsdatum === null || payload.geburtsdatum === '') {
+      updates.geburtsdatum = null;
+    } else {
+      const dateValue = new Date(payload.geburtsdatum);
+      if (!Number.isNaN(dateValue.getTime())) {
+        updates.geburtsdatum = dateValue.toISOString();
+      }
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'user_type')) {
+    if (payload.user_type === null) {
+      updates.user_type = null;
+    } else if (['applicant', 'landlord'].includes(payload.user_type)) {
+      updates.user_type = payload.user_type;
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'role')) {
+    if (payload.role === null) {
+      updates.role = null;
+    } else if (['user', 'tenant', 'landlord', 'admin'].includes(payload.role)) {
+      updates.role = payload.role;
+    }
+  }
+
+  return updates;
+};
+
+const collectUserStats = async (userId) => {
+  const results = await Promise.all([
+    supabase
+      .from('apartments')
+      .select('id, views_count, status', { count: 'exact' })
+      .eq('landlord_id', userId),
+    supabase
+      .from('bookings')
+      .select('id, status, total_amount')
+      .eq('requester_id', userId),
+    supabase
+      .from('reviews')
+      .select('id, rating')
+      .eq('requester_id', userId),
+    supabase
+      .from('favorites')
+      .select('id')
+      .eq('user_id', userId),
+    supabase
+      .from('messages')
+      .select('id, created_at')
+      .eq('sender_id', userId),
+    supabase
+      .from('user_activity')
+      .select('id, action, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50),
+  ]);
+
+  const [apartmentsRes, bookingsRes, reviewsRes, favoritesRes, messagesRes, activityRes] = results;
+
+  if (
+    [apartmentsRes, bookingsRes, reviewsRes, favoritesRes, messagesRes, activityRes].some(
+      (res) => res?.error && !isMissingTableError(res.error),
+    )
+  ) {
+    const firstError = [
+      apartmentsRes,
+      bookingsRes,
+      reviewsRes,
+      favoritesRes,
+      messagesRes,
+      activityRes,
+    ].find((res) => res?.error && !isMissingTableError(res.error))?.error;
+    throw httpError(500, 'Failed to collect user statistics.', firstError?.message);
+  }
+
+  const apartments = apartmentsRes?.data || [];
+  const bookings = bookingsRes?.data || [];
+  const reviews = reviewsRes?.data || [];
+  const favorites = favoritesRes?.data || [];
+  const messages = messagesRes?.data || [];
+  const activity = activityRes?.data || [];
+
+  const totalViews = apartments.reduce((sum, apt) => sum + (Number(apt.views_count) || 0), 0);
+  const confirmedBookings = bookings.filter((b) => b.status === 'confirmed');
+  const totalBookingSpend = bookings.reduce(
+    (sum, b) => sum + (Number.isFinite(Number(b.total_amount)) ? Number(b.total_amount) : 0),
+    0,
+  );
+  const averageRating = reviews.length
+    ? reviews.reduce((sum, review) => sum + (Number(review.rating) || 0), 0) / reviews.length
+    : 0;
+
+  const mostCommonAction = activity.reduce((acc, entry) => {
+    if (!entry?.action) return acc;
+    acc[entry.action] = (acc[entry.action] || 0) + 1;
+    return acc;
+  }, {});
+
+  const topAction = Object.entries(mostCommonAction).reduce(
+    (top, [action, count]) => {
+      if (!top || count > top.count) {
+        return { action, count };
+      }
+      return top;
+    },
+    null,
+  );
+
+  return {
+    apartments: {
+      total: apartments.length,
+      active: apartments.filter((apt) => apt.status === 'active').length,
+      total_views: totalViews,
+    },
+    bookings: {
+      total: bookings.length,
+      confirmed: confirmedBookings.length,
+      total_spent: Number(totalBookingSpend.toFixed(2)),
+    },
+    reviews: {
+      total: reviews.length,
+      average_rating: Number(averageRating.toFixed(2)),
+    },
+    favorites: {
+      total: favorites.length,
+    },
+    messages: {
+      total: messages.length,
+      last_30_days: messages.filter((msg) => {
+        if (!msg?.created_at) return false;
+        const created = new Date(msg.created_at);
+        const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        return created > cutoff;
+      }).length,
+    },
+    activity: {
+      total_actions: activity.length,
+      last_activity: activity[0]?.created_at || null,
+      most_common_action: topAction?.action || null,
+    },
+  };
+};
+
+const getAuthContext = async (eventHeaders) => {
+  const token = extractBearerToken(eventHeaders || {});
+  if (!token) {
+    throw httpError(401, 'Authorization token is required.');
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user?.id) {
+      throw httpError(401, 'Invalid or expired token.');
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('id, email, role, status, account_status, is_blocked')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError || !profile) {
+      throw httpError(401, 'User profile not found.');
+    }
+
+    if (
+      profile.is_blocked ||
+      ['suspended', 'deleted'].includes(profile.account_status) ||
+      profile.status === 'suspended'
+    ) {
+      throw httpError(403, 'Account suspended or blocked');
+    }
+
+    return { token, authUser: data.user, profile };
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(401, 'Authentication failed');
+  }
+};
+
+const handleGetUserProfile = async ({ headers, userId }) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select(PROFILE_SELECT_FIELDS)
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    if (isMissingTableError(error)) {
+      return respond(200, headers, { success: true, data: null });
+    }
+    if (error.code === 'PGRST116') {
+      throw httpError(404, 'Profile not found.');
+    }
+    throw httpError(500, 'Failed to load profile information.', error.message);
+  }
+
+  return respond(200, headers, {
+    success: true,
+    data: sanitizeUserRecord(data),
+  });
+};
+
+const handleUpdateUserProfile = async ({ headers, userId, body }) => {
+  const payload = parseRequestBody(body);
+  const updates = buildProfileUpdatePayload(payload);
+
+  if (Object.keys(updates).length === 0) {
+    throw httpError(400, 'No valid fields provided for update.');
+  }
+
+  updates.updated_at = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', userId)
+    .select(PROFILE_SELECT_FIELDS)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      throw httpError(404, 'Profile not found.');
+    }
+    throw httpError(500, 'Failed to update profile.', error.message);
+  }
+
+  return respond(200, headers, {
+    success: true,
+    message: 'Profile updated successfully.',
+    data: sanitizeUserRecord(data),
+  });
+};
+
+const handleGetUserStats = async ({ headers, userId }) => {
+  const stats = await collectUserStats(userId);
+  return respond(200, headers, {
+    success: true,
+    data: stats,
+  });
+};
+
+const handleGetUserActivity = async ({ headers, userId, query }) => {
+  const { limit = '50', offset = '0', action_type: actionType } = query || {};
+
+  const parsedLimit = clampNumber(limit, { min: 1, max: 100, fallback: 50 });
+  const parsedOffset = clampNumber(offset, { min: 0, max: 10000, fallback: 0 });
+  const sanitizedActionType = sanitizeString(actionType, { maxLength: 120, allowEmpty: true });
+
+  let builder = supabase
+    .from('user_activity')
+    .select('id, user_id, action, metadata, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .range(parsedOffset, parsedOffset + parsedLimit - 1);
+
+  if (sanitizedActionType) {
+    builder = builder.eq('action', sanitizedActionType);
+  }
+
+  const { data, error } = await builder;
+
+  if (error) {
+    if (isMissingTableError(error)) {
+      return respond(200, headers, {
+        success: true,
+        data: {
+          activities: [],
+          pagination: {
+            limit: parsedLimit,
+            offset: parsedOffset,
+            returned: 0,
+          },
+        },
+      });
+    }
+    throw httpError(500, 'Failed to load user activity.', error.message);
+  }
+
+  return respond(200, headers, {
+    success: true,
+    data: {
+      activities: data || [],
+      pagination: {
+        limit: parsedLimit,
+        offset: parsedOffset,
+        returned: data?.length || 0,
+      },
+    },
+  });
+};
+
+const handleUpdatePreferences = async ({ headers, userId, body }) => {
+  const payload = parseRequestBody(body);
+  const allowedKeys = ['preferences', 'notification_settings', 'privacy_settings'];
+
+  const updatePayload = {};
+  allowedKeys.forEach((key) => {
+    if (!Object.prototype.hasOwnProperty.call(payload, key)) return;
+    const sanitized = sanitizeObject(payload[key]);
+    updatePayload[key] = sanitized ?? null;
+  });
+
+  if (Object.keys(updatePayload).length === 0) {
+    throw httpError(400, 'No valid preference fields provided.');
+  }
+
+  updatePayload.updated_at = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(updatePayload)
+    .eq('id', userId)
+    .select('preferences, notification_settings, privacy_settings')
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      throw httpError(404, 'Profile not found.');
+    }
+    throw httpError(500, 'Failed to update preferences.', error.message);
+  }
+
+  return respond(200, headers, {
+    success: true,
+    message: 'Preferences updated successfully.',
+    data,
+  });
+};
+
+const handleUpdatePassword = async ({ headers, userId, userEmail, body }) => {
+  if (!publicSupabase) {
+    throw httpError(503, 'Password updates are temporarily unavailable.');
+  }
+
+  const payload = parseRequestBody(body);
+  const currentPassword = sanitizeString(payload.current_password, {
+    maxLength: 128,
+    allowEmpty: false,
+  });
+  const newPassword = sanitizeString(payload.new_password, {
+    maxLength: 128,
+    allowEmpty: false,
+  });
+
+  if (!currentPassword || !newPassword) {
+    throw httpError(400, 'Current and new passwords are required.');
+  }
+
+  if (newPassword.length < 8) {
+    throw httpError(400, 'New password must be at least 8 characters long.');
+  }
+
+  if (!userEmail) {
+    throw httpError(400, 'Unable to verify user email for password update.');
+  }
+
+  const { error: signInError } = await publicSupabase.auth.signInWithPassword({
+    email: userEmail,
+    password: currentPassword,
+  });
+
+  if (signInError) {
+    throw httpError(400, 'Current password is incorrect.');
+  }
+
+  const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+    password: newPassword,
+  });
+
+  if (updateError) {
+    throw httpError(500, 'Failed to update password.', updateError.message);
+  }
+
+  return respond(200, headers, {
+    success: true,
+    message: 'Password updated successfully.',
+  });
+};
+
+const handleUpdateAvatar = async ({ headers, userId, body }) => {
+  const payload = parseRequestBody(body);
+  const profileImage = sanitizeString(payload.profile_image, { maxLength: 2048, allowEmpty: false });
+
+  if (!profileImage) {
+    throw httpError(400, 'A valid profile_image string is required.');
+  }
+
+  const updates = {
+    profile_image: profileImage,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', userId)
+    .select('id, profile_image, updated_at')
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      throw httpError(404, 'Profile not found.');
+    }
+    throw httpError(500, 'Failed to update avatar.', error.message);
+  }
+
+  return respond(200, headers, {
+    success: true,
+    message: 'Avatar updated successfully.',
+    data,
+  });
+};
+
+const handleDeleteAccount = async ({ headers, userId, body }) => {
+  const payload = parseRequestBody(body);
+  const deleteReason = sanitizeString(payload.reason, { maxLength: 500, allowEmpty: true });
+
+  const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+  if (deleteError) {
+    throw httpError(500, 'Failed to delete user account.', deleteError.message);
+  }
+
+  const timestamp = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from('users')
+    .update({
+      account_status: 'deleted',
+      deleted_at: timestamp,
+      delete_reason: deleteReason && deleteReason.length > 0 ? deleteReason : null,
+    })
+    .eq('id', userId);
+
+  if (updateError && !isMissingTableError(updateError)) {
+    throw httpError(500, 'Failed to mark account as deleted.', updateError.message);
+  }
+
+  return respond(200, headers, {
+    success: true,
+    message: 'Account deleted successfully.',
+  });
+};
+
+const ACTION_CONFIG = {
+  get_user_profile: { methods: ['GET'], handler: handleGetUserProfile },
+  update_user_profile: { methods: ['PUT', 'POST'], handler: handleUpdateUserProfile },
+  get_user_stats: { methods: ['GET'], handler: handleGetUserStats },
+  get_user_activity: { methods: ['GET'], handler: handleGetUserActivity },
+  update_preferences: { methods: ['PUT', 'POST'], handler: handleUpdatePreferences },
+  update_password: { methods: ['PUT', 'POST'], handler: handleUpdatePassword },
+  update_avatar: { methods: ['PUT', 'POST'], handler: handleUpdateAvatar },
+  delete_account: { methods: ['DELETE', 'POST'], handler: handleDeleteAccount },
+};
+
+const buildActionDetails = () => ({
+  available_actions: Object.entries(ACTION_CONFIG).map(([action, config]) => ({
+    action,
+    methods: config.methods,
+  })),
+});
+
+export const handler = async (event) => {
+  const headers = buildHeaders();
 
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
   }
 
   try {
-    const { action } = event.queryStringParameters || {};
-    
-    if (!action) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Action parameter is required',
-          available_actions: [
-            'get_user_profile', 
-            'update_user_profile', 
-            'get_user_stats',
-            'get_user_activity',
-            'update_preferences',
-            'update_password',
-            'update_avatar',
-            'delete_account'
-          ]
-        })
-      };
+    const authResult = await getAuthContext(event.headers || {});
+
+    const method = (event.httpMethod || 'GET').toUpperCase();
+    const actionValue = sanitizeString(event.queryStringParameters?.action, {
+      maxLength: 120,
+      allowEmpty: false,
+    });
+
+    if (!actionValue) {
+      throw httpError(400, 'Missing action parameter.', buildActionDetails());
     }
 
-    // Get authentication for most operations
-    const authHeader = event.headers.authorization || event.headers.Authorization;
-    let user = null;
-    
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      user = verifyToken(token);
-      
-      if (!user) {
-        return {
-          statusCode: 401,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            message: 'Invalid authentication token'
-          })
-        };
-      }
+    const actionConfig = ACTION_CONFIG[actionValue];
+    if (!actionConfig) {
+      throw httpError(400, 'Invalid action specified.', buildActionDetails());
     }
 
-    switch (action) {
-      case 'get_user_profile':
-        return await getUserProfile(user?.id || event.queryStringParameters?.user_id, headers);
-      
-      case 'update_user_profile':
-        if (!user) {
-          return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Authentication required' }) };
-        }
-        return await updateUserProfile(user.id, event.body, headers);
-      
-      case 'get_user_stats':
-        if (!user) {
-          return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Authentication required' }) };
-        }
-        return await getUserStats(user.id, headers);
-      
-      case 'get_user_activity':
-        if (!user) {
-          return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Authentication required' }) };
-        }
-        return await getUserActivity(user.id, event.queryStringParameters, headers);
-      
-      case 'update_preferences':
-        if (!user) {
-          return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Authentication required' }) };
-        }
-        return await updatePreferences(user.id, event.body, headers);
-      
-      case 'update_password':
-        if (!user) {
-          return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Authentication required' }) };
-        }
-        return await updatePassword(user.id, event.body, headers);
-      
-      case 'update_avatar':
-        if (!user) {
-          return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Authentication required' }) };
-        }
-        return await updateAvatar(user.id, event.body, headers);
-      
-      case 'delete_account':
-        if (!user) {
-          return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Authentication required' }) };
-        }
-        return await deleteAccount(user.id, event.body, headers);
-      
-      default:
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            message: 'Invalid action specified'
-          })
-        };
+    if (!actionConfig.methods.includes(method)) {
+      const error = httpError(
+        405,
+        `Action "${actionValue}" is not available for ${method} requests.`,
+        {
+          action: actionValue,
+          allowed_methods: actionConfig.methods,
+        },
+      );
+      error.allow = actionConfig.methods.join(', ');
+      throw error;
     }
 
-  } catch (error) {
-    console.error('User management error:', error);
-    return {
-      statusCode: 500,
+    const context = {
       headers,
-      body: JSON.stringify({
-        success: false,
-        message: 'User management operation failed',
-        error: error.message
-      })
+      userId: authResult.profile.id,
+      userEmail: authResult.authUser.email || authResult.profile.email,
+      body: event.body,
+      query: event.queryStringParameters || {},
     };
+
+    return await actionConfig.handler(context);
+  } catch (error) {
+    console.error('user-management error:', error);
+    const status = error.status || 500;
+    const responseHeaders = { ...headers };
+    if (status === 405 && error.allow) {
+      responseHeaders.Allow = error.allow;
+    }
+    return respond(status, responseHeaders, {
+      success: false,
+      error: status === 500 ? 'User management operation failed.' : error.message,
+      ...(error.details && status !== 500 ? { details: error.details } : {}),
+      ...(status === 500 && process.env.NODE_ENV === 'development'
+        ? { details: error.details || error.message }
+        : {}),
+    });
   }
 };
-
-// Get user profile with detailed information
-async function getUserProfile(userId, headers) {
-  try {
-    if (!userId) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'User ID is required'
-        })
-      };
-    }
-
-    // Get user data with related information
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select(`
-        id,
-        username,
-        email,
-        full_name,
-        phone,
-        user_type,
-        verified,
-        profile_image,
-        bio,
-        location,
-        notification_settings,
-        privacy_settings,
-        created_at,
-        updated_at,
-        last_login_at
-      `)
-      .eq('id', userId)
-      .single();
-
-    if (userError) {
-      throw userError;
-    }
-
-    // Get user statistics
-    const [
-      apartmentsCount,
-      bookingsCount,
-      reviewsCount,
-      favoritesCount,
-      messagesCount
-    ] = await Promise.all([
-      supabase.from('apartments').select('id', { count: 'exact' }).eq('landlord_id', userId),
-      supabase.from('bookings').select('id', { count: 'exact' }).eq('user_id', userId),
-      supabase.from('apartment_reviews').select('id', { count: 'exact' }).eq('user_id', userId),
-      supabase.from('user_favorites').select('id', { count: 'exact' }).eq('user_id', userId),
-      supabase.from('messages').select('id', { count: 'exact' }).eq('sender_id', userId)
-    ]);
-
-    const userProfile = {
-      ...user,
-      statistics: {
-        apartments_count: apartmentsCount.count || 0,
-        bookings_count: bookingsCount.count || 0,
-        reviews_count: reviewsCount.count || 0,
-        favorites_count: favoritesCount.count || 0,
-        messages_count: messagesCount.count || 0
-      },
-      account_status: {
-        verified: user.verified,
-        profile_complete: !!(user.full_name && user.phone && user.bio),
-        last_activity: user.last_login_at
-      }
-    };
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        data: userProfile
-      })
-    };
-
-  } catch (error) {
-    console.error('Get user profile error:', error);
-    throw error;
-  }
-}
-
-// Update user profile information
-async function updateUserProfile(userId, requestBody, headers) {
-  try {
-    const {
-      full_name,
-      phone,
-      bio,
-      location,
-      user_type,
-      profile_image
-    } = JSON.parse(requestBody);
-
-    // Validate input
-    const updateData = {};
-    if (full_name !== undefined) updateData.full_name = full_name;
-    if (phone !== undefined) updateData.phone = phone;
-    if (bio !== undefined) updateData.bio = bio;
-    if (location !== undefined) updateData.location = location;
-    if (user_type !== undefined && ['tenant', 'landlord'].includes(user_type)) {
-      updateData.user_type = user_type;
-    }
-    if (profile_image !== undefined) updateData.profile_image = profile_image;
-    
-    updateData.updated_at = new Date().toISOString();
-
-    const { data: updatedUser, error } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Profile updated successfully',
-        data: updatedUser
-      })
-    };
-
-  } catch (error) {
-    console.error('Update user profile error:', error);
-    throw error;
-  }
-}
-
-// Get user statistics and analytics
-async function getUserStats(userId, headers) {
-  try {
-    // Get various user statistics
-    const [
-      apartmentStats,
-      bookingStats,
-      reviewStats,
-      messageStats,
-      activityStats
-    ] = await Promise.all([
-      // Apartment statistics
-      supabase
-        .from('apartments')
-        .select('id, status, created_at, views_count')
-        .eq('landlord_id', userId),
-
-      // Booking statistics
-      supabase
-        .from('bookings')
-        .select('id, status, total_amount, created_at')
-        .eq('user_id', userId),
-
-      // Review statistics
-      supabase
-        .from('apartment_reviews')
-        .select('id, rating, created_at')
-        .eq('user_id', userId),
-
-      // Message statistics
-      supabase
-        .from('messages')
-        .select('id, created_at')
-        .eq('sender_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(30),
-
-      // Activity statistics
-      supabase
-        .from('user_activity')
-        .select('id, action, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(50)
-    ]);
-
-    const stats = {
-      apartments: {
-        total: apartmentStats.data?.length || 0,
-        active: apartmentStats.data?.filter(a => a.status === 'active').length || 0,
-        total_views: apartmentStats.data?.reduce((sum, a) => sum + (a.views_count || 0), 0) || 0
-      },
-      bookings: {
-        total: bookingStats.data?.length || 0,
-        confirmed: bookingStats.data?.filter(b => b.status === 'confirmed').length || 0,
-        total_spent: bookingStats.data?.reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
-      },
-      reviews: {
-        total: reviewStats.data?.length || 0,
-        average_rating: reviewStats.data?.length > 0 
-          ? reviewStats.data.reduce((sum, r) => sum + r.rating, 0) / reviewStats.data.length 
-          : 0
-      },
-      messages: {
-        total: messageStats.data?.length || 0,
-        last_30_days: messageStats.data?.filter(m => 
-          new Date(m.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        ).length || 0
-      },
-      activity: {
-        total_actions: activityStats.data?.length || 0,
-        last_activity: activityStats.data?.[0]?.created_at || null,
-        most_common_action: getMostCommonAction(activityStats.data || [])
-      }
-    };
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        data: stats
-      })
-    };
-
-  } catch (error) {
-    console.error('Get user stats error:', error);
-    throw error;
-  }
-}
-
-// Get user activity history
-async function getUserActivity(userId, queryParams, headers) {
-  try {
-    const { limit = '50', offset = '0', action_type } = queryParams || {};
-
-    let query = supabase
-      .from('user_activity')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(parseInt(limit))
-      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
-
-    if (action_type) {
-      query = query.eq('action', action_type);
-    }
-
-    const { data: activities, error } = await query;
-
-    if (error) {
-      throw error;
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        data: {
-          activities: activities || [],
-          total_fetched: activities?.length || 0
-        }
-      })
-    };
-
-  } catch (error) {
-    console.error('Get user activity error:', error);
-    throw error;
-  }
-}
-
-// Update user preferences
-async function updatePreferences(userId, requestBody, headers) {
-  try {
-    const {
-      notification_settings,
-      privacy_settings,
-      language_preference,
-      timezone
-    } = JSON.parse(requestBody);
-
-    const updateData = {};
-    if (notification_settings) updateData.notification_settings = notification_settings;
-    if (privacy_settings) updateData.privacy_settings = privacy_settings;
-    if (language_preference) updateData.language_preference = language_preference;
-    if (timezone) updateData.timezone = timezone;
-    
-    updateData.updated_at = new Date().toISOString();
-
-    const { data: updatedUser, error } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', userId)
-      .select('notification_settings, privacy_settings, language_preference, timezone')
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Preferences updated successfully',
-        data: updatedUser
-      })
-    };
-
-  } catch (error) {
-    console.error('Update preferences error:', error);
-    throw error;
-  }
-}
-
-// Update user password
-async function updatePassword(userId, requestBody, headers) {
-  try {
-    const { current_password, new_password } = JSON.parse(requestBody);
-
-    if (!current_password || !new_password) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Current password and new password are required'
-        })
-      };
-    }
-
-    if (new_password.length < 8) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'New password must be at least 8 characters long'
-        })
-      };
-    }
-
-    // Get current user data
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('password')
-      .eq('id', userId)
-      .single();
-
-    if (userError) {
-      throw userError;
-    }
-
-    // Verify current password (in production, use proper password hashing)
-    // This is a simplified example
-    if (user.password !== current_password) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Current password is incorrect'
-        })
-      };
-    }
-
-    // Update password (in production, hash the password)
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({
-        password: new_password, // In production: await bcrypt.hash(new_password, 10)
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId);
-
-    if (updateError) {
-      throw updateError;
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Password updated successfully'
-      })
-    };
-
-  } catch (error) {
-    console.error('Update password error:', error);
-    throw error;
-  }
-}
-
-// Update user avatar
-async function updateAvatar(userId, requestBody, headers) {
-  try {
-    const { profile_image, avatar_data } = JSON.parse(requestBody);
-
-    if (!profile_image && !avatar_data) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Profile image URL or avatar data is required'
-        })
-      };
-    }
-
-    const updateData = {
-      profile_image: profile_image || avatar_data,
-      updated_at: new Date().toISOString()
-    };
-
-    const { data: updatedUser, error } = await supabase
-      .from('users')
-      .update(updateData)
-      .eq('id', userId)
-      .select('profile_image')
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Avatar updated successfully',
-        data: {
-          profile_image: updatedUser.profile_image
-        }
-      })
-    };
-
-  } catch (error) {
-    console.error('Update avatar error:', error);
-    throw error;
-  }
-}
-
-// Delete user account
-async function deleteAccount(userId, requestBody, headers) {
-  try {
-    const { confirmation, reason } = JSON.parse(requestBody);
-
-    if (confirmation !== 'DELETE MY ACCOUNT') {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Account deletion requires confirmation text: "DELETE MY ACCOUNT"'
-        })
-      };
-    }
-
-    // Check for active bookings or obligations
-    const { data: activeBookings, error: bookingError } = await supabase
-      .from('bookings')
-      .select('id')
-      .eq('user_id', userId)
-      .in('status', ['confirmed', 'active']);
-
-    if (bookingError) {
-      throw bookingError;
-    }
-
-    if (activeBookings && activeBookings.length > 0) {
-      return {
-        statusCode: 409,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Cannot delete account with active bookings',
-          active_bookings: activeBookings.length
-        })
-      };
-    }
-
-    // Anonymize user data instead of hard delete
-    const anonymizedData = {
-      username: `deleted_user_${Date.now()}`,
-      email: `deleted_${Date.now()}@anonymized.local`,
-      full_name: '[DELETED USER]',
-      phone: null,
-      profile_image: null,
-      bio: null,
-      is_deleted: true,
-      deleted_at: new Date().toISOString(),
-      deletion_reason: reason || 'User requested deletion',
-      updated_at: new Date().toISOString()
-    };
-
-    const { error: deleteError } = await supabase
-      .from('users')
-      .update(anonymizedData)
-      .eq('id', userId);
-
-    if (deleteError) {
-      throw deleteError;
-    }
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Account deleted successfully',
-        data: {
-          deletion_date: new Date().toISOString(),
-          method: 'anonymization'
-        }
-      })
-    };
-
-  } catch (error) {
-    console.error('Delete account error:', error);
-    throw error;
-  }
-}
-
-// Helper function to get most common action
-function getMostCommonAction(activities) {
-  if (!activities || activities.length === 0) return null;
-  
-  const actionCounts = activities.reduce((acc, activity) => {
-    acc[activity.action] = (acc[activity.action] || 0) + 1;
-    return acc;
-  }, {});
-  
-  return Object.keys(actionCounts).reduce((a, b) => 
-    actionCounts[a] > actionCounts[b] ? a : b
-  );
-}

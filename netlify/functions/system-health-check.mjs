@@ -1,42 +1,83 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Environment validation
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing Supabase environment variables');
+  throw new Error('Missing required Supabase environment variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Initialize Supabase client with hardened configuration
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+
+// Helper function to build standardized headers
+const buildHeaders = (additionalHeaders = {}) => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Origin, Access-Control-Request-Headers',
+  ...additionalHeaders
+});
+
+// Helper function to create standardized responses
+const respond = (data, additionalHeaders = {}) => ({
+  statusCode: 200,
+  headers: buildHeaders(additionalHeaders),
+  body: JSON.stringify(data)
+});
+
+// Helper function to create HTTP errors
+const httpError = (statusCode, message, details = {}) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.details = details;
+  return error;
+};
+
+// Safe database operations
+const safeSelect = async (table, query) => {
+  try {
+    const result = await supabase.from(table).select(query.select).limit(query.limit || 1);
+    return result;
+  } catch (error) {
+    console.error(`Database select error in ${table}:`, error);
+    return { data: null, error };
+  }
+};
+
+const safeCount = async (table) => {
+  try {
+    const result = await supabase.from(table).select('*', { count: 'exact', head: true });
+    return result;
+  } catch (error) {
+    console.error(`Database count error in ${table}:`, error);
+    return { count: null, error };
+  }
+};
 
 export const handler = async (event, context) => {
-  // Handle CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
-  };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  if (event.httpMethod !== 'GET') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
-  }
-
   try {
+    // Handle CORS preflight
+    if (event.httpMethod === 'OPTIONS') {
+      return { statusCode: 200, headers: buildHeaders(), body: '' };
+    }
+
+    if (event.httpMethod !== 'GET') {
+      throw httpError(405, 'Method not allowed');
+    }
+
     const startTime = Date.now();
-    const { 
-      includeMetrics = true, 
-      includeHealth = true, 
-      includeRecommendations = true 
-    } = event.queryStringParameters || {};
+    const queryParams = event.queryStringParameters || {};
+    const includeMetrics = queryParams.includeMetrics !== 'false';
+    const includeHealth = queryParams.includeHealth !== 'false';
+    const includeRecommendations = queryParams.includeRecommendations !== 'false';
 
     // Initialize system health check results
     const healthCheck = {
@@ -49,49 +90,38 @@ export const handler = async (event, context) => {
       execution_time_ms: null
     };
 
-    try {
-      // Database health check
-      const dbStartTime = Date.now();
-      const { data: dbTest, error: dbError } = await supabase
-        .from('users')
-        .select('id')
-        .limit(1);
+    // Database health check with safe operations
+    const dbStartTime = Date.now();
+    const { data: dbTest, error: dbError } = await safeSelect('users', {
+      select: 'id',
+      limit: 1
+    });
+    
+    const dbResponseTime = Date.now() - dbStartTime;
       
-      const dbResponseTime = Date.now() - dbStartTime;
-      
-      healthCheck.components.database = {
-        status: dbError ? 'unhealthy' : 'healthy',
-        response_time_ms: dbResponseTime,
-        error: dbError?.message || null,
-        last_check: new Date().toISOString()
-      };
+    healthCheck.components.database = {
+      status: dbError ? 'unhealthy' : 'healthy',
+      response_time_ms: dbResponseTime,
+      error: dbError?.message || null,
+      last_check: new Date().toISOString()
+    };
 
-      if (dbError) {
-        healthCheck.overall_score -= 30;
-        healthCheck.recommendations.push({
-          component: 'database',
-          severity: 'high',
-          issue: 'Database connection failed',
-          recommendation: 'Check Supabase configuration and network connectivity'
-        });
-      } else if (dbResponseTime > 1000) {
-        healthCheck.overall_score -= 15;
-        healthCheck.recommendations.push({
-          component: 'database',
-          severity: 'medium',
-          issue: 'Slow database response',
-          recommendation: 'Optimize database queries and check connection pool'
-        });
-      }
-
-    } catch (dbError) {
-      healthCheck.components.database = {
-        status: 'unhealthy',
-        response_time_ms: null,
-        error: dbError.message,
-        last_check: new Date().toISOString()
-      };
-      healthCheck.overall_score -= 40;
+    if (dbError) {
+      healthCheck.overall_score -= 30;
+      healthCheck.recommendations.push({
+        component: 'database',
+        severity: 'high',
+        issue: 'Database connection failed',
+        recommendation: 'Check Supabase configuration and network connectivity'
+      });
+    } else if (dbResponseTime > 1000) {
+      healthCheck.overall_score -= 15;
+      healthCheck.recommendations.push({
+        component: 'database',
+        severity: 'medium',
+        issue: 'Slow database response',
+        recommendation: 'Optimize database queries and check connection pool'
+      });
     }
 
     // Environment variables check
@@ -362,9 +392,11 @@ export const handler = async (event, context) => {
       maintenance_window: 'Sunday 02:00-04:00 UTC'
     };
 
+    const statusCode = healthCheck.overall_status === 'critical' ? 503 : 200;
+    
     return {
-      statusCode: healthCheck.overall_status === 'critical' ? 503 : 200,
-      headers,
+      statusCode,
+      headers: buildHeaders(),
       body: JSON.stringify({
         success: healthCheck.overall_status !== 'critical',
         data: healthCheck
@@ -373,15 +405,30 @@ export const handler = async (event, context) => {
 
   } catch (error) {
     console.error('System health check error:', error);
+    
+    // Handle HTTP errors (from httpError helper)
+    if (error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: buildHeaders(),
+        body: JSON.stringify({
+          success: false,
+          message: error.message,
+          ...(error.details && process.env.NODE_ENV === 'development' && { details: error.details })
+        })
+      };
+    }
+    
+    // Handle unexpected errors
     return {
       statusCode: 500,
-      headers,
+      headers: buildHeaders(),
       body: JSON.stringify({
         success: false,
         message: 'System health check failed',
-        error: error.message,
         timestamp: new Date().toISOString(),
-        overall_status: 'critical'
+        overall_status: 'critical',
+        ...(process.env.NODE_ENV === 'development' && { error: error.message })
       })
     };
   }

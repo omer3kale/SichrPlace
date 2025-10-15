@@ -65,9 +65,9 @@ export const handler = async (event, context) => {
       .from('apartments')
       .select(`
         *,
-        landlord:users!apartments_landlord_id_fkey(username, full_name, phone),
+        landlord:users!apartments_owner_id_fkey(username, full_name, phone),
         images:apartment_images(url, is_main),
-        reviews:apartment_reviews(rating, comment, created_at, user:users(username))
+        reviews:reviews(rating, comment, created_at, user:users(username))
       `)
       .eq('status', 'active');
 
@@ -88,7 +88,7 @@ export const handler = async (event, context) => {
       query = query.eq('property_type', propertyType);
     }
     if (furnished !== null) {
-      query = query.eq('furnished', furnished);
+      query = query.eq('moebliert_typ', furnished ? 'moebliert' : 'unmoebliert');
     }
 
     // Execute query
@@ -195,7 +195,7 @@ export const handler = async (event, context) => {
             body: JSON.stringify({
               success: true,
               data: {
-                apartments: limitedResults,
+                apartments: mapArrayToFrontend(limitedResults, mapApartmentToFrontend),
                 total_found: apartmentsWithDistance.length,
                 search_center: location,
                 radius_km: radius / 1000,
@@ -226,7 +226,7 @@ export const handler = async (event, context) => {
       body: JSON.stringify({
         success: true,
         data: {
-          apartments: limitedResults,
+          apartments: mapArrayToFrontend(limitedResults),
           total_found: apartmentsWithDistance.length,
           search_center: location,
           radius_km: radius / 1000,

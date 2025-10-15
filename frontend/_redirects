@@ -1,4 +1,4 @@
-# API redirects for Netlify Functions  
+# API redirects for Netlify Functions
 /api/paypal-config /.netlify/functions/paypal-config 200
 /api/csrf-token /.netlify/functions/csrf-token 200
 /api/viewing-request /.netlify/functions/viewing-request 200
@@ -7,5 +7,18 @@
 /api/upload-apartment /.netlify/functions/upload-apartment 200
 /api/health /.netlify/functions/health 200
 
-# TEMPORARY: Removed catch-all redirect to test functions
+# Authentication endpoints
+/auth/login /.netlify/functions/auth-login 200
+/auth/register /.netlify/functions/auth-register 200
+/auth/logout /.netlify/functions/auth-logout 200
+/auth/forgot-password /.netlify/functions/auth-forgot-password 200
+/auth/reset-password /.netlify/functions/auth-reset-password 200
+/auth/verify /.netlify/functions/auth-verify 200
+/auth/resend-verification /.netlify/functions/auth-resend-verification 200
+/auth/me /.netlify/functions/auth-me 200
+
+# SPA fallback - serve index.html for all non-API routes
+/* /index.html 200
+
+# TEMPORARY: Removed catch-all redirect to test functions  
 /api/* /.netlify/functions/:splat 200

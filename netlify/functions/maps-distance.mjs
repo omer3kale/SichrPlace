@@ -1,31 +1,70 @@
 const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
 
 if (!googleMapsApiKey) {
-  console.error('GOOGLE_MAPS_API_KEY environment variable is not set');
+  throw new Error('GOOGLE_MAPS_API_KEY environment variable is required for maps-distance function');
 }
 
+const buildHeaders = () => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Authorization',
+});
+
+const respond = (statusCode, payload) => ({
+  statusCode,
+  headers: buildHeaders(),
+  body: JSON.stringify(payload),
+});
+
+const parseRequestBody = (body) => {
+  if (!body) return {};
+  try {
+    if (typeof body === 'object') {
+      return body;
+    }
+    return JSON.parse(body);
+  } catch (error) {
+    throw httpError(400, 'Request body must be valid JSON');
+  }
+};
+
+const sanitizeString = (value, { maxLength, allowEmpty = false } = {}) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!allowEmpty && trimmed.length === 0) return null;
+  if (maxLength && trimmed.length > maxLength) {
+    return trimmed.slice(0, maxLength);
+  }
+  return trimmed;
+};
+
+const httpError = (status, message, details = null) => {
+  const error = new Error(message);
+  error.status = status;
+  if (details) {
+    error.details = details;
+  }
+  return error;
+};
+
 export const handler = async (event, context) => {
-  // Handle CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+  console.log('Maps distance handler called:', {
+    method: event.httpMethod,
+    path: event.path
+  });
 
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return respond(200, '');
   }
 
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+    throw httpError(405, 'Method not allowed');
   }
 
   try {
+    const payload = parseRequestBody(event.body);
     const { 
       origin, 
       destination, 
@@ -35,40 +74,41 @@ export const handler = async (event, context) => {
       avoid = [],
       departure_time = null,
       arrival_time = null
-    } = JSON.parse(event.body);
+    } = payload;
 
-    if (!origin || !destination) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Origin and destination are required'
-        })
-      };
+    // Validate required fields
+    const sanitizedOrigin = sanitizeString(origin, { maxLength: 500, allowEmpty: false });
+    const sanitizedDestination = sanitizeString(destination, { maxLength: 500, allowEmpty: false });
+
+    if (!sanitizedOrigin || !sanitizedDestination) {
+      throw httpError(400, 'Origin and destination are required');
     }
 
-    if (!googleMapsApiKey) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Google Maps API key not configured'
-        })
-      };
-    }
+    // Validate travel mode
+    const allowedModes = ['driving', 'walking', 'bicycling', 'transit'];
+    const sanitizedMode = allowedModes.includes(mode) ? mode : 'driving';
+    
+    // Validate units
+    const allowedUnits = ['metric', 'imperial'];
+    const sanitizedUnits = allowedUnits.includes(units) ? units : 'metric';
+    
+    // Validate language
+    const sanitizedLanguage = sanitizeString(language, { maxLength: 10, allowEmpty: false }) || 'en';
+    
+    // Validate avoid array
+    const allowedAvoid = ['tolls', 'highways', 'ferries', 'indoor'];
+    const sanitizedAvoid = Array.isArray(avoid) ? avoid.filter(item => allowedAvoid.includes(item)) : [];
 
     // Convert locations to proper format
-    const originStr = typeof origin === 'object' ? `${origin.lat},${origin.lng}` : origin;
-    const destinationStr = typeof destination === 'object' ? `${destination.lat},${destination.lng}` : destination;
+    const originStr = typeof sanitizedOrigin === 'object' ? `${sanitizedOrigin.lat},${sanitizedOrigin.lng}` : sanitizedOrigin;
+    const destinationStr = typeof sanitizedDestination === 'object' ? `${sanitizedDestination.lat},${sanitizedDestination.lng}` : sanitizedDestination;
 
     // Build Directions API URL
-    let directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(originStr)}&destination=${encodeURIComponent(destinationStr)}&mode=${mode}&units=${units}&language=${language}&key=${googleMapsApiKey}`;
+    let directionsUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(originStr)}&destination=${encodeURIComponent(destinationStr)}&mode=${sanitizedMode}&units=${sanitizedUnits}&language=${sanitizedLanguage}&key=${googleMapsApiKey}`;
     
     // Add avoid parameters
-    if (avoid.length > 0) {
-      directionsUrl += `&avoid=${avoid.join('|')}`;
+    if (sanitizedAvoid.length > 0) {
+      directionsUrl += `&avoid=${sanitizedAvoid.join('|')}`;
     }
 
     // Add departure time for transit/driving
@@ -141,59 +181,52 @@ export const handler = async (event, context) => {
         };
       }
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          data: {
-            routes: routes,
-            distance_matrix: distanceMatrix,
-            search_params: {
-              origin: originStr,
-              destination: destinationStr,
-              mode: mode,
-              units: units,
-              avoid: avoid
-            },
-            status: data.status
-          }
-        })
-      };
+      return respond(200, {
+        success: true,
+        data: {
+          routes: routes,
+          distance_matrix: distanceMatrix,
+          search_params: {
+            origin: originStr,
+            destination: destinationStr,
+            mode: sanitizedMode,
+            units: sanitizedUnits,
+            avoid: sanitizedAvoid
+          },
+          status: data.status
+        }
+      });
     }
 
     if (data.status === 'ZERO_RESULTS') {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'No route found between the specified locations'
-        })
-      };
+      throw httpError(404, 'No route found between the specified locations');
     }
 
     // Handle other API errors
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        message: `Directions request failed: ${data.status}`,
-        error: data.error_message || 'Unknown error'
-      })
-    };
+    throw httpError(400, `Directions request failed: ${data.status}`, {
+      google_maps_error: data.error_message || 'Unknown Google Maps API error',
+      status: data.status
+    });
 
   } catch (error) {
-    console.error('Distance calculation error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        message: 'Distance calculation failed',
-        error: error.message
-      })
+    console.error('Maps distance handler error:', error);
+
+    const status = error.status || 500;
+    const message = status === 500 ? 'Distance calculation failed' : error.message;
+    
+    const errorResponse = {
+      success: false,
+      error: message
     };
+
+    if (error.details && status !== 500) {
+      errorResponse.details = error.details;
+    }
+
+    if (status === 500 && process.env.NODE_ENV === 'development') {
+      errorResponse.details = error.details || error.message;
+    }
+
+    return respond(status, errorResponse);
   }
 };

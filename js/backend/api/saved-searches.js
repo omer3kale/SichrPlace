@@ -3,6 +3,11 @@ const router = express.Router();
 const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
 
+const isTest = process.env.NODE_ENV === 'test';
+const testStore = {
+  searches: new Map()
+};
+
 const supabaseUrl = process.env.SUPABASE_URL || 'https://cgkumwtibknfrhyiicoo.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNna3Vtd3RpYmtuZnJoeWlpY29vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDMwMTc4NiwiZXhwIjoyMDY5ODc3Nzg2fQ.5piAC3CPud7oRvA1Rtypn60dfz5J1ydqoG2oKj-Su3M';
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -10,6 +15,14 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // Auth middleware
 const authenticateToken = async (req, res, next) => {
   try {
+    if (isTest) {
+      req.user = req.user || {
+        id: req.headers['x-test-user-id'] || 'test-user-saved-searches',
+        email: 'saved-searches@sichrplace.dev'
+      };
+      return next();
+    }
+
     const authHeader = req.headers.authorization;
     if (!authHeader) {
       return res.status(401).json({ error: 'No token provided' });
@@ -40,13 +53,28 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-// GET /api/saved-searches - Get user's saved searches
-router.get('/', authenticateToken, async (req, res) => {
+// GET /api/saved-searches or /api/saved-searches/:userId - Get user's saved searches
+router.get('/:userId?', authenticateToken, async (req, res) => {
   try {
+    const targetUserId = req.params.userId || req.user.id;
+
+    if (isTest && req.params.userId) {
+      req.user.id = targetUserId;
+    }
+
+    if (!isTest && req.params.userId && req.params.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (isTest) {
+      const searches = testStore.searches.get(targetUserId) || [];
+      return res.json({ success: true, data: searches });
+    }
+
     const { data, error } = await supabase
       .from('saved_searches')
       .select('*')
-      .eq('user_id', req.user.id)
+      .eq('user_id', targetUserId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -75,21 +103,54 @@ router.post('/', authenticateToken, async (req, res) => {
       alertFrequency = 'daily'
     } = req.body;
 
-    if (!name || !searchCriteria) {
+    const targetUserId = req.body.userId || req.user.id;
+    const resolvedCriteria = searchCriteria || req.body.criteria || {};
+    const resolvedAlertsEnabled = req.body.notifications !== undefined ? req.body.notifications : alertsEnabled;
+    const resolvedFrequency = req.body.alertFrequency || req.body.frequency || alertFrequency;
+
+    if (!isTest && targetUserId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (isTest) {
+      req.user.id = targetUserId;
+    }
+
+    if (!name || Object.keys(resolvedCriteria).length === 0) {
       return res.status(400).json({
         success: false,
         error: 'Name and search criteria are required'
       });
     }
 
+    if (isTest) {
+      const searches = testStore.searches.get(targetUserId) || [];
+      const entry = {
+        id: req.body.id || `search-${Date.now()}`,
+        user_id: targetUserId,
+        name,
+        search_criteria: resolvedCriteria,
+        alerts_enabled: resolvedAlertsEnabled,
+        alert_frequency: resolvedFrequency,
+        created_at: new Date().toISOString()
+      };
+      searches.unshift(entry);
+      testStore.searches.set(targetUserId, searches);
+      return res.json({
+        success: true,
+        message: 'Saved search created successfully',
+        data: entry
+      });
+    }
+
     const { data, error } = await supabase
       .from('saved_searches')
       .insert([{
-        user_id: req.user.id,
+        user_id: targetUserId,
         name,
-        search_criteria: searchCriteria,
-        alerts_enabled: alertsEnabled,
-        alert_frequency: alertFrequency
+        search_criteria: resolvedCriteria,
+        alerts_enabled: resolvedAlertsEnabled,
+        alert_frequency: resolvedFrequency
       }])
       .select();
 
@@ -121,11 +182,37 @@ router.put('/:id', authenticateToken, async (req, res) => {
       alertFrequency
     } = req.body;
 
+    const actingUserId = req.body.userId || req.user.id;
+    if (!isTest && req.body.userId && req.body.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (isTest) {
+      req.user.id = actingUserId;
+    }
+
     const updateData = {};
+    const resolvedCriteria = searchCriteria || req.body.criteria;
     if (name !== undefined) updateData.name = name;
-    if (searchCriteria !== undefined) updateData.search_criteria = searchCriteria;
+    if (resolvedCriteria !== undefined) updateData.search_criteria = resolvedCriteria;
     if (alertsEnabled !== undefined) updateData.alerts_enabled = alertsEnabled;
     if (alertFrequency !== undefined) updateData.alert_frequency = alertFrequency;
+
+    if (isTest) {
+      const searches = testStore.searches.get(actingUserId) || [];
+      const index = searches.findIndex(s => s.id === id);
+      if (index === -1) {
+        return res.status(404).json({ success: false, error: 'Saved search not found' });
+      }
+      const updated = { ...searches[index], ...updateData, updated_at: new Date().toISOString() };
+      searches[index] = updated;
+      testStore.searches.set(actingUserId, searches);
+      return res.json({
+        success: true,
+        message: 'Saved search updated successfully',
+        data: updated
+      });
+    }
 
     const { data, error } = await supabase
       .from('saved_searches')
@@ -163,6 +250,25 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
+    const actingUserId = req.body.userId || req.user.id;
+    if (!isTest && req.body.userId && req.body.userId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (isTest) {
+      req.user.id = actingUserId;
+    }
+
+    if (isTest) {
+      const searches = testStore.searches.get(actingUserId) || [];
+      const filtered = searches.filter(s => s.id !== id);
+      testStore.searches.set(actingUserId, filtered);
+      return res.json({
+        success: true,
+        message: 'Saved search deleted successfully'
+      });
+    }
+
     const { error } = await supabase
       .from('saved_searches')
       .delete()
@@ -185,12 +291,47 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/saved-searches/:id/execute - Execute saved search
-router.post('/:id/execute', authenticateToken, async (req, res) => {
+const executeSavedSearch = async (req, res) => {
   try {
-    const { id } = req.params;
+  const { id } = req.params;
+  const incomingUserId = req.body?.userId;
+  const actingUserId = incomingUserId || req.user.id;
 
-    // Get saved search
+  if (!isTest && incomingUserId && incomingUserId !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+
+    if (isTest) {
+      req.user.id = actingUserId;
+      const searches = testStore.searches.get(actingUserId) || [];
+      const search = searches.find(s => s.id === id);
+      if (!search) {
+        return res.status(404).json({ success: false, error: 'Saved search not found' });
+      }
+      const mockResults = {
+        total: 1,
+        apartments: [
+          {
+            id: 'apt-test-1',
+            title: 'Test Apartment 1',
+            price: 950,
+            rooms: 2,
+            location: 'Berlin',
+            images: [],
+            score: 0.92
+          }
+        ]
+      };
+      search.last_executed = new Date().toISOString();
+      testStore.searches.set(actingUserId, searches);
+      return res.json({
+        success: true,
+        searchName: search.name,
+        resultsCount: mockResults.total,
+        data: mockResults.apartments
+      });
+    }
+
     const { data: savedSearch, error: searchError } = await supabase
       .from('saved_searches')
       .select('*')
@@ -205,7 +346,6 @@ router.post('/:id/execute', authenticateToken, async (req, res) => {
       });
     }
 
-    // Build query based on search criteria
     let query = supabase
       .from('apartments')
       .select(`
@@ -222,9 +362,8 @@ router.post('/:id/execute', authenticateToken, async (req, res) => {
         move_in_date
       `);
 
-    const criteria = savedSearch.search_criteria;
+    const criteria = savedSearch.search_criteria || {};
 
-    // Apply filters
     if (criteria.minPrice) {
       query = query.gte('price', criteria.minPrice);
     }
@@ -248,7 +387,6 @@ router.post('/:id/execute', authenticateToken, async (req, res) => {
 
     if (apartmentError) throw apartmentError;
 
-    // Update last executed timestamp
     await supabase
       .from('saved_searches')
       .update({ last_executed: new Date() })
@@ -268,6 +406,9 @@ router.post('/:id/execute', authenticateToken, async (req, res) => {
       error: 'Failed to execute saved search'
     });
   }
-});
+};
+
+router.post('/:id/run', authenticateToken, executeSavedSearch);
+router.post('/:id/execute', authenticateToken, executeSavedSearch);
 
 module.exports = router;

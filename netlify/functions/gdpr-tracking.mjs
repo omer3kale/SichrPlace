@@ -19,7 +19,7 @@ const verifyToken = (token) => {
   }
 };
 
-export const handler = async (event, context) => {
+export const handler = async (event, _context) => {
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -333,6 +333,10 @@ async function getTrackingLogs(userId, queryParams, headers) {
       .select('event_type, data_category, legal_basis')
       .eq('user_id', userId);
 
+    if (statsError) {
+      throw statsError;
+    }
+
     const statistics = {
       total_events: allLogs?.length || 0,
       by_event_type: {},
@@ -394,7 +398,7 @@ async function consentManagement(userId, requestBody, headers) {
     }
 
     switch (action) {
-      case 'grant':
+      case 'grant': {
         if (!consent_type || is_granted === undefined) {
           return {
             statusCode: 400,
@@ -446,8 +450,9 @@ async function consentManagement(userId, requestBody, headers) {
             data: consent
           })
         };
+      }
 
-      case 'withdraw':
+      case 'withdraw': {
         if (!consent_type) {
           return {
             statusCode: 400,
@@ -497,8 +502,9 @@ async function consentManagement(userId, requestBody, headers) {
             data: updatedConsent
           })
         };
+      }
 
-      case 'get':
+      case 'get': {
         const { data: userConsents, error: getError } = await supabase
           .from('user_consents')
           .select('*')
@@ -520,6 +526,7 @@ async function consentManagement(userId, requestBody, headers) {
             }
           })
         };
+      }
 
       default:
         return {
@@ -840,6 +847,10 @@ async function dataExport(userId, queryParams, headers) {
       .select()
       .single();
 
+    if (exportError) {
+      throw exportError;
+    }
+
     return {
       statusCode: 200,
       headers,
@@ -1089,6 +1100,8 @@ async function complianceCheck(queryParams, headers) {
       detailed = 'false'
     } = queryParams || {};
 
+    const detailLevel = detailed === 'true' ? 'detailed' : 'summary';
+
     const complianceReport = {
       regulation: regulation.toUpperCase(),
       check_date: new Date().toISOString(),
@@ -1110,6 +1123,8 @@ async function complianceCheck(queryParams, headers) {
     for (const area of areas) {
       complianceReport.areas[area] = await checkComplianceArea(area);
     }
+
+    complianceReport.detail_level = detailLevel;
 
     // Calculate overall score
     const scores = Object.values(complianceReport.areas).map(area => area.score);
@@ -1147,27 +1162,141 @@ async function complianceCheck(queryParams, headers) {
 async function checkComplianceArea(area) {
   try {
     switch (area) {
-      case 'consent_management':
+      case 'consent_management': {
         const { data: consents, error: consentError } = await supabase
           .from('user_consents')
           .select('*');
-        
+
+        if (consentError) {
+          throw consentError;
+        }
+
         return {
           score: consents?.length > 0 ? 85 : 20,
           status: consents?.length > 0 ? 'good' : 'needs_attention',
           details: `${consents?.length || 0} consent records found`
         };
+      }
 
-      case 'data_processing_records':
+      case 'data_processing_records': {
         const { data: records, error: recordError } = await supabase
           .from('data_processing_records')
           .select('*');
-        
+
+        if (recordError) {
+          throw recordError;
+        }
+
         return {
           score: records?.length > 0 ? 80 : 30,
           status: records?.length > 0 ? 'good' : 'needs_attention',
           details: `${records?.length || 0} processing records maintained`
         };
+      }
+
+      case 'privacy_notices': {
+        // Check if privacy policy exists and is up to date
+        const { data: privacyDocs, error: privacyError } = await supabase
+          .from('legal_documents')
+          .select('*')
+          .eq('type', 'privacy_policy')
+          .order('version', { ascending: false })
+          .limit(1);
+
+        if (privacyError) {
+          throw privacyError;
+        }
+
+        const hasRecentPolicy = privacyDocs?.length > 0 &&
+          new Date(privacyDocs[0].updated_at) > new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+
+        return {
+          score: hasRecentPolicy ? 90 : 40,
+          status: hasRecentPolicy ? 'good' : 'needs_attention',
+          details: hasRecentPolicy
+            ? `Privacy policy version ${privacyDocs[0].version} (${new Date(privacyDocs[0].updated_at).toLocaleDateString()})`
+            : 'Privacy policy missing or outdated'
+        };
+      }
+
+      case 'data_subject_rights': {
+        // Check if data subject access requests are being handled
+        const { data: accessRequests, error: accessError } = await supabase
+          .from('gdpr_requests')
+          .select('*')
+          .in('request_type', ['access', 'deletion', 'portability', 'rectification']);
+
+        if (accessError) {
+          throw accessError;
+        }
+
+        const pendingRequests = accessRequests?.filter(req => req.status === 'pending').length || 0;
+        const overdue = accessRequests?.filter(req =>
+          req.status === 'pending' &&
+          new Date(req.created_at) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        ).length || 0;
+
+        return {
+          score: overdue === 0 ? (pendingRequests <= 5 ? 85 : 70) : 50,
+          status: overdue === 0 ? 'good' : 'needs_attention',
+          details: `${accessRequests?.length || 0} total requests, ${pendingRequests} pending, ${overdue} overdue (>30 days)`
+        };
+      }
+
+      case 'security_measures': {
+        // Check encryption, authentication, and audit logs
+        const { data: auditLogs, error: auditError } = await supabase
+          .from('admin_audit_log')
+          .select('count', { count: 'exact', head: true });
+
+        if (auditError) {
+          throw auditError;
+        }
+
+        const { data: users, error: usersError } = await supabase
+          .from('users')
+          .select('encrypted_data_key', { count: 'exact' });
+
+        if (usersError) {
+          throw usersError;
+        }
+
+        const encryptedUsers = users?.filter(u => u.encrypted_data_key).length || 0;
+        const totalUsers = users?.length || 1;
+        const encryptionRate = (encryptedUsers / totalUsers) * 100;
+
+        return {
+          score: encryptionRate > 90 ? 90 : encryptionRate > 70 ? 75 : 50,
+          status: encryptionRate > 90 ? 'good' : encryptionRate > 70 ? 'acceptable' : 'needs_attention',
+          details: `${encryptionRate.toFixed(1)}% user data encrypted, ${auditLogs || 0} audit log entries`
+        };
+      }
+
+      case 'breach_procedures': {
+        // Check for breach notification procedures and breach log
+        const { data: breaches, error: breachError } = await supabase
+          .from('security_breaches')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (breachError) {
+          throw breachError;
+        }
+
+        const recentBreaches = breaches?.filter(b =>
+          new Date(b.created_at) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        ).length || 0;
+
+        const allNotified = breaches?.every(b =>
+          b.status === 'resolved' || b.authorities_notified || !b.requires_notification
+        ) ?? true;
+
+        return {
+          score: allNotified ? (recentBreaches === 0 ? 95 : 80) : 40,
+          status: allNotified ? 'good' : 'critical',
+          details: `${breaches?.length || 0} breaches recorded, ${recentBreaches} in last 90 days, ${allNotified ? 'all properly notified' : 'NOTIFICATION REQUIRED'}`
+        };
+      }
 
       default:
         return {
@@ -1209,7 +1338,7 @@ async function dataRetentionPolicy(requestBody, headers) {
     }
 
     switch (action) {
-      case 'create':
+      case 'create': {
         if (!data_category || !retention_period) {
           return {
             statusCode: 400,
@@ -1247,8 +1376,9 @@ async function dataRetentionPolicy(requestBody, headers) {
             data: policy
           })
         };
+      }
 
-      case 'get':
+      case 'get': {
         const { data: policies, error: getPolicyError } = await supabase
           .from('data_retention_policies')
           .select('*')
@@ -1268,6 +1398,7 @@ async function dataRetentionPolicy(requestBody, headers) {
             }
           })
         };
+      }
 
       default:
         return {

@@ -1,23 +1,71 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing required environment variables for health function');
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
+
+const buildHeaders = () => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Authorization',
+});
+
+const respond = (statusCode, payload) => ({
+  statusCode,
+  headers: buildHeaders(),
+  body: JSON.stringify(payload),
+});
+
+const httpError = (status, message, details = null) => {
+  const error = new Error(message);
+  error.status = status;
+  if (details) {
+    error.details = details;
+  }
+  return error;
+};
+
+// Standardized helper functions
+const isMissingTableError = (error) => {
+  return error && error.code === 'PGRST116';
+};
+
+const safeSelect = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Query failed`, error.message);
+  }
+};
 
 export const handler = async (event, context) => {
-  // Handle CORS preflight requests
+  console.log('Health check handler called:', {
+    method: event.httpMethod,
+    path: event.path
+  });
+
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-      body: '',
-    };
+    return respond(200, '');
   }
 
   try {
@@ -25,17 +73,7 @@ export const handler = async (event, context) => {
     
     // Only allow GET requests
     if (httpMethod !== 'GET') {
-      return {
-        statusCode: 405,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          success: false,
-          message: 'Method not allowed'
-        }),
-      };
+      throw httpError(405, 'Method not allowed');
     }
 
     const startTime = Date.now();
@@ -51,10 +89,14 @@ export const handler = async (event, context) => {
       const dbStartTime = Date.now();
       
       // Test database connection with a simple query
-      const { data: testData, error: testError } = await supabase
-        .from('users')
-        .select('id')
-        .limit(1);
+      const { data: testData, error: testError } = await safeSelect(
+        supabase
+          .from('profiles')
+          .select('id')
+          .limit(1),
+        'profiles',
+        'Health check database connection test'
+      );
 
       if (testError) {
         throw testError;
@@ -64,14 +106,26 @@ export const handler = async (event, context) => {
 
       // Get basic statistics
       const [usersResult, apartmentsResult, viewingRequestsResult] = await Promise.all([
-        supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('apartments').select('id', { count: 'exact', head: true }),
-        supabase.from('viewing_requests').select('id', { count: 'exact', head: true })
+        safeSelect(
+          supabase.from('profiles').select('id', { count: 'exact', head: true }),
+          'profiles',
+          'Count profiles for health check'
+        ),
+        safeSelect(
+          supabase.from('apartments').select('id', { count: 'exact', head: true }),
+          'apartments',
+          'Count apartments for health check'
+        ),
+        safeSelect(
+          supabase.from('viewing_requests').select('id', { count: 'exact', head: true }),
+          'viewing_requests',
+          'Count viewing requests for health check'
+        )
       ]);
 
-      userCount = usersResult.count || 0;
-      apartmentCount = apartmentsResult.count || 0;
-      viewingRequestCount = viewingRequestsResult.count || 0;
+      userCount = usersResult.data?.count || 0;
+      apartmentCount = apartmentsResult.data?.count || 0;
+      viewingRequestCount = viewingRequestsResult.data?.count || 0;
 
     } catch (error) {
       console.error('Database health check failed:', error);
@@ -117,32 +171,41 @@ export const handler = async (event, context) => {
     };
 
     const statusCode = isHealthy ? 200 : 503;
+    const headers = {
+      ...buildHeaders(),
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+    };
 
     return {
       statusCode: statusCode,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-      },
+      headers,
       body: JSON.stringify(healthStatus),
     };
 
   } catch (error) {
-    console.error('Health check error:', error);
+    console.error('Health check handler error:', error);
     
+    const status = error.status || 500;
+    const message = status === 500 ? 'Health check failed' : error.message;
+    
+    const errorResponse = {
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: message
+    };
+
+    if (error.details && status !== 500) {
+      errorResponse.details = error.details;
+    }
+
+    if (status === 500 && process.env.NODE_ENV === 'development') {
+      errorResponse.details = error.details || error.message;
+    }
+
     return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        status: 'unhealthy',
-        timestamp: new Date().toISOString(),
-        error: 'Health check failed',
-        message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
-      }),
+      statusCode: status,
+      headers: buildHeaders(),
+      body: JSON.stringify(errorResponse),
     };
   }
 };

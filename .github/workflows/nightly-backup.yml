@@ -1,0 +1,97 @@
+name: Nightly Supabase Backup
+
+on:
+  schedule:
+    # Run daily at 2:00 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Create backup directory
+        run: mkdir -p backups
+
+      - name: Generate database backup
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          # Generate backup filename with timestamp
+          BACKUP_FILE="backups/sichrplace-backup-$(date +%Y-%m-%d_%H-%M-%S).sql"
+          
+          # Create database dump
+          supabase db dump \
+            --project-ref $SUPABASE_PROJECT_REF \
+            --file $BACKUP_FILE \
+            --schema public
+          
+          # Compress backup
+          gzip $BACKUP_FILE
+          
+          echo "BACKUP_FILE=${BACKUP_FILE}.gz" >> $GITHUB_ENV
+
+      - name: Upload backup to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create or update nightly-backups release
+          gh release create nightly-backups \
+            --title "Database Backups" \
+            --notes "Automated nightly database backups" \
+            --prerelease \
+            2>/dev/null || true
+          
+          # Upload backup file
+          gh release upload nightly-backups $BACKUP_FILE --clobber
+
+      - name: Clean old backups (keep last 30 days)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # List all backup files
+          ASSETS=$(gh release view nightly-backups --json assets --jq '.assets[].name' | grep -E 'sichrplace-backup-.*\.sql\.gz$' | sort)
+          
+          # Keep only the latest 30 backups
+          ASSETS_TO_DELETE=$(echo "$ASSETS" | head -n -30)
+          
+          # Delete old backups
+          for asset in $ASSETS_TO_DELETE; do
+            echo "Deleting old backup: $asset"
+            gh release delete-asset nightly-backups "$asset" --yes || true
+          done
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_ERROR_WEBHOOK }}
+        run: |
+          if [ ! -z "$SLACK_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text":"🚨 SichrPlace Database Backup Failed","attachments":[{"color":"danger","fields":[{"title":"Workflow","value":"Nightly Supabase Backup","short":true},{"title":"Status","value":"Failed","short":true},{"title":"Time","value":"'$(date -u)'","short":false}]}]}' \
+              $SLACK_WEBHOOK
+          fi
+
+      - name: Update monitoring dashboard
+        if: success()
+        env:
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          # Update backup status in monitoring (optional)
+          echo "Backup completed successfully at $(date -u)" > backup-status.txt

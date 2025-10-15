@@ -13,6 +13,8 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
+**/coverage/
+**/lcov-report/
 
 # nyc test coverage
 .nyc_output
@@ -176,3 +178,8 @@ NETLIFY_ENV_VARS_COMPLETE.txt
 
 # Local Netlify folder
 .netlify
+.netlify/functions-serve/
+
+# JS/ESM generated test artifacts
+**/*test-report*.json
+**/*test-report*.xml

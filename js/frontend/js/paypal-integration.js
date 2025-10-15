@@ -5,59 +5,95 @@ class PayPalIntegration {
   constructor() {
     this.clientId = null;
     this.environment = 'sandbox';
-    this.isSDKLoaded = false;
+    this.sdkPromise = null;
+    this.currentOrderId = null;
   }
 
   // Initialize PayPal SDK
   async initializeSDK() {
-    if (this.isSDKLoaded) return;
+    if (window.paypal) {
+      return true;
+    }
+
+    if (!this.sdkPromise) {
+      this.sdkPromise = this.loadSdk();
+    }
 
     try {
-      // Fetch PayPal config from backend
-      const configResponse = await fetch('/api/paypal/config');
-      const config = await configResponse.json();
-      
-      // Use standardized PayPal client ID
-      this.clientId = config.clientId || 'AcPYlXozR8VS9kJSk7rv5MW36lMV66ZMyqZKjM0YVuvt0dJ1cIyHRvDmGeux0qu3gBOh6XswI5gin2WO';
-      this.environment = config.environment || 'production';
-
-      // Dynamically load PayPal SDK with standardized configuration
-      const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=${this.clientId}&currency=EUR&locale=de_DE&components=buttons&enable-funding=venmo,paylater&intent=capture`;
-      script.onload = () => {
-        this.isSDKLoaded = true;
-        console.log('✅ PayPal SDK loaded successfully');
-      };
-      script.onerror = () => {
-        console.error('❌ Failed to load PayPal SDK');
-      };
-      document.head.appendChild(script);
-
-      // Wait for SDK to load
-      await new Promise((resolve, reject) => {
-        script.onload = resolve;
-        script.onerror = reject;
-      });
-
+      await this.sdkPromise;
+      return true;
     } catch (error) {
+      this.sdkPromise = null;
       console.error('PayPal SDK initialization error:', error);
+      throw error;
     }
   }
 
-  // Create PayPal button for viewing request
-  createViewingPaymentButton(containerId, viewingData) {
-    if (!window.paypal) {
-      console.error('PayPal SDK not loaded');
-      return;
+  async loadSdk() {
+    const configResponse = await fetch('/api/paypal/config');
+    const configPayload = await configResponse.json().catch(() => ({}));
+
+    if (!configResponse.ok) {
+      throw new Error(configPayload.error || 'PayPal configuration unavailable');
     }
 
+    if (!configPayload.clientId) {
+      throw new Error('PayPal client ID missing from configuration');
+    }
+
+    this.clientId = configPayload.clientId;
+    this.environment = configPayload.environment || 'sandbox';
+
+    const params = new URLSearchParams({
+      'client-id': this.clientId,
+      currency: configPayload.currency || 'EUR',
+      intent: 'capture',
+      components: 'buttons',
+      locale: 'de_DE'
+    });
+
+    return new Promise((resolve, reject) => {
+      const existingScript = document.querySelector('script[data-paypal-sdk="true"]');
+      if (existingScript) {
+        if (window.paypal) {
+          resolve();
+          return;
+        }
+
+        existingScript.addEventListener('load', () => resolve(), { once: true });
+        existingScript.addEventListener('error', () => reject(new Error('Failed to load PayPal SDK')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?${params.toString()}`;
+      script.setAttribute('data-paypal-sdk', 'true');
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load PayPal SDK'));
+      document.head.appendChild(script);
+    });
+  }
+
+  // Create PayPal button for viewing request
+  async createViewingPaymentButton(containerId, viewingData) {
     const container = document.getElementById(containerId);
     if (!container) {
       console.error(`Container ${containerId} not found`);
       return;
     }
 
-    container.innerHTML = ''; // Clear existing content
+    container.innerHTML = '<div style="padding:12px;text-align:center;color:#2563eb;">Loading secure checkout…</div>';
+
+    try {
+      await this.initializeSDK();
+    } catch (error) {
+      this.showMessage(`PayPal checkout is currently unavailable: ${error.message}`, 'error');
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = '';
+    this.currentOrderId = null;
 
     window.paypal.Buttons({
       style: {
@@ -84,15 +120,18 @@ class PayPalIntegration {
             })
           });
 
-          const result = await response.json();
-          if (result.success && result.paymentId) {
-            this.currentPaymentId = result.paymentId;
-            return result.paymentId;
+          const result = await response.json().catch(() => ({}));
+
+          if (!response.ok || !result.success || !result.orderId) {
+            throw new Error(result.error || 'Failed to create payment');
           }
-          throw new Error(result.error || 'Failed to create payment');
+
+          this.currentOrderId = result.orderId;
+          return result.orderId;
         } catch (error) {
           console.error('PayPal create order error:', error);
           this.showMessage(`Payment initialization failed: ${error.message}`, 'error');
+          throw error;
         }
       },
 
@@ -102,17 +141,23 @@ class PayPalIntegration {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              paymentId: this.currentPaymentId || data.orderID,
+              orderId: data.orderID,
               payerId: data.payerID
             })
           });
 
-          const result = await response.json();
-          if (result.success && result.status === 'completed') {
-            await this.submitViewingRequest(viewingData, result.transactionId);
+          const result = await response.json().catch(() => ({}));
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Payment execution failed');
+          }
+
+          if (String(result.status).toUpperCase() === 'COMPLETED') {
+            const transactionId = result.transactionId || data.orderID || this.currentOrderId;
+            await this.submitViewingRequest(viewingData, transactionId, data.orderID || this.currentOrderId);
             this.showMessage('✅ Payment completed! Your viewing request has been submitted.', 'success');
           } else {
-            throw new Error(result.error || 'Payment execution failed');
+            throw new Error(`Payment status not completed (${result.status})`);
           }
         } catch (error) {
           console.error('PayPal approve error:', error);
@@ -133,16 +178,22 @@ class PayPalIntegration {
   }
 
   // Create PayPal button for premium features
-  createPremiumPaymentButton(containerId, premiumData) {
-    if (!window.paypal) {
-      console.error('PayPal SDK not loaded');
-      return;
-    }
-
+  async createPremiumPaymentButton(containerId, premiumData) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    container.innerHTML = '<div style="padding:12px;text-align:center;color:#2563eb;">Loading secure checkout…</div>';
+
+    try {
+      await this.initializeSDK();
+    } catch (error) {
+      this.showMessage(`PayPal checkout is currently unavailable: ${error.message}`, 'error');
+      container.innerHTML = '';
+      return;
+    }
+
     container.innerHTML = '';
+    this.currentOrderId = null;
 
     window.paypal.Buttons({
       style: {
@@ -167,14 +218,18 @@ class PayPalIntegration {
             })
           });
 
-          const result = await response.json();
-          if (result.success && result.paymentId) {
-            return result.paymentId;
+          const result = await response.json().catch(() => ({}));
+
+          if (!response.ok || !result.success || !result.orderId) {
+            throw new Error(result.error || 'Failed to create payment');
           }
-          throw new Error(result.error || 'Failed to create payment');
+
+          this.currentOrderId = result.orderId;
+          return result.orderId;
         } catch (error) {
           console.error('Premium payment create error:', error);
           this.showMessage(`Payment initialization failed: ${error.message}`, 'error');
+          throw error;
         }
       },
 
@@ -184,17 +239,22 @@ class PayPalIntegration {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              paymentId: data.orderID,
+              orderId: data.orderID,
               payerId: data.payerID
             })
           });
 
-          const result = await response.json();
-          if (result.success) {
+          const result = await response.json().catch(() => ({}));
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Payment execution failed');
+          }
+
+          if (String(result.status).toUpperCase() === 'COMPLETED') {
             this.showMessage('✅ Premium feature activated!', 'success');
             if (premiumData.onSuccess) premiumData.onSuccess(result);
           } else {
-            throw new Error(result.error || 'Payment execution failed');
+            throw new Error(`Payment status not completed (${result.status})`);
           }
         } catch (error) {
           console.error('Premium payment approve error:', error);
@@ -215,15 +275,15 @@ class PayPalIntegration {
   }
 
   // Submit viewing request after successful payment
-  async submitViewingRequest(viewingData, transactionId) {
+  async submitViewingRequest(viewingData, transactionId, orderId) {
     try {
       const response = await fetch('/api/viewing-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...viewingData,
-          paymentId: this.currentPaymentId,
           transactionId: transactionId,
+          paypalOrderId: orderId,
           paymentStatus: 'completed',
           paymentAmount: 25.00,
           paymentCurrency: 'EUR'
@@ -308,7 +368,7 @@ class PayPalIntegration {
    * @param {Function} options.onError - Error callback
    * @returns {Promise} PayPal button promise
    */
-  createMarketplacePaymentButton(options = {}) {
+  async createMarketplacePaymentButton(options = {}) {
     const {
       itemName = 'Marketplace Item',
       amount = 50.00,
@@ -319,17 +379,23 @@ class PayPalIntegration {
       onError = null
     } = options;
 
-    if (!this.isSDKLoaded()) {
-      console.warn('PayPal SDK not loaded. Button will be created when SDK is ready.');
-      return this.initializeSDK().then(() => 
-        this.createMarketplacePaymentButton(options)
-      );
-    }
-
     const container = document.querySelector(containerSelector);
     if (!container) {
       console.error(`PayPal button container not found: ${containerSelector}`);
       return Promise.reject(new Error('Container not found'));
+    }
+
+    container.innerHTML = '<div style="padding:12px;text-align:center;color:#2563eb;">Loading secure checkout…</div>';
+
+    try {
+      await this.initializeSDK();
+    } catch (error) {
+      this.showMessage(`PayPal checkout is currently unavailable: ${error.message}`, 'error');
+      container.innerHTML = '';
+      if (typeof onError === 'function') {
+        onError(error);
+      }
+      return Promise.reject(error);
     }
 
     // Clear existing content

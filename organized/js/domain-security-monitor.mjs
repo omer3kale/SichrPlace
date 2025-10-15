@@ -1,8 +1,11 @@
 // Domain Security Monitor for www.sichrplace.com
 // Comprehensive security and performance monitoring script
 
+import http from 'http';
 import https from 'https';
-import { URL } from 'url';
+import fs from 'fs';
+import path from 'path';
+import { URL, pathToFileURL } from 'url';
 
 const DOMAIN = 'www.sichrplace.com';
 const BACKUP_DOMAIN = 'sichrplace.netlify.app';
@@ -202,7 +205,7 @@ class DomainSecurityMonitor {
   // Follow a redirect
   async followRedirect(hostname, path = '/', isHttps = false) {
     return new Promise((resolve) => {
-      const module = isHttps ? https : require('http');
+      const transport = isHttps ? https : http;
       const port = isHttps ? 443 : 80;
 
       const options = {
@@ -213,7 +216,7 @@ class DomainSecurityMonitor {
         timeout: 10000
       };
 
-      const req = module.request(options, (res) => {
+  const req = transport.request(options, (res) => {
         resolve({
           status: res.statusCode,
           location: res.headers.location || `${isHttps ? 'https' : 'http'}://${hostname}${path}`
@@ -499,15 +502,18 @@ class DomainSecurityMonitor {
 export { DomainSecurityMonitor };
 
 // Auto-run if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isDirectExecution = process.argv[1]
+  ? import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href
+  : false;
+
+if (isDirectExecution) {
   const monitor = new DomainSecurityMonitor();
   
   monitor.runCompleteAudit().then((results) => {
     monitor.printReport();
     
-    // Save results to file
-    const fs = require('fs');
-    fs.writeFileSync('domain-security-report.json', JSON.stringify(results, null, 2));
+  // Save results to file
+  fs.writeFileSync('domain-security-report.json', JSON.stringify(results, null, 2));
     console.log('\n📄 Detailed report saved to domain-security-report.json');
     
     // Exit with appropriate code

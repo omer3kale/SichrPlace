@@ -8,10 +8,15 @@ if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing Supabase environment variables');
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
 
 // Email configuration
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.SMTP_USER,
@@ -19,100 +24,294 @@ const transporter = nodemailer.createTransporter({
   }
 });
 
-export const handler = async (event, context) => {
-  // Handle CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
+const buildHeaders = () => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Authorization',
+});
+
+const respond = (statusCode, payload) => ({
+  statusCode,
+  headers: buildHeaders(),
+  body: JSON.stringify(payload),
+});
+
+const getHeader = (headers = {}, name) => {
+  const target = name.toLowerCase();
+  const entry = Object.entries(headers || {}).find(([key]) => key.toLowerCase() === target);
+  return entry ? entry[1] : null;
+};
+
+const extractBearerToken = (headers) => {
+  const value = getHeader(headers, 'authorization');
+  if (!value) return null;
+  const parts = value.trim().split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
+  return parts[1];
+};
+
+const parseRequestBody = (body) => {
+  if (!body) return {};
+  try {
+    if (typeof body === 'object') {
+      return body;
+    }
+    return JSON.parse(body);
+  } catch (error) {
+    throw httpError(400, 'Request body must be valid JSON');
+  }
+};
+
+const isUuid = (value) =>
+  typeof value === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const clampNumber = (value, { min, max, fallback }) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, parsed));
+};
+
+const sanitizeString = (value, { maxLength, allowEmpty = false } = {}) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!allowEmpty && trimmed.length === 0) return null;
+  if (maxLength && trimmed.length > maxLength) {
+    return trimmed.slice(0, maxLength);
+  }
+  return trimmed;
+};
+
+const httpError = (status, message, details = null) => {
+  const error = new Error(message);
+  error.status = status;
+  if (details) {
+    error.details = details;
+  }
+  return error;
+};
+
+// Standardized helper functions
+const isMissingTableError = (error) => {
+  return error && error.code === 'PGRST116';
+};
+
+const safeSelect = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Query failed`, error.message);
+  }
+};
+
+const safeInsert = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Table not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Insert failed`, error.message);
+  }
+};
+
+const safeUpdate = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Update failed`, error.message);
+  }
+};
+
+const safeDelete = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Delete failed`, error.message);
+  }
+};
+
+const getAuthContext = async (event, options = {}) => {
+  const token = extractBearerToken(event.headers || {});
+  if (!token) {
+    throw httpError(401, 'Authorization token is required');
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data?.user?.id) {
+    throw httpError(401, 'Invalid or expired token');
+  }
+
+  const { data: profile, error: profileError } = await safeSelect(
+    supabase
+      .from('profiles')
+      .select('id, email, role, status, account_status, is_blocked, is_admin, is_staff, notification_preferences')
+      .eq('id', data.user.id)
+      .single(),
+    'profiles',
+    'Failed to fetch user profile'
+  );
+
+  if (profileError) {
+    throw profileError;
+  }
+
+  if (!profile) {
+    throw httpError(403, 'User profile not found');
+  }
+
+  // Check account status
+  if (profile.is_blocked) {
+    throw httpError(403, 'Account is blocked');
+  }
+
+  if (profile.account_status === 'suspended') {
+    throw httpError(403, 'Account is suspended');
+  }
+
+  // Check role requirements if specified
+  if (options.requireAdmin && !profile.is_admin) {
+    throw httpError(403, 'Admin access required');
+  }
+
+  if (options.requireAnalytics && !(profile.is_admin || profile.is_staff || profile.role === 'analytics')) {
+    throw httpError(403, 'Analytics access required');
+  }
+
+  return {
+    user: data.user,
+    profile,
+    isAdmin: profile.is_admin,
+    isStaff: profile.is_staff
   };
+};
+
+const AVAILABLE_ACTIONS = [
+  'send_notification', 
+  'create_notification', 
+  'mark_read', 
+  'mark_all_read',
+  'get_notifications',
+];
+
+export const handler = async (event, _context) => {
+  console.log('Email notifications handler called:', {
+    method: event.httpMethod,
+    path: event.path,
+    action: event.queryStringParameters?.action
+  });
 
   if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+    return respond(200, '');
   }
 
   try {
-    const { action } = event.queryStringParameters || {};
+    const responseHeaders = buildHeaders();
+    const action = sanitizeString(event.queryStringParameters?.action, {
+      maxLength: 64,
+      allowEmpty: false,
+    });
     
     if (!action) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Action parameter is required',
-          available_actions: [
-            'send_notification', 
-            'create_notification', 
-            'mark_read', 
-            'mark_all_read',
-            'get_notifications',
-            'delete_notification',
-            'send_system_alert',
-            'send_promotional',
-            'unsubscribe'
-          ]
-        })
-      };
+      throw httpError(400, 'Action parameter is required', {
+        available_actions: AVAILABLE_ACTIONS
+      });
     }
+    
+    const { profile } = await getAuthContext(event);
 
     switch (action) {
       case 'send_notification':
-        return await sendNotification(event.body, headers);
+        return await sendNotification(profile.id, event.body, responseHeaders);
       
       case 'create_notification':
-        return await createNotification(event.body, headers);
+        return await createNotification(profile.id, event.body, responseHeaders);
       
       case 'mark_read':
-        return await markNotificationRead(event.body, headers);
+        return await markNotificationRead(profile.id, event.body, responseHeaders);
       
       case 'mark_all_read':
-        return await markAllNotificationsRead(event.body, headers);
+        return await markAllNotificationsRead(profile.id, event.body, responseHeaders);
       
       case 'get_notifications':
-        return await getNotifications(event.queryStringParameters, headers);
+        return await getNotifications(profile.id, event.queryStringParameters, responseHeaders);
       
       case 'delete_notification':
-        return await deleteNotification(event.body, headers);
+        return await deleteNotification(profile.id, event.body, responseHeaders);
       
       case 'send_system_alert':
-        return await sendSystemAlert(event.body, headers);
+        return await sendSystemAlert(profile.id, event.body, responseHeaders);
       
       case 'send_promotional':
-        return await sendPromotionalEmail(event.body, headers);
+        return await sendPromotionalEmail(profile.id, event.body, responseHeaders);
       
       case 'unsubscribe':
-        return await unsubscribeUser(event.body, headers);
+        return await unsubscribeUser(profile.id, event.body, responseHeaders);
       
       default:
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            message: 'Invalid action specified'
-          })
-        };
+        throw httpError(400, 'Invalid action specified', {
+          available_actions: AVAILABLE_ACTIONS
+        });
     }
 
   } catch (error) {
-    console.error('Notification error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        message: 'Notification operation failed',
-        error: error.message
-      })
+    console.error('Email notifications handler error:', error);
+
+    const status = error.status || 500;
+    const message = status === 500 ? 'Email notification operation failed' : error.message;
+    
+    const errorResponse = {
+      success: false,
+      error: message
     };
+
+    if (error.details && status !== 500) {
+      errorResponse.details = error.details;
+    }
+
+    if (status === 500 && process.env.NODE_ENV === 'development') {
+      errorResponse.details = error.details || error.message;
+    }
+
+    return respond(status, errorResponse);
   }
 };
 
 // Send notification (email + in-app)
-async function sendNotification(requestBody, headers) {
+async function sendNotification(actorUserId, requestBody, headers) {
   try {
+    const parsedBody = parseRequestBody(requestBody);
     const {
       user_id,
       notification_type,
@@ -122,15 +321,27 @@ async function sendNotification(requestBody, headers) {
       email_required = true,
       priority = 'normal',
       category = 'general'
-    } = JSON.parse(requestBody);
+    } = parsedBody;
 
-    if (!user_id || !notification_type || !title || !message) {
+    if (!notification_type || !title || !message) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'Missing required fields: user_id, notification_type, title, message'
+          message: 'Missing required fields: notification_type, title, message'
+        })
+      };
+    }
+
+    const targetUserId = user_id || actorUserId;
+    if (!isUuid(targetUserId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Valid user_id is required'
         })
       };
     }
@@ -139,7 +350,7 @@ async function sendNotification(requestBody, headers) {
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('email, username, notification_settings')
-      .eq('id', user_id)
+      .eq('id', targetUserId)
       .single();
 
     if (userError || !user) {
@@ -171,25 +382,27 @@ async function sendNotification(requestBody, headers) {
     }
 
     // Create in-app notification
-    const { data: notification, error: notificationError } = await supabase
-      .from('notifications')
-      .insert([{
-        user_id: user_id,
-        type: notification_type,
-        title: title,
-        message: message,
-        action_url: action_url,
-        priority: priority,
-        category: category,
-        is_read: false,
-        created_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
+    const notificationResult = await safeInsert(
+      supabase
+        .from('notifications')
+        .insert([{
+          user_id: targetUserId,
+          type: notification_type,
+          title: title,
+          message: message,
+          action_url: action_url,
+          priority: priority,
+          category: category,
+          is_read: false,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single(),
+      'notifications',
+      'Failed to create notification'
+    );
 
-    if (notificationError) {
-      throw notificationError;
-    }
+    const notification = notificationResult.data;
 
     // Send email notification if required and enabled
     let emailSent = false;
@@ -215,7 +428,7 @@ async function sendNotification(requestBody, headers) {
 
         // Log email delivery
         await supabase.from('email_logs').insert([{
-          user_id: user_id,
+          user_id: targetUserId,
           email_type: 'notification',
           subject: title,
           status: 'sent',
@@ -252,8 +465,9 @@ async function sendNotification(requestBody, headers) {
 }
 
 // Create notification without sending email
-async function createNotification(requestBody, headers) {
+async function createNotification(actorUserId, requestBody, headers) {
   try {
+    const parsedBody = parseRequestBody(requestBody);
     const {
       user_id,
       notification_type,
@@ -262,27 +476,52 @@ async function createNotification(requestBody, headers) {
       action_url,
       priority = 'normal',
       category = 'general'
-    } = JSON.parse(requestBody);
+    } = parsedBody;
 
-    const { data: notification, error } = await supabase
-      .from('notifications')
-      .insert([{
-        user_id: user_id,
-        type: notification_type,
-        title: title,
-        message: message,
-        action_url: action_url,
-        priority: priority,
-        category: category,
-        is_read: false,
-        created_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
+    if (!notification_type || !title || !message) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Missing required fields: notification_type, title, message'
+        })
+      };
     }
+
+    const targetUserId = user_id || actorUserId;
+    if (!isUuid(targetUserId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Valid user_id is required'
+        })
+      };
+    }
+
+    const notificationResult = await safeInsert(
+      supabase
+        .from('notifications')
+        .insert([{
+          user_id: targetUserId,
+          type: notification_type,
+          title: title,
+          message: message,
+          action_url: action_url,
+          priority: priority,
+          category: category,
+          is_read: false,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single(),
+      'notifications',
+      'Failed to create notification'
+    );
+
+    const notification = notificationResult.data;
 
     return {
       statusCode: 200,
@@ -301,23 +540,38 @@ async function createNotification(requestBody, headers) {
 }
 
 // Mark notification as read
-async function markNotificationRead(requestBody, headers) {
+async function markNotificationRead(actorUserId, requestBody, headers) {
   try {
-    const { notification_id, user_id } = JSON.parse(requestBody);
+    const parsedBody = parseRequestBody(requestBody);
+    const { notification_id, user_id } = parsedBody;
 
-    const { data, error } = await supabase
-      .from('notifications')
-      .update({
-        is_read: true,
-        read_at: new Date().toISOString()
-      })
-      .match({ id: notification_id, user_id: user_id })
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
+    const targetUserId = user_id || actorUserId;
+    if (!isUuid(notification_id) || !isUuid(targetUserId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Valid notification_id and user_id are required'
+        })
+      };
     }
+
+    const updateResult = await safeUpdate(
+      supabase
+        .from('notifications')
+        .update({
+          is_read: true,
+          read_at: new Date().toISOString()
+        })
+        .match({ id: notification_id, user_id: targetUserId })
+        .select()
+        .single(),
+      'notifications',
+      'Failed to mark notification as read'
+    );
+
+    const data = updateResult.data;
 
     return {
       statusCode: 200,
@@ -336,23 +590,37 @@ async function markNotificationRead(requestBody, headers) {
 }
 
 // Mark all notifications as read for user
-async function markAllNotificationsRead(requestBody, headers) {
+async function markAllNotificationsRead(actorUserId, requestBody, headers) {
   try {
-    const { user_id } = JSON.parse(requestBody);
+    const parsedBody = parseRequestBody(requestBody);
+    const targetUserId = parsedBody.user_id || actorUserId;
 
-    const { data, error } = await supabase
-      .from('notifications')
-      .update({
-        is_read: true,
-        read_at: new Date().toISOString()
-      })
-      .eq('user_id', user_id)
-      .eq('is_read', false)
-      .select('id');
-
-    if (error) {
-      throw error;
+    if (!isUuid(targetUserId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Valid user_id is required'
+        })
+      };
     }
+
+    const updateResult = await safeUpdate(
+      supabase
+        .from('notifications')
+        .update({
+          is_read: true,
+          read_at: new Date().toISOString()
+        })
+        .eq('user_id', targetUserId)
+        .eq('is_read', false)
+        .select('id'),
+      'notifications',
+      'Failed to mark notifications as read'
+    );
+
+    const data = updateResult.data;
 
     return {
       statusCode: 200,
@@ -373,37 +641,44 @@ async function markAllNotificationsRead(requestBody, headers) {
 }
 
 // Get user notifications
-async function getNotifications(queryParams, headers) {
+async function getNotifications(actorUserId, queryParams, headers) {
   try {
-    const {
-      user_id,
-      limit = '20',
-      offset = '0',
-      unread_only = 'false',
-      category,
-      priority
-    } = queryParams || {};
+    const targetUserId = (queryParams?.user_id || actorUserId) ?? null;
 
-    if (!user_id) {
+    if (!isUuid(targetUserId)) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'User ID is required'
+          message: 'Valid user_id is required'
         })
       };
     }
 
+    const limitValue = clampNumber(queryParams?.limit, {
+      min: 1,
+      max: 100,
+      fallback: 20
+    });
+    const offsetValue = clampNumber(queryParams?.offset, {
+      min: 0,
+      max: 1000,
+      fallback: 0
+    });
+
+    const unreadOnly = String(queryParams?.unread_only ?? 'false').toLowerCase() === 'true';
+    const category = sanitizeString(queryParams?.category, { maxLength: 64, allowEmpty: false });
+    const priority = sanitizeString(queryParams?.priority, { maxLength: 32, allowEmpty: false });
+
     let query = supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', user_id)
+      .eq('user_id', targetUserId)
       .order('created_at', { ascending: false })
-      .limit(parseInt(limit))
-      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+      .range(offsetValue, offsetValue + limitValue - 1);
 
-    if (unread_only === 'true') {
+    if (unreadOnly) {
       query = query.eq('is_read', false);
     }
 
@@ -415,18 +690,26 @@ async function getNotifications(queryParams, headers) {
       query = query.eq('priority', priority);
     }
 
-    const { data: notifications, error } = await query;
+    const notificationsResult = await safeSelect(
+      query,
+      'notifications',
+      'Failed to fetch notifications'
+    );
 
-    if (error) {
-      throw error;
-    }
+    const notifications = notificationsResult.data || [];
 
     // Get unread count
-    const { count: unreadCount, error: countError } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user_id)
-      .eq('is_read', false);
+    const unreadResult = await safeSelect(
+      supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', targetUserId)
+        .eq('is_read', false),
+      'notifications',
+      'Failed to count unread notifications'
+    );
+
+    const unreadCount = unreadResult.count ?? 0;
 
     return {
       statusCode: 200,
@@ -448,18 +731,31 @@ async function getNotifications(queryParams, headers) {
 }
 
 // Delete notification
-async function deleteNotification(requestBody, headers) {
+async function deleteNotification(actorUserId, requestBody, headers) {
   try {
-    const { notification_id, user_id } = JSON.parse(requestBody);
+    const parsedBody = parseRequestBody(requestBody);
+    const { notification_id, user_id } = parsedBody;
 
-    const { error } = await supabase
-      .from('notifications')
-      .delete()
-      .match({ id: notification_id, user_id: user_id });
-
-    if (error) {
-      throw error;
+    const targetUserId = user_id || actorUserId;
+    if (!isUuid(notification_id) || !isUuid(targetUserId)) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'Valid notification_id and user_id are required'
+        })
+      };
     }
+
+    await safeDelete(
+      supabase
+        .from('notifications')
+        .delete()
+        .match({ id: notification_id, user_id: targetUserId }),
+      'notifications',
+      'Failed to delete notification'
+    );
 
     return {
       statusCode: 200,
@@ -477,8 +773,9 @@ async function deleteNotification(requestBody, headers) {
 }
 
 // Send system alert to multiple users
-async function sendSystemAlert(requestBody, headers) {
+async function sendSystemAlert(actorUserId, requestBody, headers) {
   try {
+    const parsedBody = parseRequestBody(requestBody);
     const {
       user_ids = [],
       title,
@@ -486,7 +783,7 @@ async function sendSystemAlert(requestBody, headers) {
       priority = 'high',
       send_email = true,
       alert_type = 'system'
-    } = JSON.parse(requestBody);
+    } = parsedBody;
 
     if (!title || !message || user_ids.length === 0) {
       return {
@@ -499,7 +796,22 @@ async function sendSystemAlert(requestBody, headers) {
       };
     }
 
-    const notifications = user_ids.map(user_id => ({
+    const validUserIds = user_ids
+      .filter((value) => typeof value === 'string' && isUuid(value))
+      .slice(0, 200);
+
+    if (validUserIds.length === 0) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'No valid user IDs provided'
+        })
+      };
+    }
+
+    const notifications = validUserIds.map((user_id) => ({
       user_id: user_id,
       type: alert_type,
       title: title,
@@ -507,24 +819,27 @@ async function sendSystemAlert(requestBody, headers) {
       priority: priority,
       category: 'system',
       is_read: false,
+      initiated_by: actorUserId,
       created_at: new Date().toISOString()
     }));
 
-    const { data: createdNotifications, error } = await supabase
-      .from('notifications')
-      .insert(notifications)
-      .select();
+    const createdResult = await safeInsert(
+      supabase
+        .from('notifications')
+        .insert(notifications)
+        .select(),
+      'notifications',
+      'Failed to create system alerts'
+    );
 
-    if (error) {
-      throw error;
-    }
+    const createdNotifications = createdResult.data || [];
 
     // Send emails if required
     if (send_email) {
       const { data: users, error: userError } = await supabase
         .from('users')
         .select('id, email, username, notification_settings')
-        .in('id', user_ids);
+        .in('id', validUserIds);
 
       if (!userError && users) {
         const emailPromises = users
@@ -579,15 +894,16 @@ async function sendSystemAlert(requestBody, headers) {
 }
 
 // Send promotional email
-async function sendPromotionalEmail(requestBody, headers) {
+async function sendPromotionalEmail(actorUserId, requestBody, headers) {
   try {
+    const parsedBody = parseRequestBody(requestBody);
     const {
       user_ids = [],
       subject,
       content,
       template_type = 'promotional',
       campaign_id
-    } = JSON.parse(requestBody);
+    } = parsedBody;
 
     if (!subject || !content) {
       return {
@@ -635,7 +951,8 @@ async function sendPromotionalEmail(requestBody, headers) {
             user.username,
             subject,
             content,
-            user.id
+            user.id,
+            template_type
           );
 
           await transporter.sendMail({
@@ -649,11 +966,12 @@ async function sendPromotionalEmail(requestBody, headers) {
           // Log promotional email
           await supabase.from('email_logs').insert([{
             user_id: user.id,
-            email_type: 'promotional',
+            email_type: template_type,
             subject: subject,
             status: 'sent',
             sent_at: new Date().toISOString(),
-            campaign_id: campaign_id
+            campaign_id: campaign_id,
+            initiated_by: actorUserId
           }]);
 
           return { user_id: user.id, status: 'sent' };
@@ -688,30 +1006,46 @@ async function sendPromotionalEmail(requestBody, headers) {
 }
 
 // Unsubscribe user from emails
-async function unsubscribeUser(requestBody, headers) {
+async function unsubscribeUser(actorUserId, requestBody, headers) {
   try {
-    const { user_id, email_type = 'all' } = JSON.parse(requestBody);
+    const parsedBody = parseRequestBody(requestBody);
+    const { user_id, email_type = 'all' } = parsedBody;
 
-    if (!user_id) {
+    const targetUserId = user_id || actorUserId;
+
+    if (!isUuid(targetUserId)) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({
           success: false,
-          message: 'User ID is required'
+          message: 'Valid user_id is required'
         })
       };
     }
 
     // Get current settings
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('notification_settings')
-      .eq('id', user_id)
-      .single();
+    const userResult = await safeSelect(
+      supabase
+        .from('users')
+        .select('notification_settings')
+        .eq('id', targetUserId)
+        .single(),
+      'users',
+      'Failed to load notification settings'
+    );
 
-    if (userError) {
-      throw userError;
+    const user = userResult.data;
+
+    if (!user) {
+      return {
+        statusCode: 404,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          message: 'User not found'
+        })
+      };
     }
 
     const currentSettings = user.notification_settings || {};
@@ -724,14 +1058,14 @@ async function unsubscribeUser(requestBody, headers) {
       updatedSettings = { ...currentSettings, [email_type]: false };
     }
 
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ notification_settings: updatedSettings })
-      .eq('id', user_id);
-
-    if (updateError) {
-      throw updateError;
-    }
+    await safeUpdate(
+      supabase
+        .from('users')
+        .update({ notification_settings: updatedSettings })
+        .eq('id', targetUserId),
+      'users',
+      'Failed to update notification settings'
+    );
 
     return {
       statusCode: 200,
@@ -754,6 +1088,7 @@ async function unsubscribeUser(requestBody, headers) {
 
 // Email template generators
 function generateNotificationEmail(username, title, message, actionUrl, type) {
+  const notificationLabel = type ? `<div class="badge">${type.toUpperCase()}</div>` : '';
   const html = `
     <!DOCTYPE html>
     <html>
@@ -766,7 +1101,8 @@ function generateNotificationEmail(username, title, message, actionUrl, type) {
             .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
             .header { text-align: center; margin-bottom: 30px; }
             .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
-            .notification { background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 20px 0; }
+      .notification { background: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 20px 0; }
+      .badge { display: inline-block; margin-bottom: 12px; padding: 4px 10px; border-radius: 999px; background: #e0e7ff; color: #1d4ed8; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; }
             .notification-title { font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 10px; }
             .notification-message { color: #475569; line-height: 1.6; }
             .action-button { display: inline-block; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
@@ -782,6 +1118,7 @@ function generateNotificationEmail(username, title, message, actionUrl, type) {
             <p>Hi ${username},</p>
             
             <div class="notification">
+        ${notificationLabel}
                 <div class="notification-title">${title}</div>
                 <div class="notification-message">${message}</div>
             </div>
@@ -803,7 +1140,9 @@ function generateNotificationEmail(username, title, message, actionUrl, type) {
     Hi ${username},
     
     ${title}
-    ${message}
+  ${message}
+
+  ${type ? `Category: ${type}` : ''}
     
     ${actionUrl ? `View details: ${actionUrl}` : ''}
     
@@ -874,8 +1213,13 @@ function generateSystemAlertEmail(username, title, message, alertType) {
   return { html, text };
 }
 
-function generatePromotionalEmail(username, subject, content, userId) {
-  const unsubscribeUrl = `${process.env.FRONTEND_URL}/unsubscribe?user_id=${userId}&type=promotional`;
+function generatePromotionalEmail(username, subject, content, userId, templateType = 'promotional') {
+  const unsubscribeUrl = `${process.env.FRONTEND_URL}/unsubscribe?user_id=${userId}&type=${templateType}`;
+  const bannerText = templateType === 'onboarding'
+    ? 'Welcome to SichrPlace!'
+    : templateType === 'feature'
+      ? 'Discover What Is New'
+      : 'A Message From SichrPlace';
   
   const html = `
     <!DOCTYPE html>
@@ -895,8 +1239,9 @@ function generatePromotionalEmail(username, subject, content, userId) {
     </head>
     <body>
         <div class="container">
-            <div class="header">
-                <div class="logo">SichrPlace</div>
+      <div class="header">
+        <div class="logo">SichrPlace</div>
+        <p>${bannerText}</p>
             </div>
             
             <p>Hi ${username},</p>
@@ -921,6 +1266,7 @@ function generatePromotionalEmail(username, subject, content, userId) {
     
     ${content.replace(/<[^>]*>/g, '')}
     
+    Template: ${templateType}
     You received this promotional email because you subscribed to SichrPlace updates.
     To unsubscribe: ${unsubscribeUrl}
   `;

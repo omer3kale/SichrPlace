@@ -1,100 +1,303 @@
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const jwtSecret = process.env.JWT_SECRET;
 
-if (!supabaseUrl || !supabaseKey || !jwtSecret) {
-  throw new Error('Missing required environment variables');
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing required Supabase environment variables for realtime-chat function');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
 
-// Helper function to authenticate token
-const authenticateToken = async (headers) => {
-  const authHeader = headers.authorization;
-  if (!authHeader) {
-    throw new Error('No token provided');
-  }
+const buildHeaders = () => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Authorization',
+});
 
-  const token = authHeader.split(' ')[1];
-  if (!token) {
-    throw new Error('Malformed token');
-  }
+const respond = (statusCode, payload) => ({
+  statusCode,
+  headers: buildHeaders(),
+  body: JSON.stringify(payload),
+});
 
-  const decoded = jwt.verify(token, jwtSecret);
-  
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('id, email, role')
-    .eq('id', decoded.id)
-    .single();
-
-  if (error || !user) {
-    throw new Error(`User not found: ${error?.message}`);
-  }
-
-  return user;
+const getHeader = (headers = {}, name) => {
+  if (!headers) return null;
+  const target = name.toLowerCase();
+  const entry = Object.entries(headers).find(([key]) => key.toLowerCase() === target);
+  return entry ? entry[1] : null;
 };
 
-export const handler = async (event, context) => {
-  // Enable CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+const extractBearerToken = (headers = {}) => {
+  const value = getHeader(headers, 'authorization');
+  if (!value) return null;
+  const parts = value.trim().split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
+  return parts[1];
+};
 
-  // Handle preflight OPTIONS request
+const parseRequestBody = (body) => {
+  if (!body) return {};
+  try {
+    if (typeof body === 'object') {
+      return body;
+    }
+    return JSON.parse(body);
+  } catch (error) {
+    throw httpError(400, 'Request body must be valid JSON');
+  }
+};
+
+const isUuid = (value) =>
+  typeof value === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
+const clampNumber = (value, { min, max, fallback }) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, parsed));
+};
+
+const sanitizeString = (value, { maxLength, allowEmpty = false } = {}) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!allowEmpty && trimmed.length === 0) return null;
+  if (maxLength && trimmed.length > maxLength) {
+    return trimmed.slice(0, maxLength);
+  }
+  return trimmed;
+};
+
+const httpError = (status, message, details = null) => {
+  const error = new Error(message);
+  error.status = status;
+  if (details) {
+    error.details = details;
+  }
+  return error;
+};
+
+// Standardized helper functions
+const isMissingTableError = (error) => {
+  return error && error.code === 'PGRST116';
+};
+
+const safeSelect = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Query failed`, error.message);
+  }
+};
+
+const safeInsert = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Table not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Insert failed`, error.message);
+  }
+};
+
+const safeUpdate = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Update failed`, error.message);
+  }
+};
+
+const safeDelete = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Delete failed`, error.message);
+  }
+};
+
+const getAuthContext = async (event, options = {}) => {
+  const token = extractBearerToken(event.headers || {});
+  if (!token) {
+    throw httpError(401, 'Authorization token is required');
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data?.user?.id) {
+    throw httpError(401, 'Invalid or expired token');
+  }
+
+  const { data: profile, error: profileError } = await safeSelect(
+    supabase
+      .from('profiles')
+      .select('id, email, role, status, account_status, is_blocked, is_admin, is_staff, notification_preferences')
+      .eq('id', data.user.id)
+      .single(),
+    'profiles',
+    'Failed to fetch user profile'
+  );
+
+  if (profileError) {
+    throw profileError;
+  }
+
+  if (!profile) {
+    throw httpError(403, 'User profile not found');
+  }
+
+  // Check account status
+  if (profile.is_blocked) {
+    throw httpError(403, 'Account is blocked');
+  }
+
+  if (profile.account_status === 'suspended') {
+    throw httpError(403, 'Account is suspended');
+  }
+
+  // Check role requirements if specified
+  if (options.requireAdmin && !profile.is_admin) {
+    throw httpError(403, 'Admin access required');
+  }
+
+  if (options.requireAnalytics && !(profile.is_admin || profile.is_staff || profile.role === 'analytics')) {
+    throw httpError(403, 'Analytics access required');
+  }
+
+  return {
+    user: data.user,
+    profile,
+    isAdmin: profile.is_admin,
+    isStaff: profile.is_staff
+  };
+};
+
+const httpErrorOld = (status, message, details) => {
+  const error = new Error(message);
+  error.status = status;
+  if (details) {
+    error.details = details;
+  }
+  return error;
+};
+
+
+
+export const handler = async (event) => {
+  console.log('Realtime chat handler called:', {
+    method: event.httpMethod,
+    path: event.path
+  });
+
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: ''
-    };
+    return respond(200, '');
   }
 
   try {
-    const user = await authenticateToken(event.headers);
-    
-    switch (event.httpMethod) {
+    const { profile } = await getAuthContext(event);
+
+    switch ((event.httpMethod || 'GET').toUpperCase()) {
       case 'GET':
-        return await getConversations(user, event.queryStringParameters, headers);
+        return await getConversations(profile, event.queryStringParameters);
       case 'POST':
-        return await handleChatAction(user, event.body, event.path, headers);
+        return await handleChatAction(profile, event.body, event.path || '');
       case 'PUT':
-        return await updateMessage(user, event.path, event.body, headers);
+        return await updateMessage(profile, event.path || '', event.body);
       default:
-        return {
-          statusCode: 405,
-          headers,
-          body: JSON.stringify({ error: 'Method not allowed' })
-        };
+        throw httpError(405, 'Method not allowed');
     }
   } catch (error) {
-    console.error('Realtime chat function error:', error);
-    return {
-      statusCode: error.message.includes('token') || error.message.includes('User not found') ? 401 : 500,
-      headers,
-      body: JSON.stringify({ 
-        error: error.message.includes('token') || error.message.includes('User not found') 
-          ? 'Authentication failed' 
-          : 'Internal server error',
-        details: error.message 
-      })
+    console.error('Realtime chat handler error:', error);
+
+    const status = error.status || 500;
+    const message = status === 500 ? 'Realtime chat operation failed' : error.message;
+    
+    const errorResponse = {
+      success: false,
+      error: message
     };
+
+    if (error.details && status !== 500) {
+      errorResponse.details = error.details;
+    }
+
+    if (status === 500 && process.env.NODE_ENV === 'development') {
+      errorResponse.details = error.details || error.message;
+    }
+
+    return respond(status, errorResponse);
   }
 };
 
 // GET conversations and messages
+
 const getConversations = async (user, queryParams, headers) => {
   try {
     const { conversationId, limit = '50', offset = '0' } = queryParams || {};
-    
-    if (conversationId) {
-      // Get messages for specific conversation
+
+    const safeLimit = clampNumber(limit, { min: 1, max: 100, fallback: 50 });
+    const safeOffset = clampNumber(offset, { min: 0, max: 5000, fallback: 0 });
+    const sanitizedConversationId = sanitizeString(conversationId, { maxLength: 36, allowEmpty: true });
+
+    if (sanitizedConversationId) {
+      if (!isUuid(sanitizedConversationId)) {
+        throw httpError(400, 'conversationId must be a valid UUID');
+      }
+
+      const { data: conversationRecord, error: conversationError } = await supabase
+        .from('conversations')
+        .select('id, participant_1_id, participant_2_id')
+        .eq('id', sanitizedConversationId)
+        .maybeSingle();
+
+      if (conversationError) {
+        throw httpError(500, 'Failed to verify conversation access.', conversationError.message);
+      }
+
+      if (
+        !conversationRecord ||
+        (conversationRecord.participant_1_id !== user.id &&
+          conversationRecord.participant_2_id !== user.id)
+      ) {
+        throw httpError(403, 'Access to this conversation is not permitted');
+      }
+
       const { data: messages, error } = await supabase
         .from('messages')
         .select(`
@@ -112,265 +315,316 @@ const getConversations = async (user, queryParams, headers) => {
             name
           )
         `)
-        .eq('conversation_id', conversationId)
+        .eq('conversation_id', sanitizedConversationId)
         .order('created_at', { ascending: true })
-        .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
+        .range(safeOffset, safeOffset + safeLimit - 1);
 
-      if (error) throw new Error(`Failed to fetch messages: ${error.message}`);
+      if (error) {
+        throw httpError(500, 'Failed to fetch messages.', error.message);
+      }
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          data: messages || [],
-          conversationId
-        })
-      };
+      return respond(200, headers, {
+        success: true,
+        data: messages || [],
+        conversationId: sanitizedConversationId,
+        pagination: {
+          limit: safeLimit,
+          offset: safeOffset,
+        },
+      });
     } else {
       // Get user's conversations
       const { data: conversations, error } = await supabase
         .from('conversations')
         .select(`
           id,
-          tenant_id,
-          landlord_id,
+          participant_1_id,
+          participant_2_id,
           apartment_id,
           status,
           created_at,
           updated_at,
-          tenant:tenant_id (
+          participant_1:participant_1_id (
             id,
             email,
-            name
+            full_name
           ),
-          landlord:landlord_id (
+          participant_2:participant_2_id (
             id,
             email,
-            name
+            full_name
           ),
           apartment:apartment_id (
             id,
             title,
-            images
+            image_urls
           ),
-          last_message:messages(
+          messages(
             id,
             content,
             created_at,
             sender_id
           )
         `)
-        .or(`tenant_id.eq.${user.id},landlord_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false });
+        .or(`participant_1_id.eq.${user.id},participant_2_id.eq.${user.id}`)
+  .order('updated_at', { ascending: false })
+  .range(safeOffset, safeOffset + safeLimit - 1);
 
-      if (error) throw new Error(`Failed to fetch conversations: ${error.message}`);
+      if (error) {
+        throw httpError(500, 'Failed to fetch conversations.', error.message);
+      }
 
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          success: true,
-          data: conversations || []
-        })
-      };
+      return respond(200, headers, {
+        success: true,
+        data: conversations || [],
+        pagination: {
+          limit: safeLimit,
+          offset: safeOffset,
+        },
+      });
     }
   } catch (error) {
-    throw error;
+    if (error.status) {
+      throw error;
+    }
+    throw httpError(500, 'Failed to fetch conversations.', error.message);
   }
 };
 
 // POST handle chat actions (send message, create conversation)
 const handleChatAction = async (user, body, path, headers) => {
-  try {
-    const data = JSON.parse(body || '{}');
-    
-    // Check if this is a message send action
-    if (path.includes('/send') || data.action === 'send_message') {
-      return await sendMessage(user, data, headers);
-    }
-    
-    // Check if this is a conversation creation
-    if (data.action === 'create_conversation') {
-      return await createConversation(user, data, headers);
-    }
+  const payload = parseRequestBody(body);
+  const action = sanitizeString(payload.action, { maxLength: 64, allowEmpty: true });
+  const normalizedPath = path || '';
 
-    // Default to sending message
-    return await sendMessage(user, data, headers);
-  } catch (error) {
-    throw error;
+  if (normalizedPath.includes('/send') || action === 'send_message' || !action) {
+    return await sendMessage(user, payload, headers);
   }
+
+  if (action === 'create_conversation') {
+    return await createConversation(user, payload, headers);
+  }
+
+  throw httpError(400, 'Unsupported chat action requested.');
 };
 
 // Send message
 const sendMessage = async (user, data, headers) => {
-  try {
-    const { conversationId, content, messageType = 'text', apartmentId, recipientId } = data;
-    
-    if (!content) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Message content is required' })
-      };
+  const sanitizedContent = sanitizeString(data.content, { maxLength: 5000, allowEmpty: false });
+  if (!sanitizedContent) {
+    throw httpError(400, 'Message content is required.');
+  }
+
+  const sanitizedMessageType = sanitizeString(data.messageType, {
+    maxLength: 32,
+    allowEmpty: true,
+  }) || 'text';
+
+  const providedConversationId = sanitizeString(data.conversationId, {
+    maxLength: 36,
+    allowEmpty: true,
+  });
+
+  const sanitizedApartmentId = sanitizeString(data.apartmentId, {
+    maxLength: 36,
+    allowEmpty: true,
+  });
+  const sanitizedRecipientId = sanitizeString(data.recipientId, {
+    maxLength: 36,
+    allowEmpty: true,
+  });
+
+  let finalConversationId = null;
+
+  if (providedConversationId) {
+    if (!isUuid(providedConversationId)) {
+      throw httpError(400, 'Conversation ID must be a valid UUID.');
     }
+    finalConversationId = providedConversationId;
+  }
 
-    let finalConversationId = conversationId;
-
-    // If no conversation ID, create new conversation
-    if (!finalConversationId && apartmentId && recipientId) {
-      const newConversation = await createConversationInternal(user.id, recipientId, apartmentId);
-      finalConversationId = newConversation.id;
+  if (!finalConversationId && sanitizedApartmentId && sanitizedRecipientId) {
+    if (!isUuid(sanitizedApartmentId) || !isUuid(sanitizedRecipientId)) {
+      throw httpError(400, 'Apartment ID and recipient ID must be valid UUIDs.');
     }
+    const newConversation = await createConversationInternal(user.id, sanitizedRecipientId, sanitizedApartmentId);
+    finalConversationId = newConversation.id;
+  }
 
-    if (!finalConversationId) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Conversation ID or apartment/recipient info required' })
-      };
-    }
+  if (!finalConversationId) {
+    throw httpError(400, 'Conversation ID or apartment/recipient information is required.');
+  }
 
-    // Insert message
-    const { data: message, error } = await supabase
-      .from('messages')
-      .insert([{
+  const { data: conversationRecord, error: conversationError } = await supabase
+    .from('conversations')
+    .select('participant_1_id, participant_2_id')
+    .eq('id', finalConversationId)
+    .maybeSingle();
+
+  if (conversationError) {
+    throw httpError(500, 'Failed to verify conversation membership.', conversationError.message);
+  }
+
+  if (
+    !conversationRecord ||
+    (conversationRecord.participant_1_id !== user.id &&
+      conversationRecord.participant_2_id !== user.id)
+  ) {
+    throw httpError(403, 'User is not a participant in this conversation.');
+  }
+
+  const { data: message, error } = await supabase
+    .from('messages')
+    .insert([
+      {
         conversation_id: finalConversationId,
         sender_id: user.id,
-        content,
-        message_type: messageType
-      }])
-      .select(`
+        content: sanitizedContent,
+        message_type: sanitizedMessageType,
+      },
+    ])
+    .select(`
+      id,
+      conversation_id,
+      sender_id,
+      content,
+      message_type,
+      created_at,
+      sender:sender_id (
         id,
-        conversation_id,
-        sender_id,
-        content,
-        message_type,
-        created_at,
-        sender:sender_id (
-          id,
-          email,
-          name
-        )
-      `);
+        email,
+        name
+      )
+    `)
+    .single();
 
-    if (error) throw new Error(`Failed to send message: ${error.message}`);
-
-    // Update conversation timestamp
-    await supabase
-      .from('conversations')
-      .update({ updated_at: new Date() })
-      .eq('id', finalConversationId);
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Message sent successfully',
-        data: message[0]
-      })
-    };
-  } catch (error) {
-    throw error;
+  if (error) {
+    throw httpError(500, 'Failed to send message.', error.message);
   }
+
+  await supabase
+    .from('conversations')
+    .update({ updated_at: new Date().toISOString() })
+    .eq('id', finalConversationId);
+
+  return respond(200, headers, {
+    success: true,
+    message: 'Message sent successfully.',
+    data: message,
+  });
 };
 
 // Create conversation
 const createConversation = async (user, data, headers) => {
-  try {
-    const { apartmentId, recipientId } = data;
-    
-    if (!apartmentId || !recipientId) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Apartment ID and recipient ID are required' })
-      };
-    }
+  const sanitizedApartmentId = sanitizeString(data.apartmentId, { maxLength: 36, allowEmpty: false });
+  const sanitizedRecipientId = sanitizeString(data.recipientId, { maxLength: 36, allowEmpty: false });
 
-    const conversation = await createConversationInternal(user.id, recipientId, apartmentId);
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Conversation created successfully',
-        data: conversation
-      })
-    };
-  } catch (error) {
-    throw error;
+  if (!sanitizedApartmentId || !sanitizedRecipientId || !isUuid(sanitizedApartmentId) || !isUuid(sanitizedRecipientId)) {
+    throw httpError(400, 'Valid apartmentId and recipientId are required.');
   }
+
+  const conversation = await createConversationInternal(user.id, sanitizedRecipientId, sanitizedApartmentId);
+
+  return respond(200, headers, {
+    success: true,
+    message: 'Conversation created successfully.',
+    data: conversation,
+  });
 };
 
 // Internal function to create conversation
 const createConversationInternal = async (userId, recipientId, apartmentId) => {
-  // Check if conversation already exists
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('conversations')
     .select('id')
     .eq('apartment_id', apartmentId)
-    .or(`and(tenant_id.eq.${userId},landlord_id.eq.${recipientId}),and(tenant_id.eq.${recipientId},landlord_id.eq.${userId})`)
-    .single();
+    .or(
+      `and(participant_1_id.eq.${userId},participant_2_id.eq.${recipientId}),and(participant_1_id.eq.${recipientId},participant_2_id.eq.${userId})`,
+    )
+    .maybeSingle();
 
-  if (existing) {
+  if (existingError) {
+    throw httpError(500, 'Failed to verify existing conversation.', existingError.message);
+  }
+
+  if (existing?.id) {
     return existing;
   }
 
-  // Create new conversation
   const { data, error } = await supabase
     .from('conversations')
-    .insert([{
-      tenant_id: userId,
-      landlord_id: recipientId,
-      apartment_id: apartmentId,
-      status: 'active'
-    }])
+    .insert([
+      {
+        participant_1_id: userId,
+        participant_2_id: recipientId,
+        apartment_id: apartmentId,
+        status: 'active',
+      },
+    ])
     .select()
     .single();
 
-  if (error) throw new Error(`Failed to create conversation: ${error.message}`);
+  if (error) {
+    throw httpError(500, 'Failed to create conversation.', error.message);
+  }
 
   return data;
 };
 
 // PUT update message (mark as read)
 const updateMessage = async (user, path, body, headers) => {
-  try {
-    const pathParts = path.split('/');
-    const messageId = pathParts[pathParts.length - 1];
-    
-    if (!messageId) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Message ID is required' })
-      };
-    }
+  const pathParts = (path || '').split('/').filter(Boolean);
+  const messageId = pathParts[pathParts.length - 1] || null;
 
-    const { data, error } = await supabase
-      .from('messages')
-      .update({ 
-        read_at: new Date(),
-        read_by: user.id
-      })
-      .eq('id', messageId)
-      .select();
-
-    if (error) throw new Error(`Failed to update message: ${error.message}`);
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        message: 'Message marked as read',
-        data: data[0]
-      })
-    };
-  } catch (error) {
-    throw error;
+  if (!messageId || !isUuid(messageId)) {
+    throw httpError(400, 'Message ID is required.');
   }
+
+  const { data: messageRecord, error: messageError } = await supabase
+    .from('messages')
+    .select('id, conversation_id')
+    .eq('id', messageId)
+    .single();
+
+  if (messageError || !messageRecord) {
+    throw httpError(404, 'Message not found.');
+  }
+
+  const { data: conversationRecord, error: conversationError } = await supabase
+    .from('conversations')
+    .select('participant_1_id, participant_2_id')
+    .eq('id', messageRecord.conversation_id)
+    .maybeSingle();
+
+  if (conversationError) {
+    throw httpError(500, 'Failed to verify conversation membership.', conversationError.message);
+  }
+
+  if (
+    !conversationRecord ||
+    (conversationRecord.participant_1_id !== user.id &&
+      conversationRecord.participant_2_id !== user.id)
+  ) {
+    throw httpError(403, 'User is not permitted to update this message.');
+  }
+
+  const { data, error } = await supabase
+    .from('messages')
+    .update({
+      read_at: new Date().toISOString(),
+      read_by: user.id,
+    })
+    .eq('id', messageId)
+    .select()
+    .single();
+
+  if (error) {
+    throw httpError(500, 'Failed to update message.', error.message);
+  }
+
+  return respond(200, headers, {
+    success: true,
+    message: 'Message marked as read.',
+    data,
+  });
 };

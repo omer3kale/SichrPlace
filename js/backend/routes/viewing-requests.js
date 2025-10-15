@@ -3,9 +3,53 @@ const router = express.Router();
 const ViewingRequestService = require('../services/ViewingRequestService');
 const EmailService = require('../services/emailService');
 const auth = require('../middleware/auth');
+const { supabase } = require('../config/supabase');
 
 // Initialize email service
 const emailService = new EmailService();
+
+const NOTIFICATION_TYPES = {
+  VIEWING_REQUEST: 'viewing_request',
+  VIEWING_APPROVED: 'viewing_approved',
+  VIEWING_REJECTED: 'viewing_rejected'
+};
+
+const createNotification = async ({
+  userId,
+  type,
+  title,
+  message,
+  data = {},
+  actionUrl = '/viewing-requests-dashboard.html',
+  priority = 'normal'
+}) => {
+  if (!userId) {
+    return { success: false, error: 'Missing user id' };
+  }
+
+  try {
+    const { error } = await supabase.from('notifications').insert([
+      {
+        user_id: userId,
+        type,
+        title,
+        message,
+        data,
+        action_url: actionUrl,
+        priority
+      }
+    ]);
+
+    if (error) {
+      throw error;
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to create viewing notification:', error.message || error);
+    return { success: false, error: error.message };
+  }
+};
 
 // GET /api/viewing-requests - List viewing requests with filters
 router.get('/', auth, async (req, res) => {
@@ -208,6 +252,25 @@ router.post('/', auth, async (req, res) => {
       console.error(`❌ Failed to send request confirmation email: ${emailResult.error}`);
     }
 
+    const landlordId = viewingRequest.landlord_id || req.body.landlord_id;
+    const apartmentTitle = viewingRequest.apartment?.title || req.body.apartment_title || 'Apartment';
+    const requesterName = [req.user.first_name, req.user.last_name].filter(Boolean).join(' ') || req.user.username || 'Ein Interessent';
+
+    if (landlordId) {
+      await createNotification({
+        userId: landlordId,
+        type: NOTIFICATION_TYPES.VIEWING_REQUEST,
+        title: 'Neue Besichtigungsanfrage',
+        message: `${requesterName} möchte "${apartmentTitle}" besichtigen.`,
+        data: {
+          viewingRequestId: viewingRequest.id,
+          apartmentTitle,
+          requesterName
+        },
+        priority: 'high'
+      });
+    }
+
     res.status(201).json({ 
       success: true, 
       data: viewingRequest,
@@ -307,9 +370,40 @@ router.patch('/:id/approve', auth, async (req, res) => {
     }
 
     const updatedRequest = await ViewingRequestService.approve(id, confirmed_date);
-    
-    // TODO: Send approval notification email
-    
+
+    const tenantEmail = updatedRequest.requester_email || updatedRequest.email;
+    const tenantFirstName = updatedRequest.requester?.first_name || updatedRequest.requester_name;
+    const apartmentTitle = updatedRequest.apartment?.title || 'Apartment';
+    const confirmedDateDisplay = updatedRequest.confirmed_date;
+
+    if (tenantEmail) {
+      const emailPayload = {
+        firstName: tenantFirstName,
+        apartmentTitle,
+        confirmedDate: confirmedDateDisplay,
+        additionalNotes: updatedRequest.notes || ''
+      };
+
+      const approvalEmail = await emailService.sendViewingApprovedEmail(tenantEmail, emailPayload);
+
+      if (!approvalEmail.success) {
+        console.error('Failed to send viewing approved email:', approvalEmail.error);
+      }
+    }
+
+    await createNotification({
+      userId: updatedRequest.requester_id,
+      type: NOTIFICATION_TYPES.VIEWING_APPROVED,
+      title: 'Besichtigung bestätigt',
+      message: `Deine Anfrage für "${apartmentTitle}" wurde bestätigt.`,
+      data: {
+        viewingRequestId: updatedRequest.id,
+        apartmentTitle,
+        confirmedDate: confirmedDateDisplay
+      },
+      priority: 'high'
+    });
+
     res.json({
       success: true,
       data: updatedRequest,
@@ -350,9 +444,36 @@ router.patch('/:id/reject', auth, async (req, res) => {
     }
 
     const updatedRequest = await ViewingRequestService.reject(id, reason);
-    
-    // TODO: Send rejection notification email
-    
+
+    const tenantEmail = updatedRequest.requester_email || updatedRequest.email;
+    const tenantFirstName = updatedRequest.requester?.first_name || updatedRequest.requester_name;
+    const apartmentTitle = updatedRequest.apartment?.title || 'Apartment';
+
+    if (tenantEmail) {
+      const rejectionEmail = await emailService.sendViewingRejectedEmail(tenantEmail, {
+        firstName: tenantFirstName,
+        apartmentTitle,
+        reason: updatedRequest.cancellation_reason
+      });
+
+      if (!rejectionEmail.success) {
+        console.error('Failed to send viewing rejection email:', rejectionEmail.error);
+      }
+    }
+
+    await createNotification({
+      userId: updatedRequest.requester_id,
+      type: NOTIFICATION_TYPES.VIEWING_REJECTED,
+      title: 'Besichtigung nicht möglich',
+      message: `Deine Anfrage für "${apartmentTitle}" wurde abgelehnt.`,
+      data: {
+        viewingRequestId: updatedRequest.id,
+        apartmentTitle,
+        reason: updatedRequest.cancellation_reason
+      },
+      priority: 'normal'
+    });
+
     res.json({
       success: true,
       data: updatedRequest,
@@ -480,7 +601,7 @@ router.delete('/:id', auth, async (req, res) => {
       });
     }
 
-    await ViewingRequestService.cancel(id);
+  await ViewingRequestService.cancel(id, userId);
     
     res.json({
       success: true,

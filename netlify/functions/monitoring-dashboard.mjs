@@ -146,7 +146,9 @@ export const handler = async (event, context) => {
       }
     };
 
-    // 6. Active Monitoring
+    // 6. Monitoring Setup Status
+    const uptimeRobotStatus = await getUptimeRobotStatus();
+    
     monitoringData.monitoring_setup = {
       internal_health_checks: {
         status: 'active',
@@ -155,9 +157,11 @@ export const handler = async (event, context) => {
       },
       external_monitoring: {
         uptimerobot: {
-          status: 'recommended',
-          setup_required: true,
-          cost: 'Free tier available'
+          status: uptimeRobotStatus.configured ? 'active' : 'setup_required',
+          monitors_count: uptimeRobotStatus.monitors_count || 0,
+          uptime_percentage: uptimeRobotStatus.uptime || 'N/A',
+          cost: 'Free tier available',
+          setup_required: !uptimeRobotStatus.configured
         },
         pingdom: {
           status: 'optional',
@@ -245,3 +249,46 @@ export const handler = async (event, context) => {
     };
   }
 };
+
+// Function to check UptimeRobot status
+async function getUptimeRobotStatus() {
+  const apiKey = process.env.UPTIMEROBOT_API_KEY;
+  
+  if (!apiKey) {
+    return { configured: false, monitors_count: 0 };
+  }
+
+  try {
+    const response = await fetch('https://api.uptimerobot.com/v2/getMonitors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `api_key=${apiKey}&format=json&logs=0`
+    });
+
+    if (!response.ok) {
+      return { configured: false, monitors_count: 0 };
+    }
+
+    const data = await response.json();
+    
+    if (data.stat === 'ok' && data.monitors) {
+      const monitors = data.monitors;
+      const activeMonitors = monitors.filter(m => m.status === 2); // Status 2 = UP
+      const totalUptime = monitors.reduce((sum, m) => sum + parseFloat(m.all_time_uptime_ratio || 0), 0);
+      const averageUptime = monitors.length > 0 ? (totalUptime / monitors.length).toFixed(2) : 0;
+
+      return {
+        configured: true,
+        monitors_count: monitors.length,
+        active_monitors: activeMonitors.length,
+        uptime: `${averageUptime}%`,
+        last_checked: new Date().toISOString()
+      };
+    }
+
+    return { configured: false, monitors_count: 0 };
+  } catch (error) {
+    console.error('[UPTIMEROBOT] API check failed:', error);
+    return { configured: false, monitors_count: 0 };
+  }
+}

@@ -1,333 +1,355 @@
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
+import { mapArrayToFrontend } from '../utils/field-mapper.mjs';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Helper function to verify JWT token
-const verifyToken = (token) => {
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  throw new Error('Missing Supabase environment variables for chats function');
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
+
+// Utility functions
+const buildHeaders = () => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Authorization',
+});
+
+const respond = (statusCode, payload) => ({
+  statusCode,
+  headers: buildHeaders(),
+  body: JSON.stringify(payload),
+});
+
+const httpError = (status, message, details = null) => {
+  const error = new Error(message);
+  error.status = status;
+  if (details) {
+    error.details = details;
+  }
+  return error;
+};
+
+const getHeader = (headers = {}, name) => {
+  const target = name.toLowerCase();
+  const entry = Object.entries(headers || {}).find(([key]) => key.toLowerCase() === target);
+  return entry ? entry[1] : null;
+};
+
+const extractBearerToken = (headers) => {
+  const value = getHeader(headers, 'authorization');
+  if (!value) return null;
+  const parts = value.trim().split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
+  return parts[1];
+};
+
+const isMissingTableError = (error) => {
+  return error && error.code === 'PGRST116';
+};
+
+const safeSelect = async (query, tableName, context) => {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_here');
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Record not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
   } catch (error) {
-    return null;
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Query failed`, error.message);
   }
 };
 
-export const handler = async (event, context) => {
-  // Handle CORS preflight requests
+const safeInsert = async (query, tableName, context) => {
+  try {
+    const result = await query;
+    if (result.error) {
+      if (isMissingTableError(result.error)) {
+        throw httpError(404, `${context}: Table not found`);
+      }
+      throw httpError(500, `${context}: Database error`, result.error.message);
+    }
+    return result;
+  } catch (error) {
+    if (error.status) throw error;
+    throw httpError(500, `${context}: Insert failed`, error.message);
+  }
+};
+
+const getAuthContext = async (event, options = {}) => {
+  const token = extractBearerToken(event.headers || {});
+  if (!token) {
+    throw httpError(401, 'Authorization token is required');
+  }
+
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data?.user?.id) {
+    throw httpError(401, 'Invalid or expired token');
+  }
+
+  const { data: profile, error: profileError } = await safeSelect(
+    supabase
+      .from('profiles')
+      .select('id, email, role, status, account_status, is_blocked, is_admin, is_staff')
+      .eq('id', data.user.id)
+      .single(),
+    'profiles',
+    'Failed to fetch user profile'
+  );
+
+  if (profileError) {
+    throw profileError;
+  }
+
+  if (!profile) {
+    throw httpError(403, 'User profile not found');
+  }
+
+  // Check if account is blocked or suspended
+  if (profile.is_blocked || ['suspended', 'deleted'].includes(profile.account_status) || profile.status === 'suspended') {
+    throw httpError(403, 'Account access restricted');
+  }
+
+  // Check role requirements
+  if (options.requireAdmin && !profile.is_admin) {
+    throw httpError(403, 'Admin access required');
+  }
+
+  return { user: data.user, profile, token };
+};
+
+export const handler = async (event) => {
+  console.log('Chats handler called:', {
+    method: event.httpMethod,
+    path: event.path
+  });
+
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-      body: '',
-    };
+    return respond(200, '');
   }
 
   try {
-    const authHeader = event.headers.authorization || event.headers.Authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return {
-        statusCode: 401,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          success: false,
-          error: 'Authorization header required'
-        }),
-      };
-    }
-
-    const token = authHeader.substring(7);
-    const user = verifyToken(token);
-
-    if (!user) {
-      return {
-        statusCode: 401,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          success: false,
-          error: 'Invalid or expired token'
-        }),
-      };
-    }
+  const { user } = await getAuthContext(event);
 
     if (event.httpMethod === 'GET') {
       const { chatId } = event.queryStringParameters || {};
 
       if (chatId) {
         // Get specific chat messages
-        const { data: messages, error: fetchError } = await supabase
-          .from('chat_messages')
-          .select(`
-            *,
-            sender:users!sender_id (
-              id,
-              first_name,
-              last_name,
-              email
-            )
-          `)
-          .eq('chat_id', chatId)
-          .order('sent_at', { ascending: true });
+        const { data: messages, error } = await safeSelect(
+          supabase
+            .from('chat_messages')
+            .select(`
+              *,
+              sender:profiles!sender_id (
+                id,
+                first_name,
+                last_name,
+                email
+              )
+            `)
+            .eq('chat_id', chatId)
+            .order('sent_at', { ascending: true }),
+          'chat_messages',
+          'Failed to fetch chat messages'
+        );
 
-        if (fetchError) {
-          console.error('Error fetching chat messages:', fetchError);
-          return {
-            statusCode: 500,
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              success: false,
-              error: 'Failed to fetch chat messages'
-            }),
-          };
+        if (error) {
+          throw error;
         }
 
-        return {
-          statusCode: 200,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: true,
-            data: messages
-          }),
-        };
+        return respond(200, {
+          success: true,
+          data: mapArrayToFrontend(messages)
+        });
       } else {
         // Get user's chat conversations
-        const { data: chats, error: fetchError } = await supabase
-          .from('chats')
-          .select(`
-            *,
-            participant1:users!participant1_id (
-              id,
-              first_name,
-              last_name,
-              email
-            ),
-            participant2:users!participant2_id (
-              id,
-              first_name,
-              last_name,
-              email
-            ),
-            apartment:apartments (
-              id,
-              title,
-              address
-            ),
-            last_message:chat_messages (
-              message,
-              sent_at
-            )
-          `)
-          .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
-          .order('updated_at', { ascending: false });
+        const { data: chats, error } = await safeSelect(
+          supabase
+            .from('chats')
+            .select(`
+              *,
+              participant1:profiles!participant1_id (
+                id,
+                first_name,
+                last_name,
+                email
+              ),
+              participant2:profiles!participant2_id (
+                id,
+                first_name,
+                last_name,
+                email
+              ),
+              apartment:apartments (
+                id,
+                title,
+                adresse
+              ),
+              last_message:chat_messages (
+                message,
+                sent_at
+              )
+            `)
+            .or(`participant1_id.eq.${user.id},participant2_id.eq.${user.id}`)
+            .order('updated_at', { ascending: false }),
+          'chats',
+          'Failed to fetch chats'
+        );
 
-        if (fetchError) {
-          console.error('Error fetching chats:', fetchError);
-          return {
-            statusCode: 500,
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              success: false,
-              error: 'Failed to fetch chats'
-            }),
-          };
+        if (error) {
+          throw error;
         }
 
-        return {
-          statusCode: 200,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: true,
-            data: chats
-          }),
-        };
+        return respond(200, {
+          success: true,
+          data: mapArrayToFrontend(chats)
+        });
       }
     }
 
     if (event.httpMethod === 'POST') {
-      const { apartmentId, message } = JSON.parse(event.body);
-      let { receiverId } = JSON.parse(event.body);
+      const body = JSON.parse(event.body || '{}');
+      const { apartmentId, message } = body;
+      let { receiverId } = body;
 
       if (!message || (!apartmentId && !receiverId)) {
-        return {
-          statusCode: 400,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: false,
-            error: 'Message and either apartment ID or receiver ID are required'
-          }),
-        };
+        throw httpError(400, 'Message and either apartmentId or receiverId are required');
       }
 
       let chatId;
 
       if (apartmentId) {
         // Get apartment owner to start conversation
-        const { data: apartment, error: apartmentError } = await supabase
-          .from('apartments')
-          .select('landlord_id')
-          .eq('id', apartmentId)
-          .single();
+        const { data: apartment, error } = await safeSelect(
+          supabase
+            .from('apartments')
+            .select('landlord_id')
+            .eq('id', apartmentId)
+            .single(),
+          'apartments',
+          'Failed to fetch apartment'
+        );
 
-        if (apartmentError || !apartment) {
-          return {
-            statusCode: 404,
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              success: false,
-              error: 'Apartment not found'
-            }),
-          };
+        if (error) {
+          throw error;
+        }
+
+        if (!apartment) {
+          throw httpError(404, 'Apartment not found');
         }
 
         receiverId = apartment.landlord_id;
       }
 
       // Check if chat already exists
-      const { data: existingChat, error: chatFetchError } = await supabase
-        .from('chats')
-        .select('id')
-        .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${receiverId}),and(participant1_id.eq.${receiverId},participant2_id.eq.${user.id})`)
-        .maybeSingle();
+      const { data: existingChat, error: chatFetchError } = await safeSelect(
+        supabase
+          .from('chats')
+          .select('id')
+          .or(`and(participant1_id.eq.${user.id},participant2_id.eq.${receiverId}),and(participant1_id.eq.${receiverId},participant2_id.eq.${user.id})`)
+          .maybeSingle(),
+        'chats',
+        'Failed to check existing chat'
+      );
 
       if (chatFetchError) {
-        console.error('Error checking existing chat:', chatFetchError);
-        return {
-          statusCode: 500,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: false,
-            error: 'Failed to check existing chat'
-          }),
-        };
+        throw chatFetchError;
       }
 
       if (existingChat) {
         chatId = existingChat.id;
       } else {
         // Create new chat
-        const { data: newChat, error: chatCreateError } = await supabase
-          .from('chats')
-          .insert([
-            {
-              participant1_id: user.id,
-              participant2_id: receiverId,
-              apartment_id: apartmentId || null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          ])
-          .select()
-          .single();
+        const { data: newChat, error: chatCreateError } = await safeInsert(
+          supabase
+            .from('chats')
+            .insert([
+              {
+                participant1_id: user.id,
+                participant2_id: receiverId,
+                apartment_id: apartmentId || null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            ])
+            .select()
+            .single(),
+          'chats',
+          'Failed to create chat'
+        );
 
         if (chatCreateError) {
-          console.error('Error creating chat:', chatCreateError);
-          return {
-            statusCode: 500,
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              success: false,
-              error: 'Failed to create chat'
-            }),
-          };
+          throw chatCreateError;
         }
 
         chatId = newChat.id;
       }
 
       // Send message
-      const { data: newMessage, error: messageError } = await supabase
-        .from('chat_messages')
-        .insert([
-          {
-            chat_id: chatId,
-            sender_id: user.id,
-            message: message,
-            sent_at: new Date().toISOString()
-          }
-        ])
-        .select(`
-          *,
-          sender:users!sender_id (
-            id,
-            first_name,
-            last_name,
-            email
-          )
-        `)
-        .single();
+      const { data: newMessage, error: messageError } = await safeInsert(
+        supabase
+          .from('chat_messages')
+          .insert([
+            {
+              chat_id: chatId,
+              sender_id: user.id,
+              message: message,
+              sent_at: new Date().toISOString()
+            }
+          ])
+          .select(`
+            *,
+            sender:profiles!sender_id (
+              id,
+              first_name,
+              last_name,
+              email
+            )
+          `)
+          .single(),
+        'chat_messages',
+        'Failed to send message'
+      );
 
       if (messageError) {
-        console.error('Error sending message:', messageError);
-        return {
-          statusCode: 500,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: false,
-            error: 'Failed to send message'
-          }),
-        };
+        throw messageError;
       }
 
       // Update chat's updated_at timestamp
-      await supabase
-        .from('chats')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', chatId);
+      const { error: updateError } = await safeUpdate(
+        supabase
+          .from('chats')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', chatId),
+        'chats',
+        'Failed to update chat timestamp'
+      );
 
-      return {
-        statusCode: 201,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          success: true,
-          data: {
-            chatId,
-            message: newMessage
-          }
-        }),
-      };
+      if (updateError) {
+        throw updateError;
+      }
+
+      return respond(201, {
+        success: true,
+        data: {
+          chatId,
+          message: mapArrayToFrontend([newMessage])[0]
+        }
+      });
     }
 
     if (event.httpMethod === 'PUT') {
@@ -335,79 +357,52 @@ export const handler = async (event, context) => {
       const { chatId } = JSON.parse(event.body);
 
       if (!chatId) {
-        return {
-          statusCode: 400,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: false,
-            error: 'Chat ID is required'
-          }),
-        };
+        throw httpError(400, 'Chat ID is required');
       }
 
       // Mark all unread messages in this chat as read for this user
-      const { error: updateError } = await supabase
-        .from('chat_messages')
-        .update({ read_at: new Date().toISOString() })
-        .eq('chat_id', chatId)
-        .neq('sender_id', user.id)
-        .is('read_at', null);
+      const { error: updateError } = await safeUpdate(
+        supabase
+          .from('chat_messages')
+          .update({ read_at: new Date().toISOString() })
+          .eq('chat_id', chatId)
+          .neq('sender_id', user.id)
+          .is('read_at', null),
+        'chat_messages',
+        'Failed to mark messages as read'
+      );
 
       if (updateError) {
-        console.error('Error marking messages as read:', updateError);
-        return {
-          statusCode: 500,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: false,
-            error: 'Failed to mark messages as read'
-          }),
-        };
+        throw updateError;
       }
 
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          success: true,
-          message: 'Messages marked as read'
-        }),
-      };
+      return respond(200, {
+        success: true,
+        message: 'Messages marked as read'
+      });
     }
 
-    return {
-      statusCode: 405,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        success: false,
-        error: 'Method not allowed'
-      }),
-    };
+    throw httpError(405, 'Method not allowed');
 
   } catch (error) {
-    console.error('Chat function error:', error);
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        success: false,
-        error: 'Internal server error'
-      }),
+    console.error('Chats handler error:', error);
+
+    const status = error.status || 500;
+    const message = status === 500 ? 'Chat operation failed' : error.message;
+    
+    const errorResponse = {
+      success: false,
+      error: message
     };
+
+    if (error.details && status !== 500) {
+      errorResponse.details = error.details;
+    }
+
+    if (status === 500 && process.env.NODE_ENV === 'development') {
+      errorResponse.details = error.details || error.message;
+    }
+
+    return respond(status, errorResponse);
   }
 };

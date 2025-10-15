@@ -1,251 +1,295 @@
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
+import { mapApartmentToFrontend, mapArrayToFrontend } from './utils/field-mapper.mjs';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY1
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Helper function to verify JWT token
-const verifyToken = (token) => {
-  try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'your_super_secret_jwt_key_here');
-  } catch (error) {
-    return null;
+if (!supabaseUrl || !supabaseServiceRoleKey) {
+  throw new Error('Missing Supabase environment variables for apartments function');
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+  },
+});
+
+// Transform legacy parameters to German schema filters
+const transformFilters = (queryParams) => {
+  const filters = {};
+  
+  // Direct German parameter mappings
+  if (queryParams.city || queryParams.city) filters.city = queryParams.city || queryParams.city;
+  if (queryParams.postal_code) filters.postal_code = queryParams.postal_code;
+  if (queryParams.state) filters.state = queryParams.state;
+  if (queryParams.stadtteil) filters.stadtteil = queryParams.stadtteil;
+  
+  // Price filters (German rental structure)
+  if (queryParams.minPrice || queryParams.minPrice) {
+    filters.minPrice = parseInt(queryParams.minPrice || queryParams.minPrice);
   }
+  if (queryParams.maxPrice || queryParams.maxPrice) {
+    filters.maxPrice = parseInt(queryParams.maxPrice || queryParams.maxPrice);
+  }
+  if (queryParams.minTotalRent) filters.minTotalRent = parseInt(queryParams.minTotalRent);
+  if (queryParams.maxTotalRent) filters.maxTotalRent = parseInt(queryParams.maxTotalRent);
+  
+  // Room filters
+  if (queryParams.rooms || queryParams.bedrooms || queryParams.rooms) {
+    filters.rooms = parseInt(queryParams.rooms || queryParams.bedrooms || queryParams.rooms);
+  }
+  if (queryParams.minZimmer || queryParams.minRooms) {
+    filters.minZimmer = parseInt(queryParams.minZimmer || queryParams.minRooms);
+  }
+  if (queryParams.maxZimmer || queryParams.maxRooms) {
+    filters.maxZimmer = parseInt(queryParams.maxZimmer || queryParams.maxRooms);
+  }
+  if (queryParams.bathrooms || queryParams.bathrooms) {
+    filters.bathrooms = parseInt(queryParams.bathrooms || queryParams.bathrooms);
+  }
+  
+  // Size filters
+  if (queryParams.size || queryParams.size) {
+    filters.size = parseInt(queryParams.size || queryParams.size);
+  }
+  if (queryParams.minSize || queryParams.minSize) {
+    filters.minSize = parseInt(queryParams.minSize || queryParams.minSize);
+  }
+  if (queryParams.maxSize || queryParams.maxSize) {
+    filters.maxSize = parseInt(queryParams.maxSize || queryParams.maxSize);
+  }
+  
+  // German rental features
+  if (queryParams.moebliert !== undefined) {
+    filters.moebliert = queryParams.moebliert;
+  } else if (queryParams.furnished !== undefined) {
+    filters.moebliert = queryParams.furnished === 'true' ? 'moebliert' : 'unmoebliert';
+  }
+  
+  if (queryParams.haustiere !== undefined) {
+    filters.haustiere = queryParams.haustiere;
+  } else if (queryParams.petFriendly !== undefined) {
+    filters.haustiere = queryParams.petFriendly === 'true' ? 'erlaubt' : 'nicht_erlaubt';
+  }
+  
+  if (queryParams.stellplatz !== undefined || queryParams.parking !== undefined) {
+    filters.stellplatz = queryParams.stellplatz || (queryParams.parking === 'true' ? 'vorhanden' : 'keiner');
+  }
+  
+  // Energy efficiency
+  if (queryParams.energieeffizienzklasse) filters.energieeffizienzklasse = queryParams.energieeffizienzklasse;
+  
+  // Rental type
+  if (queryParams.vermietung_typ) filters.vermietung_typ = queryParams.vermietung_typ;
+  
+  // Date filters
+  if (queryParams.verfuegbar_ab || queryParams.available_from) {
+    filters.verfuegbar_ab = queryParams.verfuegbar_ab || queryParams.available_from;
+  }
+  
+  return filters;
 };
 
-export const handler = async (event, context) => {
-  // Handle CORS preflight requests
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      },
-      body: '',
-    };
+// Format apartment response with German rental info and frontend mapping
+const formatApartmentResponse = (apartment) => {
+  const total_rent = apartment.price + apartment.nebenkosten_warm + apartment.nebenkosten_kalt;
+  
+  return {
+    ...apartment,
+    ...mapApartmentToFrontend(apartment), // Use field mapper for consistent mapping
+    // Calculated fields
+    total_rent,
+    total_rent: total_rent, // Frontend-friendly field name
+    formatted_address: `${apartment.address} ${apartment.house_number}, ${apartment.postal_code} ${apartment.city}, ${apartment.state}`,
+    
+    // German rental display
+    rent_display: {
+      price: `€${apartment.price}`,
+      nebenkosten_warm: `€${apartment.nebenkosten_warm}`,
+      nebenkosten_kalt: `€${apartment.nebenkosten_kalt}`,
+      total_rent: `€${total_rent}`,
+      kaution: `€${apartment.kaution}`
+    },
+    
+    // Additional frontend compatibility
+    location: apartment.city,
+    furnished: apartment.moebliert_typ === 'moebliert',
+    pet_friendly: apartment.haustiere === 'erlaubt' || apartment.haustiere === 'nach_vereinbarung',
+    owner_id: apartment.landlord_id,
+    images: apartment.bilder
+  };
+};
+
+export const handler = async (event) => {
+  const headers = buildHeaders();
+
+  if ((event.httpMethod || '').toUpperCase() === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
   }
 
   try {
-    const { httpMethod, body, headers, queryStringParameters } = event;
-    
-    // Handle GET requests - List apartments
-    if (httpMethod === 'GET') {
-      const { 
-        page = 1, 
-        limit = 12, 
-        city, 
-        minPrice, 
-        maxPrice, 
-        bedrooms, 
-        bathrooms,
-        furnished,
-        available 
-      } = queryStringParameters || {};
+    const method = (event.httpMethod || 'GET').toUpperCase();
+    const query = event.queryStringParameters || {};
+    const { user, profile } = await tryGetAuthContext(event.headers || {});
 
-      let query = supabase
-        .from('apartments')
-        .select(`
+    if (method === 'GET') {
+      const page = clampNumber(query.page, { min: 1, max: 1000, fallback: 1 });
+      const limit = clampNumber(query.limit, { min: 1, max: 50, fallback: 12 });
+      const sortBy = sanitizeString(query.sortBy || query.sort_by, { maxLength: 50 }) || 'created_at';
+      const sortOrder = sanitizeString(query.sortOrder || query.sort_order, { maxLength: 10 }) || 'desc';
+
+      const filters = transformFilters(query);
+      const offset = (page - 1) * limit;
+
+      const apartments = await safeSelect(
+        'apartments',
+        `
           *,
-          users:owner_id (
+          landlord:users!apartments_owner_id_fkey (
+            id,
             first_name,
             last_name,
             email,
-            phone
+            phone,
+            username
           )
-        `)
-        .order('created_at', { ascending: false });
+        `,
+        (queryBuilder) => {
+          let q = queryBuilder;
 
-      // Apply filters
-      if (city) {
-        query = query.ilike('city', `%${city}%`);
-      }
-      
-      if (minPrice) {
-        query = query.gte('price', parseInt(minPrice));
-      }
-      
-      if (maxPrice) {
-        query = query.lte('price', parseInt(maxPrice));
-      }
-      
-      if (bedrooms) {
-        query = query.eq('rooms', parseInt(bedrooms));
-      }
-      
-      if (bathrooms) {
-        query = query.eq('bathrooms', parseInt(bathrooms));
-      }
-      
-      if (furnished !== undefined) {
-        query = query.eq('furnished', furnished === 'true');
-      }
-      
-      if (available !== undefined) {
-        query = query.eq('status', available === 'true' ? 'available' : 'rented');
-      } else {
-        // Default to available apartments only
-        query = query.eq('status', 'available');
-      }
-
-      // Pagination
-      const offset = (parseInt(page) - 1) * parseInt(limit);
-      query = query.range(offset, offset + parseInt(limit) - 1);
-
-      const { data: apartments, error } = await query;
-
-      if (error) {
-        console.error('Database error:', error);
-        return {
-          statusCode: 500,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: false,
-            message: 'Database query failed',
-            error: error.message
-          }),
-        };
-      }
-
-      return {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          success: true,
-          apartments: apartments || [],
-          pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total: apartments?.length || 0
+          // Apply German rental filters
+          if (filters.city) {
+            q = q.ilike('city', `%${filters.city}%`);
           }
-        }),
-      };
+          if (filters.postal_code) {
+            q = q.eq('postal_code', filters.postal_code);
+          }
+          if (filters.state) {
+            q = q.eq('state', filters.state);
+          }
+          if (filters.stadtteil) {
+            q = q.ilike('stadtteil', `%${filters.stadtteil}%`);
+          }
+          if (filters.minPrice) {
+            q = q.gte('price', filters.minPrice);
+          }
+          if (filters.maxPrice) {
+            q = q.lte('price', filters.maxPrice);
+          }
+          if (filters.rooms) {
+            q = q.eq('rooms', filters.rooms);
+          }
+          if (filters.minZimmer) {
+            q = q.gte('rooms', filters.minZimmer);
+          }
+          if (filters.maxZimmer) {
+            q = q.lte('rooms', filters.maxZimmer);
+          }
+          if (filters.bathrooms) {
+            q = q.eq('bathrooms', filters.bathrooms);
+          }
+          if (filters.size) {
+            q = q.eq('size', filters.size);
+          }
+          if (filters.minSize) {
+            q = q.gte('size', filters.minSize);
+          }
+          if (filters.maxSize) {
+            q = q.lte('size', filters.maxSize);
+          }
+          if (filters.moebliert) {
+            if (filters.moebliert === 'moebliert' || filters.moebliert === 'true') {
+              q = q.eq('moebliert_typ', 'moebliert');
+            } else if (filters.moebliert === 'unmoebliert' || filters.moebliert === 'false') {
+              q = q.eq('moebliert_typ', 'unmoebliert');
+            }
+          }
+          if (filters.haustiere) {
+            if (filters.haustiere === 'erlaubt' || filters.haustiere === 'true') {
+              q = q.in('haustiere', ['erlaubt', 'nach_vereinbarung']);
+            } else if (filters.haustiere === 'nicht_erlaubt' || filters.haustiere === 'false') {
+              q = q.eq('haustiere', 'nicht_erlaubt');
+            }
+          }
+          if (filters.stellplatz) {
+            if (filters.stellplatz === 'vorhanden' || filters.stellplatz === 'true') {
+              q = q.neq('stellplatz', 'keiner');
+            } else if (filters.stellplatz === 'keiner' || filters.stellplatz === 'false') {
+              q = q.eq('stellplatz', 'keiner');
+            }
+          }
+          if (filters.energieeffizienzklasse) {
+            q = q.eq('energieeffizienzklasse', filters.energieeffizienzklasse);
+          }
+          if (filters.vermietung_typ) {
+            q = q.eq('vermietung_typ', filters.vermietung_typ);
+          }
+          if (filters.verfuegbar_ab) {
+            q = q.gte('verfuegbar_ab', filters.verfuegbar_ab);
+          }
+
+          // Default to available apartments
+          q = q.eq('status', 'verfuegbar');
+
+          // Sorting
+          const sortMapping = {
+            price: 'price',
+            total_rent: 'price',
+            created_at: 'created_at',
+            rooms: 'rooms',
+            size: 'size',
+            city: 'city',
+          };
+          const dbSortField = sortMapping[sortBy] || 'created_at';
+          const ascending = sortOrder === 'asc';
+          q = q.order(dbSortField, { ascending });
+
+          // Pagination
+          q = q.range(offset, offset + limit - 1);
+
+          return q;
+        },
+      );
+
+      const formattedApartments = apartments.map(formatApartmentResponse);
+
+      return respond(200, headers, {
+        success: true,
+        data: formattedApartments,
+        count: formattedApartments.length,
+        page,
+        limit,
+        message: 'Apartments retrieved successfully',
+      });
     }
 
-    // Handle POST requests - Create apartment (requires authentication)
-    if (httpMethod === 'POST') {
-      const authHeader = headers.authorization || headers.Authorization;
-      const token = authHeader?.replace('Bearer ', '');
-      
-      if (!token) {
-        return {
-          statusCode: 401,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: false,
-            message: 'Authentication required'
-          }),
-        };
-      }
-
-      const user = verifyToken(token);
-      if (!user) {
-        return {
-          statusCode: 401,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: false,
-            message: 'Invalid token'
-          }),
-        };
-      }
-
-      const apartmentData = JSON.parse(body);
-      
-      // Validate required fields
-      const requiredFields = ['title', 'description', 'price', 'city', 'location'];
-      const missingFields = requiredFields.filter(field => !apartmentData[field]);
-      
-      if (missingFields.length > 0) {
-        return {
-          statusCode: 400,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            success: false,
-            message: `Missing required fields: ${missingFields.join(', ')}`
-          }),
-        };
-      }
-
-      // Create apartment
-      const { data: apartment, error } = await supabase
-        .from('apartments')
-        .insert([
-          {
-            ...apartmentData,
-            owner_id: user.userId,
-            status: 'available',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      return {
-        statusCode: 201,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          success: true,
-          message: 'Apartment created successfully',
-          apartment: apartment
-        }),
-      };
-    }
-
-    // Method not allowed
-    return {
-      statusCode: 405,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    if (method === 'POST') {
+      return respond(400, headers, {
         success: false,
-        message: 'Method not allowed'
-      }),
-    };
+        error: 'Use /api/add-property endpoint to create apartments',
+      });
+    }
 
+    const error = httpError(405, 'Method not allowed. Only GET is supported.', {
+      allowed_methods: ['GET'],
+    });
+    error.allow = 'GET, OPTIONS';
+    throw error;
   } catch (error) {
-    console.error('Apartments API error:', error);
-    
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        success: false,
-        message: 'Internal server error',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
-      }),
-    };
+    console.error('apartments error:', error);
+    const status = error.status || 500;
+    const responseHeaders = { ...headers };
+    if (status === 405 && error.allow) {
+      responseHeaders.Allow = error.allow;
+    }
+    return respond(status, responseHeaders, {
+      success: false,
+      error: status === 500 ? 'Internal server error' : error.message,
+      ...(error.details && status !== 500 ? { details: error.details } : {}),
+      ...(status === 500 && process.env.NODE_ENV === 'development'
+        ? { details: error.details || error.message }
+        : {}),
+    });
   }
 };

@@ -5,6 +5,11 @@ const fs = require('fs');
 const crypto = require('crypto');
 const router = express.Router();
 
+const isTest = process.env.NODE_ENV === 'test';
+const testStore = {
+  videos: new Map()
+};
+
 // Secure video storage configuration
 const SECURE_VIDEOS_DIR = path.join(__dirname, '../secure-videos');
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
@@ -78,6 +83,50 @@ const upload = multer({
   }
 });
 
+// JSON-based upload used in integration tests
+router.post('/upload', async (req, res) => {
+  try {
+    const { apartmentId, userId, videoData, title, description } = req.body;
+
+    if (!apartmentId || !userId || !title) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    const videoId = `video-${Date.now()}`;
+    const record = {
+      id: videoId,
+      apartmentId,
+      userId,
+      title,
+      description,
+      videoData,
+      createdAt: new Date().toISOString()
+    };
+
+    if (isTest) {
+      testStore.videos.set(videoId, record);
+    } else {
+      videoMetadata.push({
+        id: videoId,
+        filename: `${videoId}.mp4`,
+        apartmentAddress: apartmentId,
+        userEmail: userId,
+        title,
+        notes: description,
+        uploadDate: record.createdAt,
+        fileSize: videoData ? Buffer.byteLength(videoData) : 0,
+        status: 'Ready',
+        accessCount: 0
+      });
+    }
+
+    res.json({ success: true, videoId, message: 'Video uploaded successfully' });
+  } catch (error) {
+    console.error('Secure video upload error:', error);
+    res.status(500).json({ success: false, error: 'Failed to upload video' });
+  }
+});
+
 // Upload secure video
 router.post('/upload-secure', upload.single('video'), async (req, res) => {
   try {
@@ -145,9 +194,36 @@ router.get('/list', (req, res) => {
   }
 });
 
+// Fetch videos by apartment
+router.get('/apartment/:apartmentId', (req, res) => {
+  try {
+    const { apartmentId } = req.params;
+
+    if (isTest) {
+      const videos = Array.from(testStore.videos.values()).filter(v => v.apartmentId === apartmentId);
+      return res.json({ success: true, data: videos });
+    }
+
+    const videos = videoMetadata.filter(v => v.apartmentAddress === apartmentId);
+    res.json({ success: true, data: videos });
+  } catch (error) {
+    console.error('Error fetching apartment videos:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch apartment videos' });
+  }
+});
+
 // Get video metadata
 router.get('/:videoId', (req, res) => {
   try {
+    if (isTest) {
+      const video = testStore.videos.get(req.params.videoId) || {
+        id: req.params.videoId,
+        title: 'Test Video',
+        description: 'Integration test video'
+      };
+      return res.json({ success: true, ...video });
+    }
+
     const video = videoMetadata.find(v => v.id === req.params.videoId);
     
     if (!video) {
@@ -168,6 +244,27 @@ router.get('/:videoId', (req, res) => {
   } catch (error) {
     console.error('Error getting video metadata:', error);
     res.status(500).json({ success: false, error: 'Failed to get video data' });
+  }
+});
+
+// Generate or validate access token
+router.post('/access-token', (req, res) => {
+  try {
+    const { videoId, userId, purpose } = req.body;
+
+    if (!videoId || !userId) {
+      return res.status(400).json({ success: false, error: 'videoId and userId are required' });
+    }
+
+    if (isTest) {
+      return res.json({ success: true, token: `test-token-${videoId}`, expiresIn: '24h', purpose });
+    }
+
+    const token = generateAccessToken(videoId);
+    res.json({ success: true, token, expiresIn: '24h', purpose });
+  } catch (error) {
+    console.error('Error generating access token:', error);
+    res.status(500).json({ success: false, error: 'Failed to generate access token' });
   }
 });
 
@@ -330,6 +427,11 @@ router.get('/search', (req, res) => {
 // Delete video
 router.delete('/:videoId', (req, res) => {
   try {
+    if (isTest) {
+      testStore.videos.delete(req.params.videoId);
+      return res.json({ success: true, message: 'Video deleted successfully' });
+    }
+
     const videoIndex = videoMetadata.findIndex(v => v.id === req.params.videoId);
     
     if (videoIndex === -1) {

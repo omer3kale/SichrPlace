@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-export const handler = async (event, context) => {
+export const handler = async (event, _context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -62,23 +56,34 @@ export const handler = async (event, context) => {
     };
 
     if (event.httpMethod === 'POST') {
-      const { action, type } = JSON.parse(event.body || '{}');
-      
+      const { action, type, backup_id } = JSON.parse(event.body || '{}');
+
       switch (action) {
-        case 'create_backup':
+        case 'create_backup': {
           return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
               success: true,
-              message: `Manual ${type} backup initiated`,
+              message: `Manual ${type || 'full'} backup initiated`,
               backup_id: `backup_${Date.now()}`,
               timestamp: new Date().toISOString()
             })
           };
-          
-        case 'restore':
-          const { backup_id } = JSON.parse(event.body);
+        }
+
+        case 'restore': {
+          if (!backup_id) {
+            return {
+              statusCode: 400,
+              headers,
+              body: JSON.stringify({
+                success: false,
+                message: 'backup_id is required to start a restore'
+              })
+            };
+          }
+
           return {
             statusCode: 200,
             headers,
@@ -86,6 +91,17 @@ export const handler = async (event, context) => {
               success: true,
               message: `Restore initiated from backup: ${backup_id}`,
               timestamp: new Date().toISOString()
+            })
+          };
+        }
+
+        default:
+          return {
+            statusCode: 400,
+            headers,
+            body: JSON.stringify({
+              success: false,
+              message: 'Unsupported backup action'
             })
           };
       }

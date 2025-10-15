@@ -6,10 +6,8 @@ class BulletproofRegistration {
     this.maxRetries = 3;
     this.retryDelay = 1000; // Start with 1 second
     this.endpoints = [
-      '/.netlify/functions/auth-register',
-      '/api/auth-register',
-      '/api/register',
-      '/api/signup'
+      '/auth/register',
+      '/.netlify/functions/auth-register'
     ];
     this.isOnline = navigator.onLine;
     this.setupNetworkMonitoring();
@@ -273,9 +271,9 @@ class EnhancedSignupManager {
   constructor() {
     this.bulletproofRegistration = new BulletproofRegistration();
     this.form = document.getElementById('signupForm');
-    this.errorMessage = document.getElementById('error-message');
-    this.successMessage = document.getElementById('success-message');
-    this.btnText = document.getElementById('btn-text');
+    this.errorMessage = document.getElementById('errorMessage');
+    this.successMessage = document.getElementById('successMessage');
+    this.btnText = document.getElementById('btnText');
     this.spinner = document.getElementById('spinner');
     this.accountTypes = document.querySelectorAll('.account-type');
     this.selectedAccountType = null;
@@ -419,7 +417,7 @@ class EnhancedSignupManager {
       email: document.getElementById('email').value,
       password: document.getElementById('password').value,
       confirmPassword: document.getElementById('confirmPassword').value,
-      userType: this.selectedAccountType === 'tenant' ? 'applicant' : this.selectedAccountType
+      userType: this.selectedAccountType // Already mapped correctly in HTML
     };
 
     if (userData.password !== userData.confirmPassword) {
@@ -434,9 +432,14 @@ class EnhancedSignupManager {
       console.log('🚀 Starting bulletproof registration...');
       const result = await this.bulletproofRegistration.register(userData);
       
-      this.showSuccess('Account created successfully! Redirecting...');
+      this.showSuccess('Account created successfully! Redirecting to your dashboard...');
+      
+      // Redirect to appropriate dashboard based on user type
+      const dashboardUrl = userData.userType === 'landlord' ? 'landlord-dashboard.html' : 'applicant-dashboard.html';
+      const redirectUrl = result.data?.redirectUrl || dashboardUrl;
+      
       setTimeout(() => {
-        window.location.href = result.data?.redirectUrl || 'login.html';
+        window.location.href = redirectUrl;
       }, 2000);
       
     } catch (error) {

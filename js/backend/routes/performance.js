@@ -18,6 +18,27 @@ const dbPerformance = new DatabasePerformanceService(supabaseAdmin);
  */
 router.get('/cache/stats', async (req, res) => {
   try {
+    if (!cacheService.enabled) {
+      return res.json({
+        success: true,
+        data: {
+          enabled: false,
+          message: 'Redis cache is currently disabled. Set REDIS_ENABLED=true once a Redis instance is ready.'
+        }
+      });
+    }
+
+    if (!cacheService.connected) {
+      return res.status(503).json({
+        success: false,
+        message: 'Cache service unavailable',
+        data: {
+          enabled: true,
+          connected: false
+        }
+      });
+    }
+
     const stats = await cacheService.getCacheStats();
     
     if (!stats) {
@@ -127,6 +148,13 @@ router.get('/system/overview', async (req, res) => {
  */
 router.post('/cache/clear', async (req, res) => {
   try {
+    if (!cacheService.enabled) {
+      return res.status(200).json({
+        success: false,
+        message: 'Redis cache is disabled. Enable it by setting REDIS_ENABLED=true to clear entries.'
+      });
+    }
+
     const { category } = req.body;
 
     if (!category) {
@@ -158,6 +186,13 @@ router.post('/cache/clear', async (req, res) => {
  */
 router.post('/cache/flush', async (req, res) => {
   try {
+    if (!cacheService.enabled) {
+      return res.status(200).json({
+        success: false,
+        message: 'Redis cache is disabled. Enable it by setting REDIS_ENABLED=true to flush entries.'
+      });
+    }
+
     // Add admin check here if needed
     const result = await cacheService.flushAll();
 
@@ -180,7 +215,7 @@ router.post('/cache/flush', async (req, res) => {
  * Get popular apartments with caching
  */
 router.get('/analytics/popular-apartments', 
-  cacheMiddleware('analytics', (req) => 600), // 10 minute cache
+  cacheMiddleware('analytics', (_req) => 600), // 10 minute cache
   async (req, res) => {
     try {
       const limit = parseInt(req.query.limit) || 10;
@@ -215,7 +250,7 @@ router.get('/analytics/popular-apartments',
  * Get analytics data with caching
  */
 router.get('/analytics/:metric',
-  cacheMiddleware('analytics', (req) => 300), // 5 minute cache
+  cacheMiddleware('analytics', (_req) => 300), // 5 minute cache
   async (req, res) => {
     try {
       const { metric } = req.params;

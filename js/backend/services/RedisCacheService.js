@@ -10,15 +10,8 @@ class RedisCacheService {
   constructor() {
     this.redis = null;
     this.connected = false;
-    this.config = {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: process.env.REDIS_PORT || 6379,
-      password: process.env.REDIS_PASSWORD || null,
-      db: process.env.REDIS_DB || 0,
-      retryDelayOnFailover: 100,
-      maxRetriesPerRequest: 3,
-      lazyConnect: true
-    };
+    this.config = null;
+    this.enabled = this.shouldEnableCaching();
     
     this.defaultTTL = {
       apartments: 15 * 60, // 15 minutes
@@ -31,11 +24,54 @@ class RedisCacheService {
       static: 7 * 24 * 60 * 60 // 7 days
     };
 
+    if (!this.enabled) {
+      console.log('ℹ️ Redis cache disabled. Set REDIS_ENABLED=true to enable caching.');
+      return;
+    }
+
+    this.config = this.buildConfig();
     this.initializeRedis();
+  }
+
+  shouldEnableCaching() {
+    if (process.env.NODE_ENV === 'test') {
+      return false;
+    }
+    const flag = (process.env.REDIS_ENABLED || '').toLowerCase();
+    if (flag === 'true') {
+      return true;
+    }
+    if (flag === 'false') {
+      return false;
+    }
+    if (process.env.REDIS_URL) {
+      return true;
+    }
+    return false;
+  }
+
+  buildConfig() {
+    if (process.env.REDIS_URL) {
+      return process.env.REDIS_URL;
+    }
+
+    return {
+      host: process.env.REDIS_HOST || 'localhost',
+      port: Number(process.env.REDIS_PORT || 6379),
+      password: process.env.REDIS_PASSWORD || null,
+      db: Number(process.env.REDIS_DB || 0),
+      retryDelayOnFailover: 100,
+      maxRetriesPerRequest: 3,
+      lazyConnect: true
+    };
   }
 
   async initializeRedis() {
     try {
+      if (!this.enabled) {
+        return;
+      }
+
       this.redis = new Redis(this.config);
       
       this.redis.on('connect', () => {
@@ -72,7 +108,7 @@ class RedisCacheService {
 
   async testConnection() {
     try {
-      if (!this.redis) return false;
+      if (!this.enabled || !this.redis) return false;
       
       const result = await this.redis.ping();
       if (result === 'PONG') {
@@ -415,6 +451,10 @@ class RedisCacheService {
    * Close Redis connection
    */
   async close() {
+    if (!this.enabled) {
+      return;
+    }
+
     if (this.redis) {
       await this.redis.quit();
       console.log('🔌 Redis connection closed');
@@ -425,7 +465,7 @@ class RedisCacheService {
 // Middleware for automatic caching
 const cacheMiddleware = (category, getTtl = null) => {
   return async (req, res, next) => {
-    if (!cacheService.connected) {
+    if (!cacheService.enabled || !cacheService.connected) {
       return next();
     }
 

@@ -165,7 +165,7 @@ describe('Configuration Integration Tests', () => {
     test('should validate security utilities', () => {
       const securityUtils = {
         hashPassword: async (password) => {
-          const bcrypt = require('bcrypt');
+          const bcrypt = require('bcryptjs');
           return await bcrypt.hash(password, 10);
         },
         generateRequestId: () => 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),

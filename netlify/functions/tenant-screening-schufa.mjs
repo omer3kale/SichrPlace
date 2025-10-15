@@ -128,7 +128,7 @@ async function requestSchufaCheck(req, supabase, user) {
           apartment_id: apartmentId,
           first_name: firstName,
           last_name: lastName,
-          date_of_birth: dateOfBirth,
+          geburtsdatum: dateOfBirth,
           address: address,
           postal_code: postalCode,
           city: city,

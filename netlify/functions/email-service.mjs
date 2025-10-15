@@ -1,52 +1,122 @@
 import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
+// Environment validation
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const emailUser = process.env.EMAIL_USER;
+const emailPassword = process.env.EMAIL_PASSWORD;
 
-// Email configuration
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error('Missing required Supabase environment variables: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
+}
+
+if (!emailUser || !emailPassword) {
+  throw new Error('Missing required email configuration: EMAIL_USER, EMAIL_PASSWORD');
+}
+
+// Enhanced email configuration with security
 const emailConfig = {
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.EMAIL_PORT) || 587,
-  secure: false, // true for 465, false for other ports
+  secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
+    user: emailUser,
+    pass: emailPassword
+  },
+  tls: {
+    rejectUnauthorized: process.env.NODE_ENV === 'production'
   }
 };
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing Supabase environment variables');
-}
+// Initialize Supabase client with hardened configuration
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
-if (!emailConfig.auth.user || !emailConfig.auth.pass) {
-  console.error('Missing email configuration variables');
-}
+// Helper function to build standardized headers
+const buildHeaders = (additionalHeaders = {}) => ({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json',
+  'Vary': 'Origin, Access-Control-Request-Headers',
+  ...additionalHeaders
+});
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Helper function to create standardized responses
+const respond = (data, additionalHeaders = {}) => ({
+  statusCode: 200,
+  headers: buildHeaders(additionalHeaders),
+  body: JSON.stringify(data)
+});
+
+// Helper function to parse request body safely
+const parseRequestBody = (body) => {
+  if (!body) throw new Error('Request body is required');
+  try {
+    return JSON.parse(body);
+  } catch (error) {
+    throw new Error('Invalid JSON in request body');
+  }
+};
+
+// Helper function to sanitize string inputs
+const sanitizeString = (value, maxLength = 500) => {
+  if (typeof value !== 'string') return '';
+  return value.trim().substring(0, maxLength);
+};
+
+// Helper function to validate email format
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 254;
+};
+
+// Helper function to create HTTP errors
+const httpError = (statusCode, message, details = {}) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.details = details;
+  return error;
+};
+
+// Safe database operations
+const safeInsert = async (table, data) => {
+  try {
+    const result = await supabase.from(table).insert(data).select();
+    return result;
+  } catch (error) {
+    console.error(`Database insert error in ${table}:`, error);
+    return { data: null, error };
+  }
+};
+
+const safeUpdate = async (table, data, whereClause) => {
+  try {
+    const result = await supabase.from(table).update(data).eq(whereClause.column, whereClause.value);
+    return result;
+  } catch (error) {
+    console.error(`Database update error in ${table}:`, error);
+    return { data: null, error };
+  }
+};
 
 export const handler = async (event, context) => {
-  // Handle CORS
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
-  };
-
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
-  }
-
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
-  }
-
   try {
+    // Handle CORS preflight
+    if (event.httpMethod === 'OPTIONS') {
+      return { statusCode: 200, headers: buildHeaders(), body: '' };
+    }
+
+    if (event.httpMethod !== 'POST') {
+      throw httpError(405, 'Method not allowed');
+    }
+
+    // Parse and validate input
     const {
       template_type,
       recipient_email,
@@ -54,56 +124,49 @@ export const handler = async (event, context) => {
       template_data = {},
       send_immediately = true,
       priority = 'normal'
-    } = JSON.parse(event.body);
+    } = parseRequestBody(event.body);
 
+    // Validate required fields
     if (!template_type || !recipient_email) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Template type and recipient email are required'
-        })
-      };
+      throw httpError(400, 'template_type and recipient_email are required');
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(recipient_email)) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: 'Invalid email format'
-        })
-      };
+    // Sanitize and validate inputs
+    const sanitizedTemplateType = sanitizeString(template_type, 50);
+    const sanitizedEmail = sanitizeString(recipient_email, 254);
+    const sanitizedName = sanitizeString(recipient_name, 100);
+    const sanitizedPriority = sanitizeString(priority, 20);
+
+    if (!sanitizedTemplateType) {
+      throw httpError(400, 'Valid template_type is required');
     }
 
-    // Get email template
-    const template = await getEmailTemplate(template_type, template_data);
+    if (!isValidEmail(sanitizedEmail)) {
+      throw httpError(400, 'Valid recipient_email is required');
+    }
+
+    const validPriorities = ['low', 'normal', 'high', 'urgent'];
+    const finalPriority = validPriorities.includes(sanitizedPriority) ? sanitizedPriority : 'normal';
+
+    // Input validation completed above
+
+    // Get email template with enhanced error handling
+    const template = await getEmailTemplate(sanitizedTemplateType, template_data);
     if (!template) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          message: `Email template not found: ${template_type}`
-        })
-      };
+      throw httpError(404, `Email template not found: ${sanitizedTemplateType}`);
     }
 
-    // Create email record
+    // Create email record with sanitized values
     const emailRecord = {
-      template_type: template_type,
-      recipient_email: recipient_email,
-      recipient_name: recipient_name || '',
-      subject: template.subject,
+      template_type: sanitizedTemplateType,
+      recipient_email: sanitizedEmail,
+      recipient_name: sanitizedName || '',
+      subject: sanitizeString(template.subject, 200),
       html_content: template.html,
       text_content: template.text,
-      template_data: template_data,
+      template_data: JSON.stringify(template_data).substring(0, 5000), // Limit template data size
       status: send_immediately ? 'sending' : 'queued',
-      priority: priority,
+      priority: finalPriority,
       scheduled_at: send_immediately ? new Date().toISOString() : null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

@@ -218,13 +218,48 @@ class UserService {
   static getUserRole(user) {
     if (!user) return 'user';
     
-    // If bio contains the original role, use that
-    if (user.bio && ['tenant', 'landlord', 'admin'].includes(user.bio)) {
-      return user.bio;
+    // CRITICAL: Role mapping for tenant/landlord stored in bio field
+    // Database stores only 'user' or 'admin' in role column
+    // Original role (tenant/landlord) stored in bio for frontend display
+    if (user.bio && ['tenant', 'landlord', 'admin'].includes(user.bio.toLowerCase())) {
+      console.log(`✅ Role resolved from bio: ${user.bio} for user ${user.id}`);
+      return user.bio.toLowerCase();
     }
     
-    // Otherwise use the database role
-    return user.role || 'user';
+    // Fallback to database role
+    const dbRole = user.role || 'user';
+    console.log(`⚠️ Role using database fallback: ${dbRole} for user ${user.id}`);
+    return dbRole;
+  }
+
+  /**
+   * Validate role consistency - ensures no conflicts between database role and bio
+   * @param {Object} user - User object
+   * @returns {boolean} True if roles are consistent
+   */
+  static validateRoleConsistency(user) {
+    if (!user) return false;
+    
+    const dbRole = user.role; // Should be 'user' or 'admin'
+    const bioRole = user.bio; // Should be 'tenant', 'landlord', or 'admin'
+    
+    // Valid combinations:
+    // dbRole='admin', bio='admin' ✅
+    // dbRole='user', bio='tenant' ✅
+    // dbRole='user', bio='landlord' ✅
+    // dbRole='user', bio=null ✅ (default user)
+    
+    if (dbRole === 'admin' && bioRole !== 'admin') {
+      console.error(`❌ Role mismatch: dbRole=${dbRole}, bio=${bioRole} for user ${user.id}`);
+      return false;
+    }
+    
+    if (dbRole === 'user' && bioRole && !['tenant', 'landlord'].includes(bioRole)) {
+      console.error(`❌ Invalid bio role: dbRole=${dbRole}, bio=${bioRole} for user ${user.id}`);
+      return false;
+    }
+    
+    return true;
   }
 
   /**
@@ -267,25 +302,6 @@ class UserService {
    */
   static async findById(id) {
     return await this.getById(id);
-  }
-
-  /**
-   * Update user (alias for test compatibility)
-   * @param {string} id - User ID
-   * @param {Object} updateData - Data to update
-   * @returns {Object} Updated user
-   */
-  static async update(id, updateData) {
-    return await this.updateUser(id, updateData);
-  }
-
-  /**
-   * Delete user (alias for test compatibility)
-   * @param {string} id - User ID
-   * @returns {Object} Deletion result
-   */
-  static async delete(id) {
-    return await this.deleteUser(id);
   }
 }
 
