@@ -1,0 +1,22 @@
+INFO: Starting comprehensive security audit...
+gh: To use GitHub CLI in a GitHub Actions workflow, set the GH_TOKEN environment variable. Example:
+  env:
+    GH_TOKEN: ${{ github.token }}
+ERROR: Failed to fetch GitHub alerts: Command failed: gh api repos/omer3kale/sichrplace/dependabot/alerts
+gh: To use GitHub CLI in a GitHub Actions workflow, set the GH_TOKEN environment variable. Example:
+  env:
+    GH_TOKEN: ${{ github.token }}
+
+INFO: Found 0 total GitHub alerts
+INFO: Found 0 open GitHub alerts
+INFO: Identified 0 high-risk packages
+INFO: Generated 0 immediate fixes
+INFO: Security report generated: /home/runner/work/SichrPlace/SichrPlace/security-report-1760583673800.json
+
+=== SECURITY AUDIT COMPLETE ===
+Total alerts: 0
+Open alerts: 0
+Critical/High: 0
+Next audit: 2025-10-23T03:01:13.800Z
+
+✅ All security vulnerabilities resolved!

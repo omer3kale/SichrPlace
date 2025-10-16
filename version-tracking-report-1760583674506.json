@@ -1,0 +1,30 @@
+{
+  "timestamp": "2025-10-16T03:01:14.506Z",
+  "summary": {
+    "vulnerabilities": 0,
+    "mismatches": 1,
+    "totalIssues": 1
+  },
+  "details": {
+    "vulnerabilities": [],
+    "mismatches": [
+      {
+        "package": "multer",
+        "currentVersion": "2.0.2",
+        "recommendedVersion": "1.4.5-lts.1",
+        "severity": "MEDIUM",
+        "action": "UPDATE_RECOMMENDED"
+      }
+    ],
+    "recommendations": []
+  },
+  "preventionMeasures": {
+    "automatedScanning": true,
+    "versionPinning": true,
+    "overrideManagement": true,
+    "githubIntegration": true
+  },
+  "nextActions": [
+    "Review version mismatches for compatibility"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "lastFullScan": "2025-10-16T03:01:23.686Z",
+  "trackedPackages": {
+    "tar-fs": {
+      "secure": "3.1.1",
+      "vulnerableRanges": [
+        ">= 2.0.0, < 2.1.3"
+      ],
+      "lastChecked": null,
+      "alertHistory": []
+    },
+    "multer": {
+      "secure": "1.4.5-lts.1",
+      "vulnerableRanges": [
+        ">= 2.0.0"
+      ],
+      "lastChecked": "2025-10-16T03:01:23.686Z",
+      "alertHistory": []
+    },
+    "next": {
+      "secure": "15.4.7",
+      "vulnerableRanges": [
+        ">= 15.0.0, < 15.4.7"
+      ],
+      "lastChecked": null,
+      "alertHistory": []
+    },
+    "esbuild": {
+      "secure": "0.25.0",
+      "vulnerableRanges": [
+        "< 0.25.0"
+      ],
+      "lastChecked": null,
+      "alertHistory": []
+    },
+    "http-proxy-middleware": {
+      "secure": "2.0.8",
+      "vulnerableRanges": [
+        "< 2.0.8"
+      ],
+      "lastChecked": null,
+      "alertHistory": []
+    },
+    "tmp": {
+      "secure": "0.2.4",
+      "vulnerableRanges": [
+        "< 0.2.4"
+      ],
+      "lastChecked": null,
+      "alertHistory": []
+    },
+    "on-headers": {
+      "secure": "1.1.0",
+      "vulnerableRanges": [
+        "< 1.1.0"
+      ],
+      "lastChecked": null,
+      "alertHistory": []
+    },
+    "ipx": {
+      "secure": "2.1.1",
+      "vulnerableRanges": [
+        "< 2.1.1"
+      ],
+      "lastChecked": null,
+      "alertHistory": []
+    }
+  },
+  "versionHistory": {},
+  "alertSuppressions": {},
+  "autoFixEnabled": true,
+  "scanSchedule": {
+    "daily": true,
+    "beforeBuild": true,
+    "beforeDeploy": true
+  }
+}
