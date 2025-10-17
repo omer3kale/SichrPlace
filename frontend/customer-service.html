@@ -178,26 +178,34 @@
             animation: fadeInDown 0.2s ease-out;
         }
         
-        .lang-option {
-            display: flex;
+        .cart-icon {
+            display: inline-flex !important;
+            width: 44px !important;
+            height: 44px !important;
+            border-radius: 12px !important;
+            background: transparent !important;
+            color: var(--primary) !important;
             align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            color: var(--text);
-            text-decoration: none;
-            font-family: var(--body-font);
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: background 0.2s ease;
-            border-bottom: 1px solid #f1f1f1;
+            justify-content: center;
+            box-shadow: none !important;
+            transition: color 0.2s ease, transform 0.2s ease;
+            padding: 0 !important;
         }
-        
-        .lang-option:last-child {
-            border-bottom: none;
+
+        .cart-icon:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            color: var(--accent) !important;
         }
-        
-        .lang-option:hover {
-            background: var(--secondary);
+
+        .cart-icon i {
+            font-size: 18px;
+            color: currentColor !important;
+        }
+
+        .cart-label {
+            display: none !important;
         }
         
         .lang-option.active {
@@ -422,7 +430,7 @@
         }
     </style>
     
-    <script src="js/language-switcher.js" defer></script>
+    <script src="js/translation-handler.js" defer></script>
     <script src="js/logo-cookie-manager.js" defer></script>
 </head>
 <body>
@@ -454,11 +462,6 @@
                     <path d="M7.01 18.5a1.5 1.5 0 1 1-2.999.001 1.5 1.5 0 0 1 2.999-.001Zm10 0a1.5 1.5 0 1 1-3.001 0 1.5 1.5 0 0 1 3.001 0ZM6.16 7l.44 2h11.56a1 1 0 0 1 .98 1.204l-1.2 6a1 1 0 0 1-.98.796H8.18a1 1 0 0 1-.98-.804L5.53 4.5H3a1 1 0 1 1 0-2h3a1 1 0 0 1 .98.804L7.62 7H6.16Z" fill="currentColor" />
                 </svg>
                 <span class="cart-label" data-translate="nav.marketplace.label">Marketplace</span>
-            </a>
-            
-            <!-- Scam Stories -->
-            <a href="scam-stories.html" title="Rental Scam Stories & Protection" aria-label="Scam Stories" data-translate-title="nav.scams.title" data-translate-aria="nav.scams.aria">
-                <span data-translate="nav.scams">Scam Stories</span>
             </a>
             
             <!-- Language Switcher moved to the rightmost position -->

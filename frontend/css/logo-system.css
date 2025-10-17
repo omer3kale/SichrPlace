@@ -289,3 +289,35 @@
 .header-logo .sichrplace-shield::before {
     font-size: 22px;
 }
+
+/* Marketplace navigation icon overrides */
+.cart-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    color: #2563EB !important;
+    box-shadow: none !important;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.cart-icon:hover {
+    background: transparent !important;
+    color: #40E0D0 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: none !important;
+}
+
+.cart-label {
+    display: none !important;
+}
+
+.cart-icon i,
+.cart-icon-svg,
+.cart-icon .cart-fallback {
+    color: currentColor !important;
+}

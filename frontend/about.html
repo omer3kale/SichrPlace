@@ -86,25 +86,34 @@
     nav a:hover { color: var(--accent); }
     
     .cart-icon {
-      display: flex;
+      display: inline-flex !important;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      background-color: var(--primary);
-      color: white;
+      width: 40px !important;
+      height: 40px !important;
+      padding: 0 !important;
+      border-radius: 8px !important;
+      background: transparent !important;
+      color: var(--primary) !important;
       position: relative;
-      transition: all 0.3s ease;
+      transition: color 0.2s ease, transform 0.2s ease;
+      box-shadow: none !important;
     }
 
     .cart-icon:hover {
-      background-color: var(--accent);
-      transform: scale(1.05);
+      background: transparent !important;
+      color: var(--accent) !important;
+      transform: translateY(-1px) !important;
+      box-shadow: none !important;
     }
 
     .cart-icon i {
       font-size: 16px;
+      color: currentColor !important;
+    }
+
+    .cart-label {
+      display: none !important;
     }
     
     .container {
@@ -265,11 +274,6 @@
         <span class="cart-label" data-translate="nav.marketplace.label">Marketplace</span>
       </a>
       
-      <!-- Scam Stories -->
-      <a href="scam-stories.html" title="Rental Scam Stories & Protection" aria-label="Scam Stories" data-translate-title="nav.scams.title" data-translate-aria="nav.scams.aria">
-        <span data-translate="nav.scams">Scam Stories</span>
-      </a>
-      
       <!-- Language Switcher moved to the rightmost position -->
       <div class="language-switcher">
         <button class="language-btn" id="language-btn" aria-label="Switch Language">
@@ -343,5 +347,6 @@
       <p>Have questions? We're here to help! Reach out through our <a href="customer-service.html">Customer Service</a> page or check our <a href="faq.html">FAQ</a> for quick answers.</p>
     </div>
   </div>
+  <script src="js/translation-handler.js"></script>
 </body>
 </html>

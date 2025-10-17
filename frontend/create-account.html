@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="css/logo-system.css" rel="stylesheet">
-    <script src="js/language-switcher.js" defer></script>
+    <script src="js/translation-handler.js" defer></script>
     <script src="js/logo-cookie-manager.js" defer></script>
     <script src="js/bulletproof-registration.js" defer></script>
     <style>
@@ -423,11 +423,6 @@
                 <span class="cart-label" data-translate="nav.marketplace.label">Marketplace</span>
             </a>
             
-            <!-- Scam Stories -->
-            <a href="scam-stories.html" title="Rental Scam Stories & Protection" aria-label="Scam Stories" data-translate-title="nav.scams.title" data-translate-aria="nav.scams.aria">
-                <span data-translate="nav.scams">Scam Stories</span>
-            </a>
-            
             <!-- Language Switcher moved to the rightmost position -->
             <div class="language-switcher">
                 <button class="language-btn" id="language-btn" aria-label="Switch Language">
@@ -529,6 +524,7 @@
         console.log('🚀 SichrPlace bulletproof registration system loaded');
         console.log('🔧 Network error prevention: Auto-retry, multiple endpoints, offline detection');
     </script>
+    <script src="js/translation-handler.js"></script>
 
     <!-- SichrPlace Footer -->
     <footer style="margin-top: 40px; padding: 20px 0; border-top: 1px solid #E5E7EB; background: var(--secondary);">

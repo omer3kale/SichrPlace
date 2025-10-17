@@ -17,7 +17,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto:wght@300;400;500&display=swap">
     <link rel="stylesheet" href="css/logo-system.css">
-    <script src="js/language-switcher.js" defer></script>
+    <script src="js/translation-handler.js" defer></script>
     <script src="js/logo-cookie-manager.js" defer></script>
     
     <style>
@@ -440,11 +440,6 @@
                 <span class="cart-label" data-translate="nav.marketplace.label">Marketplace</span>
             </a>
             
-            <!-- Scam Stories -->
-            <a href="scam-stories.html" title="Rental Scam Stories & Protection" aria-label="Scam Stories" data-translate-title="nav.scams.title" data-translate-aria="nav.scams.aria">
-                <span data-translate="nav.scams">Scam Stories</span>
-            </a>
-            
             <!-- Language Switcher moved to the rightmost position -->
             <div class="language-switcher">
                 <button class="language-btn" id="language-btn" aria-label="Switch Language">
@@ -781,5 +776,6 @@
             new AuthHandler();
         });
     </script>
+    <script src="js/translation-handler.js"></script>
 </body>
 </html>
