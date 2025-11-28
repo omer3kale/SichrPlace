@@ -1,13 +1,13 @@
-[2025-11-27T02:34:30.163Z] INFO: Starting automated version tracking...
-[2025-11-27T02:34:30.823Z] INFO: tar-fs not found in direct dependencies
-[2025-11-27T02:34:30.823Z] INFO: next not found in direct dependencies
-[2025-11-27T02:34:30.823Z] INFO: esbuild not found in direct dependencies
-[2025-11-27T02:34:30.823Z] INFO: http-proxy-middleware not found in direct dependencies
-[2025-11-27T02:34:30.823Z] INFO: tmp not found in direct dependencies
-[2025-11-27T02:34:30.823Z] INFO: on-headers not found in direct dependencies
-[2025-11-27T02:34:30.823Z] INFO: ipx not found in direct dependencies
-[2025-11-27T02:34:30.824Z] INFO: Found 0 vulnerabilities
-[2025-11-27T02:34:30.824Z] INFO: Found 0 version mismatches
+[2025-11-28T02:33:45.987Z] INFO: Starting automated version tracking...
+[2025-11-28T02:33:46.626Z] INFO: tar-fs not found in direct dependencies
+[2025-11-28T02:33:46.626Z] INFO: next not found in direct dependencies
+[2025-11-28T02:33:46.626Z] INFO: esbuild not found in direct dependencies
+[2025-11-28T02:33:46.626Z] INFO: http-proxy-middleware not found in direct dependencies
+[2025-11-28T02:33:46.626Z] INFO: tmp not found in direct dependencies
+[2025-11-28T02:33:46.626Z] INFO: on-headers not found in direct dependencies
+[2025-11-28T02:33:46.626Z] INFO: ipx not found in direct dependencies
+[2025-11-28T02:33:46.627Z] INFO: Found 0 vulnerabilities
+[2025-11-28T02:33:46.627Z] INFO: Found 0 version mismatches
 file:///home/runner/work/SichrPlace/SichrPlace/scripts/version-tracker.mjs:382
         .then(report => {
          ^
