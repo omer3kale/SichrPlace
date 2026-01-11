@@ -1,5 +1,5 @@
 {
-  "lastFullScan": "2026-01-10T02:37:25.516Z",
+  "lastFullScan": "2026-01-11T02:48:50.074Z",
   "trackedPackages": {
     "tar-fs": {
       "secure": "3.1.1",
@@ -14,7 +14,7 @@
       "vulnerableRanges": [
         ">= 2.0.0"
       ],
-      "lastChecked": "2026-01-10T02:37:25.515Z",
+      "lastChecked": "2026-01-11T02:48:50.074Z",
       "alertHistory": []
     },
     "next": {
