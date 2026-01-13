@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-01-13T02:40:28.323Z",
+  "summary": {
+    "totalAlerts": 0,
+    "openAlerts": 0,
+    "criticalHigh": 0
+  },
+  "patterns": {
+    "highRiskPackages": {},
+    "vulnerabilityTypes": {},
+    "severityDistribution": {
+      "low": 0,
+      "medium": 0,
+      "high": 0,
+      "critical": 0
+    }
+  },
+  "recommendations": {
+    "immediate": [],
+    "preventive": [],
+    "monitoring": []
+  },
+  "nextAuditDate": "2026-01-20T02:40:28.323Z"
+}
