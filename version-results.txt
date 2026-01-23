@@ -1,13 +1,13 @@
-[2026-01-22T02:45:42.887Z] INFO: Starting automated version tracking...
-[2026-01-22T02:45:43.545Z] INFO: tar-fs not found in direct dependencies
-[2026-01-22T02:45:43.545Z] INFO: next not found in direct dependencies
-[2026-01-22T02:45:43.546Z] INFO: esbuild not found in direct dependencies
-[2026-01-22T02:45:43.546Z] INFO: http-proxy-middleware not found in direct dependencies
-[2026-01-22T02:45:43.546Z] INFO: tmp not found in direct dependencies
-[2026-01-22T02:45:43.546Z] INFO: on-headers not found in direct dependencies
-[2026-01-22T02:45:43.546Z] INFO: ipx not found in direct dependencies
-[2026-01-22T02:45:43.546Z] INFO: Found 0 vulnerabilities
-[2026-01-22T02:45:43.546Z] INFO: Found 0 version mismatches
+[2026-01-23T02:42:25.786Z] INFO: Starting automated version tracking...
+[2026-01-23T02:42:26.507Z] INFO: tar-fs not found in direct dependencies
+[2026-01-23T02:42:26.507Z] INFO: next not found in direct dependencies
+[2026-01-23T02:42:26.507Z] INFO: esbuild not found in direct dependencies
+[2026-01-23T02:42:26.507Z] INFO: http-proxy-middleware not found in direct dependencies
+[2026-01-23T02:42:26.507Z] INFO: tmp not found in direct dependencies
+[2026-01-23T02:42:26.507Z] INFO: on-headers not found in direct dependencies
+[2026-01-23T02:42:26.507Z] INFO: ipx not found in direct dependencies
+[2026-01-23T02:42:26.508Z] INFO: Found 0 vulnerabilities
+[2026-01-23T02:42:26.508Z] INFO: Found 0 version mismatches
 file:///home/runner/work/SichrPlace/SichrPlace/scripts/version-tracker.mjs:382
         .then(report => {
          ^
@@ -18,4 +18,4 @@ TypeError: tracker.run(...).then is not a function
     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
 
-Node.js v20.19.6
+Node.js v20.20.0
