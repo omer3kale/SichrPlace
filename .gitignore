@@ -66,6 +66,9 @@ typings/
 .env.status.clean
 .env.project
 .env.supabase.template
+.env.*.local
+.env.secrets
+.env.secure
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -146,6 +149,13 @@ config/local.json
 # Backup files
 *.backup
 *.bak
+
+# Security files
+.master-key
+encrypted-secrets.json
+hashed-secrets.json
+password-migration.sql
+password-migration.sql.log
 
 # Cache directories
 .cache/

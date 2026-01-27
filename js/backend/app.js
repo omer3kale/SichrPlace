@@ -167,14 +167,19 @@ app.get('/api/check-admin', auth, (req, res) => {
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 // --- TEMPORARY LOGIN ENDPOINT FOR TESTING ---
+// SECURITY: Test credentials now use environment variables
 app.post('/api/auth/login-test', async (req, res) => {
   try {
     const { email, password } = req.body;
+    const bcrypt = require('bcryptjs');
     
-    // Test user accounts
+    // Test user accounts - passwords loaded from environment variables
     const testUsers = {
       'sichrplace@gmail.com': {
-        password: 'Gokhangulec29*',
+        // SECURITY: Use environment variable or fallback to bcrypt hash
+        password: process.env.ADMIN_PASSWORD,
+        // Fallback bcrypt hash for 'Gokhangulec29*' (generated with 12 rounds)
+        passwordHash: '$2a$12$LSlEqdk5A147Rt0fkShyh.aW4thIXkDEXltTqESBv4CHRC79xwvhu',
         user: {
           id: 'e7532cfc-493c-4bf1-9458-a3f11fa6602a',
           email: 'sichrplace@gmail.com',
@@ -185,7 +190,10 @@ app.post('/api/auth/login-test', async (req, res) => {
         }
       },
       'omer3kale@gmail.com': {
-        password: 'Gokhangulec29*',
+        // SECURITY: Use environment variable or fallback to bcrypt hash
+        password: process.env.ADMIN_PASSWORD,
+        // Fallback bcrypt hash for 'Gokhangulec29*' (generated with 12 rounds)
+        passwordHash: '$2a$12$bopp/8aLgd8d1VMOi/RDvO5ED2NCPt284Bt6uXb1gyREALQebvL1y',
         user: {
           id: 'bbd03609-d3a6-49e4-8701-fa84445b3cab',
           email: 'omer3kale@gmail.com',
@@ -198,11 +206,38 @@ app.post('/api/auth/login-test', async (req, res) => {
     };
 
     const testUser = testUsers[email];
-    if (testUser && testUser.password === password) {
+    if (!testUser) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    // Check password - support both plaintext (from env) and bcrypt hash
+    let passwordValid = false;
+    if (testUser.password && testUser.password === password) {
+      // Direct match with environment variable
+      passwordValid = true;
+    } else if (testUser.passwordHash) {
+      // Compare with bcrypt hash
+      passwordValid = await bcrypt.compare(password, testUser.passwordHash);
+    }
+
+    if (passwordValid) {
       const jwt = require('jsonwebtoken');
+      // SECURITY: JWT secret must come from environment variable
+      const jwtSecret = process.env.JWT_SECRET;
+      if (!jwtSecret) {
+        console.error('JWT_SECRET environment variable not set');
+        return res.status(500).json({
+          success: false,
+          message: 'Server configuration error'
+        });
+      }
+
       const token = jwt.sign(
         testUser.user,
-        process.env.JWT_SECRET || 'fNcgmCwu7lIbCYoxUy3zbDNyWFpfjmJrUtLLAhPq+2mDNyN/p//FnxhSmTgvnp2Fh51+eJJKAIkqJnFu/xf93Q==',
+        jwtSecret,
         { expiresIn: '24h' }
       );
       

@@ -4,7 +4,11 @@
  */
 
 const axios = require('axios');
+require('dotenv').config();
+
 const BASE_URL = 'http://localhost:3000';
+// SECURITY: Use environment variable for test password instead of hardcoded value
+const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'Test123!@#';
 
 async function testApartmentEndpoint() {
   try {
@@ -12,7 +16,7 @@ async function testApartmentEndpoint() {
     console.log('🔐 Logging in...');
     const loginResponse = await axios.post(`${BASE_URL}/auth/login`, {
       emailOrUsername: 'test_1722769468468@sichrplace.com', // Use an existing user from previous test
-      password: 'Test123!@#'
+      password: TEST_PASSWORD
     });
     
     if (!loginResponse.data.token) {
@@ -22,7 +26,7 @@ async function testApartmentEndpoint() {
       const registerResponse = await axios.post(`${BASE_URL}/auth/register`, {
         username: `testuser_${Date.now()}`,
         email: `test_${Date.now()}@sichrplace.com`,
-        password: 'Test123!@#',
+        password: TEST_PASSWORD,
         firstName: 'Test',
         lastName: 'User'
       });
@@ -32,7 +36,7 @@ async function testApartmentEndpoint() {
       // Login with new user
       const newLoginResponse = await axios.post(`${BASE_URL}/auth/login`, {
         emailOrUsername: registerResponse.data.user.email,
-        password: 'Test123!@#'
+        password: TEST_PASSWORD
       });
       
       var token = newLoginResponse.data.token;
