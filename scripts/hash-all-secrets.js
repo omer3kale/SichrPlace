@@ -18,20 +18,23 @@ const SALT_ROUNDS = 12;
 const OUTPUT_DIR = path.join(__dirname, '../', 'tmp');
 
 // Known credentials that need hashing
+// SECURITY WARNING: These are the credentials being migrated.
+// This script should only be run once during migration and then the output should be secured.
+// After migration, consider deleting this script or moving it to a secure location.
 const CREDENTIALS = {
   admin: {
     email: 'sichrplace@gmail.com',
-    password: 'Gokhangulec29*',
+    password: process.env.ADMIN_PASSWORD || 'Gokhangulec29*',
     role: 'admin'
   },
   user: {
     email: 'omer3kale@gmail.com',
-    password: 'Gokhangulec29*',
+    password: process.env.ADMIN_PASSWORD || 'Gokhangulec29*',
     role: 'user'
   },
   test: {
     email: 'test_*@sichrplace.com',
-    password: 'Test123!@#',
+    password: process.env.TEST_USER_PASSWORD || 'Test123!@#',
     role: 'test'
   }
 };
@@ -90,6 +93,7 @@ async function main() {
     const hash = await hashPassword(cred.password);
     results.hashes[key] = {
       email: cred.email,
+      // SECURITY: plaintext included for migration only - DELETE after use
       plaintext: cred.password,
       hash: hash,
       role: cred.role
@@ -140,8 +144,10 @@ async function main() {
   console.log('');
   console.log('⚠️  SECURITY WARNING:');
   console.log('   - Keep hashed-secrets.json SECURE and DELETE after use');
+  console.log('   - The output file contains plaintext passwords for migration only');
   console.log('   - Never commit plaintext passwords to version control');
   console.log('   - Ensure .env files are in .gitignore');
+  console.log('   - After deployment, run: rm -rf tmp/hashed-secrets.json');
   console.log('='.repeat(60));
 }
 

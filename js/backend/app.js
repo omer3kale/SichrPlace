@@ -178,7 +178,8 @@ app.post('/api/auth/login-test', async (req, res) => {
       'sichrplace@gmail.com': {
         // SECURITY: Use environment variable or fallback to bcrypt hash
         password: process.env.ADMIN_PASSWORD,
-        // Fallback bcrypt hash for 'Gokhangulec29*' (generated with 12 rounds)
+        // Fallback bcrypt hash for backward compatibility (generated with 12 rounds)
+        // NOTE: Bcrypt hashes are safe to commit - they cannot be reversed to plaintext
         passwordHash: '$2a$12$LSlEqdk5A147Rt0fkShyh.aW4thIXkDEXltTqESBv4CHRC79xwvhu',
         user: {
           id: 'e7532cfc-493c-4bf1-9458-a3f11fa6602a',
@@ -192,7 +193,8 @@ app.post('/api/auth/login-test', async (req, res) => {
       'omer3kale@gmail.com': {
         // SECURITY: Use environment variable or fallback to bcrypt hash
         password: process.env.ADMIN_PASSWORD,
-        // Fallback bcrypt hash for 'Gokhangulec29*' (generated with 12 rounds)
+        // Fallback bcrypt hash for backward compatibility (generated with 12 rounds)
+        // NOTE: Bcrypt hashes are safe to commit - they cannot be reversed to plaintext
         passwordHash: '$2a$12$bopp/8aLgd8d1VMOi/RDvO5ED2NCPt284Bt6uXb1gyREALQebvL1y',
         user: {
           id: 'bbd03609-d3a6-49e4-8701-fa84445b3cab',

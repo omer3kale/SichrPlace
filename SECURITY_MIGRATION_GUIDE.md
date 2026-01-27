@@ -53,10 +53,12 @@ This will:
    
    ```bash
    # Admin password (for test environments)
-   ADMIN_PASSWORD=Gokhangulec29*
+   # Replace with your actual password
+   ADMIN_PASSWORD=your_secure_admin_password
    
    # Test user password
-   TEST_USER_PASSWORD=Test123!@#
+   # Replace with your actual password
+   TEST_USER_PASSWORD=your_secure_test_password
    
    # JWT Secret (from generated output)
    JWT_SECRET=<paste_from_tmp/env-template.txt>
@@ -77,16 +79,16 @@ This will:
    **Netlify:**
    ```bash
    # In Netlify dashboard: Site settings > Environment variables
-   ADMIN_PASSWORD=Gokhangulec29*
-   TEST_USER_PASSWORD=Test123!@#
+   ADMIN_PASSWORD=<your_secure_password>
+   TEST_USER_PASSWORD=<your_secure_password>
    JWT_SECRET=<generated_value>
    ```
    
    **Railway:**
    ```bash
    # In Railway dashboard: Variables tab
-   ADMIN_PASSWORD=Gokhangulec29*
-   TEST_USER_PASSWORD=Test123!@#
+   ADMIN_PASSWORD=<your_secure_password>
+   TEST_USER_PASSWORD=<your_secure_password>
    JWT_SECRET=<generated_value>
    ```
 
@@ -142,9 +144,10 @@ This will:
 
 3. **Test admin login:**
    ```bash
+   # Replace with your actual password
    curl -X POST http://localhost:3000/api/auth/login-test \
      -H "Content-Type: application/json" \
-     -d '{"email":"sichrplace@gmail.com","password":"Gokhangulec29*"}'
+     -d '{"email":"sichrplace@gmail.com","password":"your_admin_password"}'
    ```
 
 ### Step 5: Clean Up
