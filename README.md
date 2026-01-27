@@ -52,9 +52,35 @@
 
 3. **Set up environment variables**
    ```bash
-   cp backend/.env.example backend/.env
-   # Edit backend/.env with your configuration
+   cp .env.example .env
+   # Edit .env with your configuration
    ```
+   
+   **Required environment variables:**
+   - `JWT_SECRET` - Generate with: `node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"`
+   - `ADMIN_PASSWORD` - Secure admin password for test environments
+   - `TEST_USER_PASSWORD` - Password for test user accounts
+   - `SUPABASE_URL` - Your Supabase project URL
+   - `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key
+   - `EMAIL_USER` - Gmail address for sending emails
+   - `EMAIL_PASS` - Gmail app password
+   
+   **🔒 Security Setup:**
+   
+   For production deployments, run the security toolkit to generate bcrypt password hashes:
+   ```bash
+   cd scripts
+   npm install
+   node hash-all-secrets.js
+   ```
+   
+   This will:
+   - Generate secure bcrypt hashes for all passwords
+   - Create a new JWT secret
+   - Generate SQL migration file for database updates
+   - Provide environment variable template
+   
+   See [SECURITY_MIGRATION_GUIDE.md](SECURITY_MIGRATION_GUIDE.md) for complete setup instructions.
 
 4. **Set up the database**
    ```bash
