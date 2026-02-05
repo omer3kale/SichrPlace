@@ -1,6 +1,0 @@
-{
-  "all": true,
-  "reporter": ["text", "html"],
-  "include": ["services/**/*.js"],
-  "exclude": ["tests/**", "config/**"]
-}
