@@ -17,12 +17,36 @@ with 55 endpoints, JWT authentication, and JPA-based dual-database support
 
 **Expected backend tag:** `v1.0.0-mssql-workplace`
 
+### Two repos, one system
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  Frontend (this repo)                                      │
+│  Vanilla JS · Netlify · github.com/omer3kale/sichrplace    │
+│  Branch: main                                              │
+├────────────────────────────────────────────────────────────┤
+│         ▲ calls /api/*        ▼ returns JSON               │
+├────────────────────────────────────────────────────────────┤
+│  Backend (sichrplace-backend)                              │
+│  Spring Boot 3.2.2 · Java 21 · JPA/Hibernate              │
+│  Tag: v1.0.0-mssql-workplace                              │
+├────────────────────────────────────────────────────────────┤
+│         ▼ JDBC                ▲ SQL results                │
+├────────────────────────────────────────────────────────────┤
+│  MSSQL 2025 Developer (Docker)                             │
+│  9 tables · 123 columns · 43 seed rows                     │
+│  localhost:1433 (local) / api.sichrplace.com (beta)         │
+└────────────────────────────────────────────────────────────┘
+```
+
 | Resource | Link |
 |----------|------|
 | Thesis architecture overview | [`THESIS_OVERVIEW_BACKEND.md`](https://github.com/omer3kale/sichrplace-backend/blob/main/THESIS_OVERVIEW_BACKEND.md) |
 | Full-stack golden path | [`docs/FULLSTACK_GOLDEN_PATH.md`](https://github.com/omer3kale/sichrplace-backend/blob/main/docs/FULLSTACK_GOLDEN_PATH.md) |
 | API endpoint reference (55 endpoints) | [`docs/API_ENDPOINTS_BACKEND.md`](https://github.com/omer3kale/sichrplace-backend/blob/main/docs/API_ENDPOINTS_BACKEND.md) |
 | Backend environment setup | [`docs/ENV_SETUP_GUIDE.MD`](https://github.com/omer3kale/sichrplace-backend/blob/main/docs/ENV_SETUP_GUIDE.MD) |
+| Student onboarding | [`docs/ONBOARDING_README.md`](https://github.com/omer3kale/sichrplace-backend/blob/main/docs/ONBOARDING_README.md) |
+| Exam / defense checklist | [`EXAM_CHECKLIST_BACKEND.md`](https://github.com/omer3kale/sichrplace-backend/blob/main/EXAM_CHECKLIST_BACKEND.md) |
 | Backend variants (local vs beta) | [`docs/BACKEND_VARIANTS.md`](docs/BACKEND_VARIANTS.md) |
 
 The frontend auto-resolves to `localhost:8080` (dev) or `api.sichrplace.com`
